@@ -4,7 +4,6 @@ import { Calendar, User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle } fr
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
-  const API_BASE = import.meta.env.VITE_API_BASE
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     fullName: '',
@@ -28,15 +27,11 @@ const Register = () => {
     
     try {
       // Register the user
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.fullName,
-          email: formData.email,
-          city: formData.city,
-          mailing_address: formData.mailingAddress,
-          referral: formData.referral
+          // ...
         })
       })
 

@@ -21,7 +21,6 @@ interface AdminData {
 }
 
 const Admin = () => {
-  const API_BASE = import.meta.env.VITE_API_BASE
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
