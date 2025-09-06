@@ -1,0 +1,148 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendWelcomeEmail = exports.sendPasswordResetEmail = void 0;
+const nodemailer_1 = __importDefault(require("nodemailer"));
+// Create a transporter using Gmail SMTP
+const createTransporter = () => {
+    return nodemailer_1.default.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER || 'jaklilu@gmail.com',
+            pass: process.env.EMAIL_APP_PASSWORD || 'your-app-password-here'
+        }
+    });
+};
+// Send password reset email
+const sendPasswordResetEmail = async (email, resetToken, userName) => {
+    try {
+        const transporter = createTransporter();
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+        const mailOptions = {
+            from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+            to: email,
+            subject: 'Password Reset Request - The Bible Bus',
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Password Reset Request</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}!</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              We received a request to reset your password for your Bible Bus account. 
+              If you didn't make this request, you can safely ignore this email.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Reset Your Password
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px;">
+              <strong>Important:</strong> This link will expire in 1 hour for security reasons.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px;">
+              If the button above doesn't work, you can copy and paste this link into your browser:
+            </p>
+            
+            <p style="background: #f3f4f6; padding: 15px; border-radius: 5px; word-break: break-all; font-family: monospace; font-size: 12px; color: #374151;">
+              ${resetLink}
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+              This email was sent from The Bible Bus application. 
+              If you have any questions, please contact our support team.
+            </p>
+          </div>
+        </div>
+      `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Password reset email sent:', info.messageId);
+        return true;
+    }
+    catch (error) {
+        console.error('Error sending password reset email:', error);
+        return false;
+    }
+};
+exports.sendPasswordResetEmail = sendPasswordResetEmail;
+// Send welcome email (for future use)
+const sendWelcomeEmail = async (email, userName) => {
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+            to: email,
+            subject: 'Welcome to The Bible Bus! 🚌',
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Welcome aboard!</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Welcome ${userName}! 🎉</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Thank you for joining The Bible Bus! We're excited to have you on this journey of getting to know God intimately.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              You're now part of a community dedicated to daily Bible reading and spiritual growth. 
+              Get ready for an amazing journey ahead!
+            </p>
+            
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 5px;">
+              <p style="color: #92400e; margin: 0; font-weight: bold;">💡 Getting Started:</p>
+              <ul style="color: #92400e; margin: 10px 0 0 0; padding-left: 20px;">
+                <li>Join a Bible reading group</li>
+                <li>Set your reading goals</li>
+                <li>Connect with fellow believers</li>
+                <li>Track your progress</li>
+              </ul>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              If you have any questions or need help getting started, don't hesitate to reach out to our support team.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Blessings,<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+        </div>
+      `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Welcome email sent:', info.messageId);
+        return true;
+    }
+    catch (error) {
+        console.error('Error sending welcome email:', error);
+        return false;
+    }
+};
+exports.sendWelcomeEmail = sendWelcomeEmail;
+//# sourceMappingURL=emailService.js.map

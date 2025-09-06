@@ -1,0 +1,36 @@
+{
+  "name": "the-bible-bus",
+  "version": "1.0.0",
+  "description": "A mobile-first React web app for managing Bible reading groups, user dashboards, milestone notifications, and community engagement",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "start": "cd backend && npm start",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test"
+  },
+  "keywords": [
+    "bible",
+    "reading",
+    "groups",
+    "react",
+    "nodejs",
+    "youversion",
+    "whatsapp"
+  ],
+  "author": "The Bible Bus Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "express-validator": "^6.15.0"
+  }
+}
