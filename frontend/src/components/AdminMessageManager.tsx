@@ -97,8 +97,8 @@ const AdminMessageManager = () => {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        
+       //onst data = await response.json()
+       await response.json()
         // Reset form and refresh messages
         setFormData({
           group_id: '',
