@@ -24,22 +24,20 @@ const Register = () => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
-    
+
     try {
-      // Register the user
+      // Register the user (Netlify will proxy /api to your Render backend)
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // ...
-        })
+        body: JSON.stringify(formData)
       })
 
       const data = await response.json()
 
       if (data.success) {
         setSuccess(true)
-        setGroupInfo(data.data.group)
+        setGroupInfo(data.data?.group)
         // Redirect to dashboard after successful registration
         setTimeout(() => {
           navigate('/dashboard')
@@ -65,9 +63,9 @@ const Register = () => {
   useEffect(() => {
     const fetchCurrentGroup = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/admin/groups/current/active`)
+        const response = await fetch('/api/admin/groups/current/active')
         const data = await response.json()
-        
+
         if (data.success && data.data) {
           setCurrentGroup(data.data)
         } else {
@@ -130,24 +128,24 @@ const Register = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 mb-8"
           >
-          <div className="flex items-center space-x-3 mb-4">
-            <Calendar className="h-6 w-6 text-yellow-400" />
-            <h2 className="text-2xl font-bold text-white">Group Details</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-6 text-white">
-            <div>
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">
-                {currentGroup?.name || 'Loading...'}
-              </h3>
-              <p className="text-purple-200">365-day Bible reading journey</p>
-              <p className="text-purple-200">Starts: {currentGroup ? new Date(currentGroup.start_date).toLocaleDateString() : 'Loading...'}</p>
-              <p className="text-purple-200">Complete by: {currentGroup ? new Date(new Date(currentGroup.start_date).getTime() + (365 * 24 * 60 * 60 * 1000)).toLocaleDateString() : 'Loading...'}</p>
+            <div className="flex items-center space-x-3 mb-4">
+              <Calendar className="h-6 w-6 text-yellow-400" />
+              <h2 className="text-2xl font-bold text-white">Group Details</h2>
             </div>
             
-            <div></div>
-          </div>
-        </motion.div>
+            <div className="grid md:grid-cols-2 gap-6 text-white">
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-400 mb-2">
+                  {currentGroup?.name || 'Loading...'}
+                </h3>
+                <p className="text-purple-200">365-day Bible reading journey</p>
+                <p className="text-purple-200">Starts: {currentGroup ? new Date(currentGroup.start_date).toLocaleDateString() : 'Loading...'}</p>
+                <p className="text-purple-200">Complete by: {currentGroup ? new Date(new Date(currentGroup.start_date).getTime() + (365 * 24 * 60 * 60 * 1000)).toLocaleDateString() : 'Loading...'}</p>
+              </div>
+              
+              <div></div>
+            </div>
+          </motion.div>
         ) : null}
 
         {/* Registration Form */}
