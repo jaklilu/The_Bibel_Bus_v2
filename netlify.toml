@@ -1,18 +1,26 @@
 [build]
-  base = "frontend"
+  base    = "frontend"
   command = "npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
 
+# --- proxy API to Render (MUST come before the SPA fallback) ---
+[[redirects]]
+  from = "/api/*"
+  to   = "https://the-bible-bus-v2.onrender.com/api/:splat"
+  status = 200
+  force  = true
+
+# SPA fallback for React Router
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to   = "/index.html"
   status = 200
 
 [dev]
-  base = "frontend"
+  base    = "frontend"
   command = "npm run dev"
-  port = 3000
+  port    = 3000
   publish = "dist"

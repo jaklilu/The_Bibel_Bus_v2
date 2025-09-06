@@ -4,6 +4,7 @@ import { Calendar, User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle } fr
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
+  const API_BASE = import.meta.env.VITE_API_BASE
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     fullName: '',
@@ -27,7 +28,7 @@ const Register = () => {
     
     try {
       // Register the user
-              const response = await fetch('http://localhost:5002/api/auth/register', {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,7 +70,7 @@ const Register = () => {
   useEffect(() => {
     const fetchCurrentGroup = async () => {
       try {
-        const response = await fetch('http://localhost:5002/api/admin/groups/current/active')
+        const response = await fetch(`${API_BASE}/api/admin/groups/current/active`)
         const data = await response.json()
         
         if (data.success && data.data) {
