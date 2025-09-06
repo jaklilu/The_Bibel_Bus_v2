@@ -76,8 +76,6 @@ const Register = () => {
           setCurrentGroup(data.data)
         } else {
           // Fallback to hardcoded logic if no active group
-          const now = new Date()
-          const currentYear = now.getFullYear()
           const fallbackGroup = {
             name: 'Bible Bus October 2025 Travelers',
             start_date: '2025-10-01',

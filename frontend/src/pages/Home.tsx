@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { BookOpen, Play, ArrowRight, Users, Calendar, Target } from 'lucide-react'
+import {  Play, ArrowRight, } from 'lucide-react'
 
 const Home = () => {
   const [countdown, setCountdown] = useState({

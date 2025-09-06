@@ -11,8 +11,6 @@ import {
   Trophy,
   Calendar,
   Users,
-  AlertCircle,
-  CheckCircle
 } from 'lucide-react'
 
 interface GroupMessage {
