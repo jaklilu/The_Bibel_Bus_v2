@@ -158,29 +158,29 @@ const Home = () => {
             </p>
             
             {/* Countdown Timer */}
-            <div className="grid grid-cols-4 gap-2 md:gap-4 mb-6">
+            <div className="grid grid-cols-4 gap-2 md:gap-4 mb-4">
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
-                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.days}</div>
-                  <div className="text-xs md:text-sm text-white font-medium">DAYS</div>
+                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.days}</div>
+                  <div className="text-xs md:text-sm text-white font-medium leading-none">DAYS</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
-                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.hours}</div>
-                  <div className="text-xs md:text-sm text-white font-medium">HOURS</div>
+                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.hours}</div>
+                  <div className="text-xs md:text-sm text-white font-medium leading-none">HOURS</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
-                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.minutes}</div>
-                  <div className="text-xs md:text-sm text-white font-medium">MINUTES</div>
+                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.minutes}</div>
+                  <div className="text-xs md:text-sm text-white font-medium leading-none">MINUTES</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
-                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.seconds}</div>
-                  <div className="text-xs md:text-sm text-white font-medium">SECONDS</div>
+                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.seconds}</div>
+                  <div className="text-xs md:text-sm text-white font-medium leading-none">SECONDS</div>
                 </div>
               </div>
             </div>
