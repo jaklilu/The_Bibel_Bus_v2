@@ -118,7 +118,7 @@ const Home = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.5 }}
-             className="text-3xl md:text-4xl font-heading text-amber-500 mb-2"
+             className="text-3xl md:text-4xl font-heading text-amber-500 mb-1 text-center"
            >
              Getting to know God,{' '}
              <span className="text-white text-3xl md:text-4xl font-heading drop-shadow-lg">intimately.</span>
@@ -129,7 +129,7 @@ const Home = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.7 }}
-             className="text-xl font-tagline text-amber-500 mb-4 text-center md:text-left md:ml-[300px]"
+             className="text-xl font-tagline text-amber-500 mb-4 text-right pr-4 md:pr-0 md:text-left md:ml-[300px]"
            >
              It's a journey...
            </motion.p>
