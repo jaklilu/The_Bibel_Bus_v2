@@ -63,13 +63,21 @@ const Login = () => {
     setError('')
     
     try {
-      const response = await fetch('/api/auth/login', {
+      const resp = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include',           // allowed but not required for token-in-body flow
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, name: formData.name })
+        body: JSON.stringify({ 
+          email: formData.email.trim(), 
+          name: formData.name.trim() 
+        })
       })
+      if (!resp.ok) {
+        const msg = await resp.text().catch(() => '')
+        throw new Error(`Login failed (${resp.status}): ${msg || resp.statusText}`)
+      }
 
-      const data = await response.json()
+      const data = await resp.json()
       
       
 
