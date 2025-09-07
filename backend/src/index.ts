@@ -78,6 +78,11 @@ app.get('/health', (_req, res) => {
   res.type('text/plain').send('OK')
 })
 
+// Simple root response to confirm service is running when visiting base URL
+app.get('/', (_req, res) => {
+  res.type('text/plain').send('API is running')
+})
+
 // ---- Automated group management ----
 const initializeGroupManagement = async () => {
   try {
