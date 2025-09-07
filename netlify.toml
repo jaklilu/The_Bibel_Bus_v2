@@ -9,13 +9,13 @@
 # --- proxy API to Render (MUST come before the SPA fallback) ---
 [[redirects]]
   from = "/api/*"
-  to   = "https://the-bible-bus-v2.onrender.com/api/:splat"
+  to   = "https://the-bibel-bus-v2.onrender.com/api/:splat"
   status = 200
   force  = true
 
 [[redirects]]
   from = "/health"
-  to   = "https://the-bible-bus-v2.onrender.com/health"
+  to   = "https://the-bibel-bus-v2.onrender.com/health"
   status = 200
   force  = true
 

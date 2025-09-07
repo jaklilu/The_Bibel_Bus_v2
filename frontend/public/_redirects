@@ -1,4 +1,4 @@
-/api/*  https://the-bible-bus-v2.onrender.com/api/:splat  200!
- /health https://the-bible-bus-v2.onrender.com/health           200!
+/api/*  https://the-bibel-bus-v2.onrender.com/api/:splat  200!
+ /health https://the-bibel-bus-v2.onrender.com/health           200!
 /*      /index.html                                             200
 
