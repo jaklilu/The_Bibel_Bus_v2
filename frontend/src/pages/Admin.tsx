@@ -145,7 +145,7 @@ const Admin = () => {
 
     try {
       // Admin login endpoint
-      const response = await fetch('http://localhost:5002/api/auth/admin/login', {
+      const response = await fetch('/api/auth/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -179,11 +179,11 @@ const Admin = () => {
       const headers = { 'Authorization': `Bearer ${token}` }
       
       const [groupsRes, usersRes, progressRes, messagesRes, donationsRes] = await Promise.all([
-        fetch('http://localhost:5002/api/admin/groups', { headers }),
-        fetch('http://localhost:5002/api/admin/users', { headers }),
-        fetch('http://localhost:5002/api/admin/progress', { headers }),
-        fetch('http://localhost:5002/api/admin/messages', { headers }),
-        fetch('http://localhost:5002/api/admin/donations', { headers })
+        fetch('/api/admin/groups', { headers }),
+        fetch('/api/admin/users', { headers }),
+        fetch('/api/admin/progress', { headers }),
+        fetch('/api/admin/messages', { headers }),
+        fetch('/api/admin/donations', { headers })
       ])
 
       const groups = await groupsRes.json()
@@ -217,7 +217,7 @@ const Admin = () => {
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:5002/api/admin/groups/${groupId}`, {
+      const response = await fetch(`/api/admin/groups/${groupId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
@@ -259,7 +259,7 @@ const Admin = () => {
     if (!token || !groupToManage) return
 
     try {
-      const response = await fetch('http://localhost:5002/api/admin/group-messages', {
+      const response = await fetch('/api/admin/group-messages', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -306,7 +306,7 @@ const Admin = () => {
     if (!token) return
 
     try {
-              const response = await fetch('http://localhost:5002/api/auth/change-password', {
+              const response = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -338,7 +338,7 @@ const Admin = () => {
     setError('') // Clear any previous login errors
 
     try {
-              const response = await fetch('http://localhost:5002/api/auth/reset-password', {
+              const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail })
@@ -635,7 +635,7 @@ const Admin = () => {
                       newOrder[idx] = newOrder[swapWith]
                       newOrder[swapWith] = tmp
                       try {
-                        await fetch('http://localhost:5002/api/admin/groups/sort-order', {
+                        await fetch('/api/admin/groups/sort-order', {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                           body: JSON.stringify({ order: newOrder })
@@ -790,7 +790,7 @@ const Admin = () => {
                                onClick={async () => {
                                  const token = localStorage.getItem('adminToken'); if (!token) return;
                                  const next = user.status === 'active' ? 'inactive' : 'active'
-                                 await fetch(`http://localhost:5002/api/admin/users/${user.id}/status`, {
+                                 await fetch(`/api/admin/users/${user.id}/status`, {
                                    method: 'POST',
                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                    body: JSON.stringify({ status: next })
@@ -805,7 +805,7 @@ const Admin = () => {
                                onClick={async () => {
                                  if (!confirm('Delete this user?')) return
                                  const token = localStorage.getItem('adminToken'); if (!token) return;
-                                 await fetch(`http://localhost:5002/api/admin/users/${user.id}`, {
+                                 await fetch(`/api/admin/users/${user.id}`, {
                                    method: 'DELETE',
                                    headers: { 'Authorization': `Bearer ${token}` }
                                  })
@@ -974,7 +974,7 @@ const Admin = () => {
                         const token = localStorage.getItem('adminToken')
                         if (!token) return
                         try {
-                          const res = await fetch('http://localhost:5002/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
+                          const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
                           const data = await res.json()
                           setAllUsers(data.data || [])
                           setSelectedUserIds([])
@@ -1018,7 +1018,7 @@ const Admin = () => {
                                 onClick={async () => {
                                   const token = localStorage.getItem('adminToken')
                                   if (!token || !selectedGroup) return
-                                  const res = await fetch(`http://localhost:5002/api/admin/groups/${selectedGroup.id}/members/${member.user_id}`, {
+                                  const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members/${member.user_id}`, {
                                     method: 'DELETE',
                                     headers: { 'Authorization': `Bearer ${token}` }
                                   })
@@ -1103,7 +1103,7 @@ const Admin = () => {
                       if (!token || !newGroupStart) { return }
                       try {
                         setCreatingGroup(true)
-                        const res = await fetch('http://localhost:5002/api/admin/groups', {
+                        const res = await fetch('/api/admin/groups', {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                           body: JSON.stringify({ start_date: normalizeToISO(newGroupStart), max_members: newGroupMax, name: newGroupName })
@@ -1199,7 +1199,7 @@ const Admin = () => {
                             if (!groupToManage) return
                             const token = localStorage.getItem('adminToken'); if (!token) return
                             try {
-                              await fetch(`http://localhost:5002/api/admin/groups/${groupToManage.id}`, {
+                              await fetch(`/api/admin/groups/${groupToManage.id}`, {
                                 method: 'PUT',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ whatsapp_invite_url: val })
@@ -1220,7 +1220,7 @@ const Admin = () => {
                             if (!groupToManage) return
                             const token = localStorage.getItem('adminToken'); if (!token) return
                             try {
-                              await fetch(`http://localhost:5002/api/admin/groups/${groupToManage.id}`, {
+                              await fetch(`/api/admin/groups/${groupToManage.id}`, {
                                 method: 'PUT',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ youversion_plan_url: val })
@@ -1298,8 +1298,8 @@ const Admin = () => {
                         if (Object.keys(payload).length === 0) { setShowManageModal(false); return }
                         try {
                           const endpoint = (Object.keys(payload).length === 1 && payload.status)
-                            ? `http://localhost:5002/api/admin/groups/${groupToManage.id}/status`
-                            : `http://localhost:5002/api/admin/groups/${groupToManage.id}`
+                            ? `/api/admin/groups/${groupToManage.id}/status`
+                            : `/api/admin/groups/${groupToManage.id}`
                           const method = (Object.keys(payload).length === 1 && payload.status) ? 'POST' : 'PUT'
                           const res = await fetch(endpoint, {
                             method,
@@ -1392,14 +1392,14 @@ const Admin = () => {
                       try {
                         setAddingMembers(true)
                         for (const uid of selectedUserIds) {
-                          await fetch(`http://localhost:5002/api/admin/groups/${selectedGroup.id}/members`, {
+                          await fetch(`/api/admin/groups/${selectedGroup.id}/members`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                             body: JSON.stringify({ user_id: uid })
                           })
                         }
                         // Refresh members in the background modal if open
-                        const res = await fetch(`http://localhost:5002/api/admin/groups/${selectedGroup.id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+                        const res = await fetch(`/api/admin/groups/${selectedGroup.id}`, { headers: { 'Authorization': `Bearer ${token}` } })
                         const data = await res.json()
                         setGroupMembers(data?.data?.members || [])
                         setShowSelectUsersModal(false)
@@ -1591,7 +1591,7 @@ const Admin = () => {
                       const token = localStorage.getItem('adminToken'); if (!token) return;
                       try {
                         setCreatingUser(true)
-                        const url = editingUser ? `http://localhost:5002/api/admin/users/${editingUser.id}` : 'http://localhost:5002/api/admin/users'
+                        const url = editingUser ? `/api/admin/users/${editingUser.id}` : '/api/admin/users'
                         const method = editingUser ? 'PUT' : 'POST'
                         const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
                         const data = await res.json()

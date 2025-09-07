@@ -21,7 +21,7 @@ const Trophies = () => {
     }
     ;(async () => {
       try {
-        const res = await fetch('http://localhost:5002/api/auth/public/trophies')
+        const res = await fetch('/api/auth/public/awards')
         const data = await res.json()
         if (data?.success) setPublicList(data.data)
       } finally {

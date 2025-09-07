@@ -82,7 +82,7 @@ const Dashboard = () => {
     // Fetch current group links for Quick Actions
     ;(async () => {
       try {
-        const res = await fetch('http://localhost:5002/api/auth/my-group', {
+        const res = await fetch('/api/auth/my-group', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const data = await res.json()
@@ -111,7 +111,7 @@ const Dashboard = () => {
       } catch {}
       // Fetch next group summary
       try {
-        const ng = await fetch('http://localhost:5002/api/auth/next-group', {
+        const ng = await fetch('/api/auth/next-group', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const ngData = await ng.json()
@@ -123,7 +123,7 @@ const Dashboard = () => {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('userToken')
-      const response = await fetch('http://localhost:5002/api/users/profile', {
+      const response = await fetch('/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -255,7 +255,7 @@ const Dashboard = () => {
                     try {
                       setJoining(true)
                       const token = localStorage.getItem('userToken') || ''
-                      const res = await fetch(`http://localhost:5002/api/auth/groups/${nextGroup.id}/join`, {
+                      const res = await fetch(`/api/auth/groups/${nextGroup.id}/join`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` }
                       })
@@ -281,7 +281,7 @@ const Dashboard = () => {
                       try {
                         setJoining(true)
                         const token = localStorage.getItem('userToken') || ''
-                        const res = await fetch(`http://localhost:5002/api/auth/groups/${nextGroup.id}/cancel`, {
+                        const res = await fetch(`/api/auth/groups/${nextGroup.id}/cancel`, {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${token}` }
                         })
