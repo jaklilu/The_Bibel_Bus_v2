@@ -77,7 +77,7 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section with Bible Bus Image */}
-      <section className="text-center py-16 px-4">
+      <section className="text-center py-10 md:py-16 px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,7 +107,7 @@ const Home = () => {
                <img 
                  src="/BibleBusLogo.jpg" 
                  alt="The Bible Bus - Customized Yellow School Bus"
-                 className="w-80 h-auto rounded-lg shadow-2xl"
+                 className="w-64 sm:w-80 h-auto rounded-lg shadow-2xl mx-auto"
                  style={{ maxHeight: '300px' }}
                />
              </div>
@@ -137,14 +137,14 @@ const Home = () => {
       </section>
 
       {/* Countdown Section */}
-      <section className="py-8 px-4">
+      <section className="py-6 md:py-8 px-4">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="max-w-4xl mx-auto"
         >
-          <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30">
+          <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-8 border border-purple-700/30">
             <h2 className="text-2xl font-bold text-white text-center mb-6">
               {new Date().getTime() < getNextGroupStart().getTime() ? 'Next Group Starts' : 'Registration Closes'}
             </h2>
@@ -158,29 +158,29 @@ const Home = () => {
             </p>
             
             {/* Countdown Timer */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-4 gap-2 md:gap-4 mb-6">
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-4 border border-purple-600">
-                  <div className="text-3xl font-bold text-amber-500">{countdown.days}</div>
-                  <div className="text-sm text-white font-medium">DAYS</div>
+                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
+                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.days}</div>
+                  <div className="text-xs md:text-sm text-white font-medium">DAYS</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-4 border border-purple-600">
-                  <div className="text-3xl font-bold text-amber-500">{countdown.hours}</div>
-                  <div className="text-sm text-white font-medium">HOURS</div>
+                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
+                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.hours}</div>
+                  <div className="text-xs md:text-sm text-white font-medium">HOURS</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-4 border border-purple-600">
-                  <div className="text-3xl font-bold text-amber-500">{countdown.minutes}</div>
-                  <div className="text-sm text-white font-medium">MINUTES</div>
+                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
+                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.minutes}</div>
+                  <div className="text-xs md:text-sm text-white font-medium">MINUTES</div>
                 </div>
               </div>
               <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg p-4 border border-purple-600">
-                  <div className="text-3xl font-bold text-amber-500">{countdown.seconds}</div>
-                  <div className="text-sm text-white font-medium">SECONDS</div>
+                <div className="bg-purple-900/80 rounded-lg p-3 md:p-4 border border-purple-600">
+                  <div className="text-2xl md:text-3xl font-bold text-amber-500">{countdown.seconds}</div>
+                  <div className="text-xs md:text-sm text-white font-medium">SECONDS</div>
                 </div>
               </div>
             </div>
@@ -193,9 +193,9 @@ const Home = () => {
       </section>
 
       {/* Action Buttons Section */}
-      <section className="py-8 px-4">
+      <section className="py-6 md:py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
                           <motion.div
                 animate={{ 
                   opacity: [0.7, 1, 0.7]
@@ -208,7 +208,7 @@ const Home = () => {
               >
                 <Link
                   to="/register"
-                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-10 py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg text-lg"
+                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg text-lg"
                 >
                   <span>Register Now</span>
                   <ArrowRight className="h-5 w-5" />
@@ -219,7 +219,7 @@ const Home = () => {
               href="https://www.youtube.com/watch?v=c-VWZN76hoc"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-purple-700 hover:bg-amber-500 hover:text-purple-900 text-white font-semibold px-10 py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-lg"
+              className="bg-purple-700 hover:bg-amber-500 hover:text-purple-900 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-lg"
             >
               <Play className="h-5 w-5" />
               <span>Watch Introduction</span>
