@@ -32,20 +32,33 @@ const allowedOrigins = (
     : defaultLocalOrigins
 ).filter(Boolean)
 
+// Optional support for suffix-based allow list (e.g., Netlify preview domains)
+// Example: ALLOWED_ORIGIN_SUFFIXES=stalwart-sunflower-596007.netlify.app
+const allowedOriginSuffixes = (
+  process.env.ALLOWED_ORIGIN_SUFFIXES && process.env.ALLOWED_ORIGIN_SUFFIXES.trim().length > 0
+    ? process.env.ALLOWED_ORIGIN_SUFFIXES.split(',').map(s => s.trim())
+    : []
+).filter(Boolean)
+
 app.use(helmet())
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // allow server-to-server, curl, Postman (no Origin header)
-      if (!origin) return cb(null, true)
-      if (allowedOrigins.includes(origin)) return cb(null, true)
-      return cb(new Error(`CORS blocked: ${origin}`))
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-)
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => {
+    // allow server-to-server, curl, Postman (no Origin header)
+    if (!origin) return cb(null, true)
+    if (allowedOrigins.includes(origin)) return cb(null, true)
+    if (allowedOriginSuffixes.some(suffix => origin.endsWith(suffix))) return cb(null, true)
+    // Do not throw; return false so request is simply not CORS-enabled
+    return cb(null, false)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+}
+
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 
 // Logging & parsers
 app.use(morgan('combined'))
