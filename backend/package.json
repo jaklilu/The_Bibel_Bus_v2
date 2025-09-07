@@ -7,6 +7,7 @@
     "node": "18.x"
   },
   "scripts": {
+    "prestart": "npm run build",
     "postinstall": "npm run build",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
