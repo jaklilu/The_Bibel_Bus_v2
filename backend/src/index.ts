@@ -70,13 +70,12 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/admin', adminRoutes)
 
-// Health check
+// Health checks (support both /api/health and /health)
 app.get('/api/health', (_req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    service: 'The Bible Bus API',
-  })
+  res.json({ status: 'OK', service: 'The Bible Bus API', timestamp: new Date().toISOString() })
+})
+app.get('/health', (_req, res) => {
+  res.type('text/plain').send('OK')
 })
 
 // ---- Automated group management ----
