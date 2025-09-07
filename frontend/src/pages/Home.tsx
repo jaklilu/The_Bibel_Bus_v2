@@ -129,8 +129,7 @@ const Home = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.7 }}
-             className="text-xl font-tagline text-amber-500 mb-4 text-left"
-             style={{ marginLeft: '500px' }}
+             className="text-xl font-tagline text-amber-500 mb-4 text-center md:text-left md:ml-[300px]"
            >
              It's a journey...
            </motion.p>
