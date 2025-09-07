@@ -65,18 +65,18 @@ app.use(morgan('combined'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// ---- Health checks (define BEFORE other routes) ----
+app.all('/health', (_req, res) => {
+  res.type('text/plain').send('OK')
+})
+app.all('/api/health', (_req, res) => {
+  res.json({ status: 'OK', service: 'The Bible Bus API', timestamp: new Date().toISOString() })
+})
+
 // ---- Routes ----
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/admin', adminRoutes)
-
-// Health checks (support both /api/health and /health)
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'OK', service: 'The Bible Bus API', timestamp: new Date().toISOString() })
-})
-app.get('/health', (_req, res) => {
-  res.type('text/plain').send('OK')
-})
 
 // Simple root response to confirm service is running when visiting base URL
 app.get('/', (_req, res) => {
