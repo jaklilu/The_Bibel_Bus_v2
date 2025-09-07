@@ -73,6 +73,14 @@ app.all('/api/health', (_req, res) => {
   res.json({ status: 'OK', service: 'The Bible Bus API', timestamp: new Date().toISOString() })
 })
 
+// Quick diagnostics: verify /api prefix routing in Render/Netlify
+app.all('/ping', (_req, res) => {
+  res.type('text/plain').send('pong')
+})
+app.all('/api/ping', (_req, res) => {
+  res.type('text/plain').send('api-pong')
+})
+
 // ---- Routes ----
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
