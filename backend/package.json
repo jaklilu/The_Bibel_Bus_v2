@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend API for The Bible Bus application",
   "main": "dist/index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
