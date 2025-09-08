@@ -58,6 +58,7 @@ const Admin = () => {
   // Users tab state
   const [showCreateUserModal, setShowCreateUserModal] = useState(false)
   const [creatingUser, setCreatingUser] = useState(false)
+  const [newUserError, setNewUserError] = useState('')
   const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' })
   const [editingUser, setEditingUser] = useState<any | null>(null)
   // Select users to add to group
@@ -185,6 +186,13 @@ const Admin = () => {
         fetch('/api/admin/messages', { headers }),
         fetch('/api/admin/donations', { headers })
       ])
+
+      // If token expired/invalid after a deploy, force re-login instead of showing empty lists
+      if ([groupsRes, usersRes, progressRes, messagesRes, donationsRes].some(r => r.status === 401)) {
+        handleLogout()
+        setError('Your admin session expired. Please sign in again.')
+        return
+      }
 
       const groups = await groupsRes.json()
       const users = await usersRes.json()
@@ -1585,21 +1593,32 @@ const Admin = () => {
                   </div>
                 </div>
 
+                {newUserError && (
+                  <div className="mt-4 text-red-300 bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-sm">
+                    {newUserError}
+                  </div>
+                )}
+
                 <div className="flex space-x-3 pt-6">
                   <button
                     onClick={async () => {
                       const token = localStorage.getItem('adminToken'); if (!token) return;
                       try {
                         setCreatingUser(true)
+                        setNewUserError('')
                         const url = editingUser ? `/api/admin/users/${editingUser.id}` : '/api/admin/users'
                         const method = editingUser ? 'PUT' : 'POST'
                         const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
-                        const data = await res.json()
-                        if (data.success) {
+                        let data: any = null
+                        try { data = await res.json() } catch {}
+                        if (res.ok && data?.success) {
                           setShowCreateUserModal(false)
                           setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' })
                           setEditingUser(null)
                           await fetchAdminData()
+                        } else {
+                          const msg = (data && (data.error?.message || data.message)) || (res.status === 409 ? 'Email already exists' : 'Failed to save user')
+                          setNewUserError(msg)
                         }
                       } finally {
                         setCreatingUser(false)
