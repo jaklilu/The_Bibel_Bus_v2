@@ -10,6 +10,7 @@ import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
+const Messages = lazy(() => import('./pages/Messages.tsx'))
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/messages" element={<Messages />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/awards" element={<Awards />} />

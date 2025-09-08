@@ -15,7 +15,7 @@ import {
   Award
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import MessageBoard from '../components/MessageBoard'
+import { Link } from 'react-router-dom'
 
 
 interface UserData {
@@ -183,14 +183,27 @@ const Dashboard = () => {
           </button>
         </motion.div>
 
-        {/* Message Board */}
+        {/* Messages Card (link to Messages page) */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
+          className="mb-8 bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30"
         >
-          <MessageBoard />
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-heading text-white mb-1 flex items-center">
+                <MessageSquare className="h-6 w-6 text-amber-500 mr-2" />
+                Message Board
+              </h2>
+              <p className="text-purple-200">Stay connected with your Bible reading group</p>
+            </div>
+            <Link
+              to="/messages"
+              className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+            >
+              Open
+            </Link>
+          </div>
         </motion.div>
 
         {/* Progress Section */}
