@@ -350,14 +350,14 @@ const MessageBoard = () => {
             {getUnreadCount() > 0 && (
               <button
                 onClick={markAsRead}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                className="w-full sm:w-auto px-4 py-2 min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 Mark All as Read
               </button>
             )}
             <button
               onClick={() => setShowCreateMessage(true)}
-              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 min-h-[44px] bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>Post Message</span>
@@ -365,37 +365,37 @@ const MessageBoard = () => {
           </div>
         </div>
         
-        {/* Filter Buttons - Always Visible */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {messageTypes.map((type) => (
-            <button
-              key={type.value}
-              onClick={() => {
-                setSelectedType(type.value)
-                // Mark this message type as read when clicked
-                if (type.value !== 'all') {
-                  markTypeAsRead(type.value)
+        {/* Compact Filter - Dropdown */}
+        <div className="mb-4">
+          <label className="block text-purple-200 text-sm font-medium mb-2">Filter messages</label>
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedType}
+              onChange={(e) => {
+                const v = e.target.value
+                setSelectedType(v)
+                if (v !== 'all') {
+                  markTypeAsRead(v)
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition-all relative ${
-                selectedType === type.value
-                  ? 'bg-yellow-500 text-purple-900 border-yellow-400'
-                  : 'bg-purple-700/50 text-purple-200 border-purple-600/30 hover:bg-purple-700/70'
-              }`}
+              className="flex-1 px-3 py-2 min-h-[44px] bg-purple-700/50 border border-purple-600/30 rounded-lg text-white"
             >
-              <span>{type.label}</span>
-              <span className="ml-1">
-                {type.count > 0 ? (
-                  <span className={`${selectedType === type.value ? 'text-purple-900' : 'text-red-500'} font-extrabold`}>({type.count})</span>
-                ) : (
-                  <span className={`${selectedType === type.value ? 'text-purple-900 font-extrabold' : 'text-purple-300'}`}>({type.total})</span>
-                )}
-              </span>
-              {type.count > 0 && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
-              )}
-            </button>
-          ))}
+              {messageTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label} {type.count > 0 ? `(${type.count})` : `(${type.total})`}
+                </option>
+              ))}
+            </select>
+            {getUnreadCount() > 0 && (
+              <button
+                onClick={markAsRead}
+                className="px-3 py-2 min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                title="Mark all as read"
+              >
+                Mark
+              </button>
+            )}
+          </div>
         </div>
         
       </div>
@@ -590,7 +590,7 @@ const MessageBoard = () => {
       <div className="mt-6 flex justify-center">
         <button
           onClick={fetchMessages}
-          className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-semibold rounded-lg transition-colors"
+          className="w-full sm:w-auto px-6 py-2 min-h-[44px] bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-semibold rounded-lg transition-colors"
         >
           Refresh Messages
         </button>
