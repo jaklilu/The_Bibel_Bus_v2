@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const Navigation = () => {
   const location = useLocation()
@@ -17,6 +17,39 @@ const Navigation = () => {
     { to: '/login', label: 'Login' },
     { to: '/admin', label: 'Admin' },
   ]
+
+  // Unread messages badge for Messages tab
+  const [unread, setUnread] = useState<number>(0)
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const token = localStorage.getItem('userToken')
+        if (!token) { setUnread(0); return }
+        const res = await fetch('/api/auth/my-group-all-messages', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        const messages: any[] = data?.data?.messages || []
+        const lastRead = localStorage.getItem('messageBoardLastRead')
+        const count = lastRead
+          ? messages.filter(m => new Date(m.created_at) > new Date(lastRead)).length
+          : messages.length
+        setUnread(count)
+      } catch {
+        setUnread(0)
+      }
+    }
+    fetchUnread()
+    // Update when tab regains focus or storage changes
+    const onFocus = () => fetchUnread()
+    const onStorage = (e: StorageEvent) => { if (e.key === 'messageBoardLastRead') fetchUnread() }
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
 
   const isActive = (path: string) => location.pathname === path
 
@@ -40,19 +73,29 @@ const Navigation = () => {
 
           {/* Desktop links */}
           <div className="ml-auto hidden md:flex items-center space-x-8">
-            {navItems.map(item => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`transition-colors ${
-                  isActive(item.to)
-                    ? 'text-amber-500 font-semibold'
-                    : 'text-white hover:text-purple-200'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map(item => {
+              const isMessages = item.to === '/messages'
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`relative transition-colors ${
+                    isActive(item.to)
+                      ? 'text-amber-500 font-semibold'
+                      : 'text-white hover:text-purple-200'
+                  }`}
+                >
+                  <span className="inline-flex items-center">
+                    {item.label}
+                    {isMessages && unread > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold rounded-full bg-red-600 text-white">
+                        {unread}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              )
+            })}
             <Link
               to="/register"
               className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold px-6 py-2 rounded-lg transition-colors"

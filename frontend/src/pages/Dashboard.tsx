@@ -48,6 +48,7 @@ const Dashboard = () => {
   } | null>(null)
   const [joining, setJoining] = useState(false)
   const [unreadCount, setUnreadCount] = useState<number>(0)
+  const [inGroup, setInGroup] = useState<boolean>(true)
 
   useEffect(() => {
     // Check if user is logged in
@@ -128,6 +129,7 @@ const Dashboard = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const data = await res.json()
+        setInGroup(!!data?.data?.group?.id)
         const msgs: any[] = data?.data?.messages || []
         const lastRead = localStorage.getItem('messageBoardLastRead')
         const count = lastRead
@@ -222,6 +224,9 @@ const Dashboard = () => {
                 Message Board
               </h2>
               <p className="text-purple-200">Stay connected with your Bible reading group</p>
+              {!inGroup && (
+                <p className="mt-1 text-sm text-amber-300">We’ll place you into a group soon. You can still read messages when assigned.</p>
+              )}
             </div>
             <Link
               to="/messages"
