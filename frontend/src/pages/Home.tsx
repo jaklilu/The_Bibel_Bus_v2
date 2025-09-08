@@ -180,9 +180,9 @@ const Home = () => {
               <div className="text-center">
                 <motion.div
                   key={countdown.seconds}
-                  initial={{ rotateX: -45, scale: 0.98, opacity: 0 }}
-                  animate={{ rotateX: 0, scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}
+                  initial={{ opacity: 0, backgroundColor: '#3b0764' }}
+                  animate={{ opacity: 1, backgroundColor: '#4c1d95' }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                   className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600"
                 >
                   <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.seconds}</div>
