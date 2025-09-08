@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
 
 
 interface UserData {
@@ -47,6 +48,7 @@ const Dashboard = () => {
     canJoin: boolean
   } | null>(null)
   const [joining, setJoining] = useState(false)
+  const [unreadCount, setUnreadCount] = useState<number>(0)
 
   useEffect(() => {
     // Check if user is logged in
@@ -118,7 +120,32 @@ const Dashboard = () => {
         setNextGroup(ngData?.success ? (ngData.data || null) : null)
       } catch {}
     })()
+    // Fetch unread count for badge
+    ;(async () => {
+      try {
+        const token = localStorage.getItem('userToken')
+        if (!token) return
+        const res = await fetch('/api/auth/my-group-all-messages', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        const msgs: any[] = data?.data?.messages || []
+        const lastRead = localStorage.getItem('messageBoardLastRead')
+        const count = lastRead
+          ? msgs.filter(m => new Date(m.created_at) > new Date(lastRead)).length
+          : msgs.length
+        setUnreadCount(count)
+      } catch {}
+    })()
   }, [navigate])
+  const UnreadBadge = () => {
+    if (!unreadCount || unreadCount <= 0) return null
+    return (
+      <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded-full">
+        {unreadCount}
+      </span>
+    )
+  }
 
   const fetchUserData = async () => {
     try {
@@ -199,9 +226,10 @@ const Dashboard = () => {
             </div>
             <Link
               to="/messages"
-              className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+              className="relative bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
             >
               Open
+              <UnreadBadge />
             </Link>
           </div>
         </motion.div>

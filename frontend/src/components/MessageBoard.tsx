@@ -39,7 +39,7 @@ interface Comment {
 const MessageBoard = () => {
   const [messages, setMessages] = useState<GroupMessage[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedType, setSelectedType] = useState<string>('milestone')
+  const [selectedType, setSelectedType] = useState<string>('all')
   const [showCreateMessage, setShowCreateMessage] = useState(false)
   const [newMessage, setNewMessage] = useState({ title: '', content: '', messageType: 'encouragement' })
   const [expandedMessage, setExpandedMessage] = useState<number | null>(null)
@@ -283,9 +283,11 @@ const MessageBoard = () => {
     setForceUpdate(prev => prev + 1)
   }
 
-  const filteredMessages = selectedType === 'all' 
+  const filteredMessages = (selectedType === 'all' 
     ? messages 
-    : messages.filter(msg => msg.message_type === selectedType)
+    : messages.filter(msg => msg.message_type === selectedType))
+    .slice()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const messageTypes = [
     { value: 'milestone', label: 'Milestones', count: getUnreadCountByType('milestone'), total: messages.filter(m => m.message_type === 'milestone').length },
