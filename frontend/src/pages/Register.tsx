@@ -30,7 +30,13 @@ const Register = () => {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.fullName.trim(),
+          email: formData.email.trim(),
+          city: formData.city.trim(),
+          mailing_address: formData.mailingAddress.trim(),
+          referral: formData.referral.trim() || null
+        })
       })
 
       const data = await response.json()
