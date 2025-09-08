@@ -179,10 +179,9 @@ const Home = () => {
               </div>
               <div className="text-center">
                 <motion.div
-                  key={countdown.seconds}
-                  initial={{ opacity: 0, backgroundColor: '#3b0764' }}
-                  animate={{ opacity: 1, backgroundColor: '#4c1d95' }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  initial={{ opacity: 0.8, backgroundColor: '#3b0764' }}
+                  animate={{ opacity: [0.8, 1, 0.8], backgroundColor: ['#3b0764', '#4c1d95', '#3b0764'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600"
                 >
                   <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.seconds}</div>
