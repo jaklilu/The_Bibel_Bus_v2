@@ -1608,7 +1608,21 @@ const Admin = () => {
                         setNewUserError('')
                         const url = editingUser ? `/api/admin/users/${editingUser.id}` : '/api/admin/users'
                         const method = editingUser ? 'PUT' : 'POST'
-                        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
+                        // Omit empty optional fields to pass backend validators
+                        const payload: any = {
+                          name: (newUser.name || '').trim(),
+                          email: (newUser.email || '').trim(),
+                          role: newUser.role || 'user',
+                          status: newUser.status || 'active',
+                          award_approved: !!newUser.award_approved
+                        }
+                        if ((newUser.phone || '').trim().length > 0) payload.phone = newUser.phone.trim()
+                        if ((newUser.avatar_url || '').trim().length > 0) payload.avatar_url = newUser.avatar_url.trim()
+                        if ((newUser.city || '').trim().length > 0) payload.city = newUser.city.trim()
+                        if ((newUser.mailing_address || '').trim().length > 0) payload.mailing_address = newUser.mailing_address.trim()
+                        if ((newUser.referral || '').trim().length > 0) payload.referral = newUser.referral.trim()
+
+                        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                         let data: any = null
                         try { data = await res.json() } catch {}
                         if (res.ok && data?.success) {
@@ -1617,8 +1631,9 @@ const Admin = () => {
                           setEditingUser(null)
                           await fetchAdminData()
                         } else {
+                          const detail = Array.isArray(data?.error?.details) ? data.error.details.map((d:any)=>d.msg).join('; ') : ''
                           const msg = (data && (data.error?.message || data.message)) || (res.status === 409 ? 'Email already exists' : 'Failed to save user')
-                          setNewUserError(msg)
+                          setNewUserError(detail ? `${msg}: ${detail}` : msg)
                         }
                       } finally {
                         setCreatingUser(false)
