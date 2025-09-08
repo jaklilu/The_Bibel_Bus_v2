@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import MessageBoard from '../components/MessageBoard'
 
 const Messages = () => {
@@ -8,10 +9,18 @@ const Messages = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
+          className="mb-6 flex items-center justify-between"
         >
-          <h1 className="text-3xl font-heading text-white">Messages</h1>
-          <p className="text-purple-200">All your group messages in one place</p>
+          <div>
+            <h1 className="text-3xl font-heading text-white">Messages</h1>
+            <p className="text-purple-200">All your group messages in one place</p>
+          </div>
+          <Link
+            to="/dashboard"
+            className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+          >
+            Back to Dashboard
+          </Link>
         </motion.div>
 
         <MessageBoard />
