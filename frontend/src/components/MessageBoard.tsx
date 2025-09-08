@@ -322,8 +322,8 @@ const MessageBoard = () => {
     >
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-start sm:items-center space-x-3">
             <div className="relative">
               <MessageCircle className="h-8 w-8 text-yellow-400" />
               {getUnreadCount() > 0 && (
@@ -346,18 +346,18 @@ const MessageBoard = () => {
           </div>
 
           {/* Primary actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3">
             {getUnreadCount() > 0 && (
               <button
                 onClick={markAsRead}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 Mark All as Read
               </button>
             )}
             <button
               onClick={() => setShowCreateMessage(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>Post Message</span>
