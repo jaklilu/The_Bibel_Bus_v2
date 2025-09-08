@@ -41,7 +41,7 @@ const MessageBoard = () => {
   const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showCreateMessage, setShowCreateMessage] = useState(false)
-  const [newMessage, setNewMessage] = useState({ title: '', content: '', messageType: 'encouragement' })
+  const [newMessage, setNewMessage] = useState({ content: '' })
   const [expandedMessage, setExpandedMessage] = useState<number | null>(null)
   const [newComment, setNewComment] = useState<{ [key: number]: string }>({})
   const [lastReadTime, setLastReadTime] = useState<string | null>(null)
@@ -160,11 +160,11 @@ const MessageBoard = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newMessage)
+        body: JSON.stringify({ content: newMessage.content })
       })
 
       if (response.ok) {
-        setNewMessage({ title: '', content: '', messageType: 'encouragement' })
+        setNewMessage({ content: '' })
         setShowCreateMessage(false)
         fetchMessages()
       }
@@ -409,31 +409,6 @@ const MessageBoard = () => {
             <h3 className="text-xl font-bold text-white mb-4">Create New Message</h3>
             
             <div className="space-y-4">
-              <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Title</label>
-                <input
-                  type="text"
-                  value={newMessage.title}
-                  onChange={(e) => setNewMessage({ ...newMessage, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:border-yellow-400"
-                  placeholder="Enter message title"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Type</label>
-                <select
-                  value={newMessage.messageType}
-                  onChange={(e) => setNewMessage({ ...newMessage, messageType: e.target.value })}
-                  className="w-full px-3 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white focus:outline-none focus:border-yellow-400"
-                >
-                  <option value="encouragement">Encouragement</option>
-                  <option value="prayer">Prayer Request</option>
-                  <option value="testimony">Testimony</option>
-                  <option value="question">Question</option>
-                </select>
-              </div>
-              
               <div>
                 <label className="block text-purple-200 text-sm font-medium mb-2">Content</label>
                 <textarea

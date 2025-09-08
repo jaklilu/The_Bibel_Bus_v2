@@ -59,12 +59,15 @@ export class UserInteractionService {
   }
 
   // Create a new user message
-  static async createUserMessage(groupId: number, userId: number, title: string, content: string, messageType: string = 'encouragement', visibility: 'group' | 'new_user' = 'group') {
+  static async createUserMessage(groupId: number, userId: number, title: string | null, content: string, messageType: string = 'encouragement', visibility: 'group' | 'new_user' = 'group') {
     try {
+      const autoTitle = title && title.trim().length > 0
+        ? title.trim()
+        : (content.length > 60 ? content.slice(0, 57) + '…' : content)
       const result = await runQuery(`
         INSERT INTO user_messages (group_id, user_id, title, content, message_type, visibility)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [groupId, userId, title, content, messageType, visibility])
+      `, [groupId, userId, autoTitle, content, messageType, visibility])
       
       return result
     } catch (error) {

@@ -759,9 +759,7 @@ router.post('/add-comment', userAuth, [
 
 // Create a new user message
 router.post('/create-message', userAuth, [
-  body('title').trim().isLength({ min: 1, max: 100 }).withMessage('Title must be between 1 and 100 characters'),
-  body('content').trim().isLength({ min: 1, max: 1000 }).withMessage('Content must be between 1 and 1000 characters'),
-  body('messageType').optional().isIn(['encouragement', 'prayer', 'testimony', 'question']).withMessage('Invalid message type')
+  body('content').trim().isLength({ min: 1, max: 1000 }).withMessage('Content must be between 1 and 1000 characters')
 ], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req)
@@ -776,7 +774,7 @@ router.post('/create-message', userAuth, [
     }
 
     const userId = (req as any).user?.id
-    const { title, content, messageType = 'encouragement' } = req.body
+    const { content } = req.body
 
     // Get user's current group
     const userGroup = await getRow(`
@@ -796,11 +794,11 @@ router.post('/create-message', userAuth, [
 
     // Create the message
     const result = await UserInteractionService.createUserMessage(
-      userGroup.group_id, 
-      userId, 
-      title, 
-      content, 
-      messageType
+      userGroup.group_id,
+      userId,
+      null,
+      content,
+      'encouragement'
     )
     
     res.json({
