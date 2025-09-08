@@ -439,3 +439,31 @@ cd backend && npm run db:reset
 **Last Updated**: December 19, 2024  
 **Session Status**: Join Next Group flow, Welcome Letters, Awards Revamp, and multiple UI/UX improvements implemented  
 **Next Session Goals**: Prep for deployment (VITE_API_BASE, redirects), optional payments scaffold, finalize CORS and envs
+
+## ✨ Recent Updates (Session)
+- Deployment routing fixed for Netlify → Render proxy: corrected domain typo (`the-bibel-bus-v2.onrender.com`). Added Netlify redirects in both `netlify.toml` and `frontend/public/_redirects`. Ensured SPA fallback order.
+- Backend CORS hardened and preflight enabled. Added `/health` and `/api/health` plus root `/` text response. Added `postinstall` and `prestart` build hooks so Render always compiles TypeScript before boot.
+- Mobile navigation: centered brand title, icon left, hamburger right. Added sticky header and mobile sheet menu.
+- Home page hero tightened for mobile: resized bus image, kept main heading on one line on phones, tag line right-aligned under it. Countdown tiles slimmed (rectangles). Seconds tile now uses a gentle 2s fade/background cycle (noticeable but not harsh).
+- Registration form: fixed backend field mapping (`name`, `mailing_address`, etc.) to resolve “Validation failed”; now sends correct body to `/api/auth/register`.
+
+## 🛠 Handoff Notes (for next agent)
+- Frontend calls use relative `/api/...`. Netlify proxies to Render. Confirm redirects in `netlify.toml` and `frontend/public/_redirects` point to `https://the-bibel-bus-v2.onrender.com` (note: bibel vs bible typo caused prior outage).
+- If API health is unclear, test:
+  - Render: `/`, `/health`, `/api/health`
+  - Netlify proxy: `/health`, `/api/health`
+- Render builds can serve stale dist; we added:
+  - `backend/package.json`: `"postinstall": "npm run build"`, `"prestart": "npm run build"`.
+  - When redeploying, use “Clear build cache & deploy” and watch for `tsc` in logs.
+- Backend CORS is permissive by suffix (`ALLOWED_ORIGIN_SUFFIXES=stalwart-sunflower-596007.netlify.app`). Add any new domains to `ALLOWED_ORIGINS`.
+- Registration assignment failures: see `GroupService.assignUserToGroup`. It returns detailed messages when group is full/closed. If October 2025 is Active with capacity, registration should succeed; otherwise, check `registration_deadline` and capacity in DB.
+- Mobile polish: hero paddings, countdown grid, and CTA paddings adjusted in `Home.tsx`. Seconds tile animation is controlled by a 2s looping fade — easy to tweak.
+
+## 🔗 Deployment URLs
+- Netlify site(s): stalwart‑sunflower‑596007.netlify.app (primary), dulcet‑toffee‑... (older test). Prefer the stalwart‑sunflower site.
+- Render backend: https://the-bibel-bus-v2.onrender.com
+
+---
+Last Updated: now
+Session Status: Deployment routing stabilized; mobile hero refined; registration mapping fixed; seconds animation softened.
+Next Session Goals: Investigate rare "failed to assign user to group" if it reoccurs (check deadline/capacity), continue polishing Admin groups and registration UX.

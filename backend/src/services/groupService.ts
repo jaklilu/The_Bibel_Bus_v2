@@ -184,7 +184,7 @@ export class GroupService {
     `, [groupName, startISO, end_date, registration_deadline, 50, 'upcoming'])
 
     // Get the created group
-    const group = await getRow('SELECT * FROM bible_groups WHERE id = ?', [result.lastID])
+    const group = await getRow('SELECT * FROM bible_groups WHERE id = ?', [result.id])
     return group
   }
 
@@ -424,7 +424,7 @@ export class GroupService {
       [groupName, startISO, end_date, registration_deadline, maxMembers, status]
     )
 
-    const group = await getRow('SELECT * FROM bible_groups WHERE id = ?', [result.lastID])
+    const group = await getRow('SELECT * FROM bible_groups WHERE id = ?', [result.id])
     return group
   }
 

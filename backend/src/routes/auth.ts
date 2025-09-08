@@ -82,11 +82,11 @@ router.post('/register', [
     )
 
     // Assign user to current active group
-    const groupAssignment = await GroupService.assignUserToGroup(result.lastID)
+    const groupAssignment = await GroupService.assignUserToGroup(result.id)
     
     if (!groupAssignment.success) {
       // If group assignment fails, delete the user and return error
-      await runQuery('DELETE FROM users WHERE id = ?', [result.lastID])
+      await runQuery('DELETE FROM users WHERE id = ?', [result.id])
       return res.status(400).json({
         success: false,
         error: {
@@ -103,7 +103,7 @@ router.post('/register', [
       message: 'User registered successfully and assigned to group',
       data: {
         user: {
-          id: result.lastID,
+          id: result.id,
           name,
           email,
           phone,

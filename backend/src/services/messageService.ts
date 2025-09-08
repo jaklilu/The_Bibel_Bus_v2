@@ -24,7 +24,7 @@ export class MessageService {
     `, [messageData.group_id, messageData.title, messageData.content, messageData.message_type, messageData.priority, messageData.created_by])
 
     // Get the created message with author and group info
-    const message = await this.getMessageById(result.lastID)
+    const message = await this.getMessageById(result.id)
     return message!
   }
 
