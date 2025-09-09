@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, Menu, X } from 'lucide-react'
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Navigation = () => {
@@ -126,27 +126,16 @@ const Navigation = () => {
           </motion.button>
         </div>
       </div>
-      {/* Mobile backdrop and sheet */}
+      {/* Mobile sheet */}
       <AnimatePresence>
         {open && (
-          <Fragment>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setOpen(false)}
-            />
-            {/* Mobile sheet */}
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50 overflow-hidden relative z-50"
-            >
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50 overflow-hidden"
+          >
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -203,7 +192,7 @@ const Navigation = () => {
                 </Link>
               </motion.div>
             </motion.div>
-          </Fragment>
+          </motion.div>
         )}
       </AnimatePresence>
     </nav>
