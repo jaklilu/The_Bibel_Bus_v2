@@ -507,4 +507,39 @@ export class GroupService {
       await runQuery('UPDATE bible_groups SET sort_index = NULL WHERE id = ?', [gid])
     }
   }
+
+  /**
+   * Ensure a baseline set of quarterly groups exists when database is empty
+   * Creates N past quarters and M future quarters starting from the current quarter.
+   */
+  static async ensureBaselineGroups(pastQuarters: number = 8, futureQuarters: number = 2): Promise<void> {
+    const existing = await getRow('SELECT COUNT(*) as c FROM bible_groups', [])
+    if (existing && Number(existing.c) > 0) return
+
+    const today = new Date()
+    // Align to current quarter start
+    const alignedStart = this.alignToQuarterStart(today.toISOString().split('T')[0])
+    const [yStr, mStr] = alignedStart.split('-')
+    let year = parseInt(yStr, 10)
+    let monthIndex = parseInt(mStr, 10) - 1
+
+    // Go back pastQuarters quarters
+    let startYear = year
+    let startMonthIndex = monthIndex - (pastQuarters)
+    while (startMonthIndex < 0) { startMonthIndex += 12; startYear -= 1 }
+
+    // Create sequence
+    const total = pastQuarters + futureQuarters + 1
+    let curYear = startYear
+    let curMonthIndex = startMonthIndex
+    for (let i = 0; i < total; i++) {
+      const iso = new Date(Date.UTC(curYear, curMonthIndex, 1)).toISOString().split('T')[0]
+      await this.createGroupWithStart(iso, 50, 'upcoming')
+      curMonthIndex += 3
+      while (curMonthIndex >= 12) { curMonthIndex -= 12; curYear += 1 }
+    }
+
+    // Update statuses based on dates
+    await this.updateGroupStatuses()
+  }
 }

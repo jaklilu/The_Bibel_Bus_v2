@@ -11,6 +11,7 @@ import authRoutes from './routes/auth'
 import adminRoutes from './routes/admin'
 import { CronService } from './services/cronService'
 import { getRow, runQuery } from './database/database'
+import { GroupService } from './services/groupService'
 
 // Load environment variables
 dotenv.config()
@@ -118,6 +119,7 @@ app.listen(PORT, () => {
   console.log(`🔧 API: http://localhost:${PORT}/api`)
   initializeGroupManagement()
   ensureDefaultAdmin()
+  ensureBaselineGroups()
 })
 
 export default app
@@ -140,5 +142,14 @@ async function ensureDefaultAdmin(): Promise<void> {
     console.log(`✅ Default admin created (${adminEmail})`)
   } catch (e) {
     console.error('❌ Failed to ensure default admin:', e)
+  }
+}
+
+async function ensureBaselineGroups(): Promise<void> {
+  try {
+    await GroupService.ensureBaselineGroups(8, 2)
+    console.log('✅ Baseline groups ensured (if table was empty)')
+  } catch (e) {
+    console.error('❌ Failed ensuring baseline groups:', e)
   }
 }
