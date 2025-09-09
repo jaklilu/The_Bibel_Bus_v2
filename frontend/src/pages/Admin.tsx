@@ -543,40 +543,82 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                  {/* Navigation Tabs */}
-         <nav className="flex justify-between items-center mb-8 border-b border-purple-600/30">
-           <div className="flex space-x-8">
-             {[
-               { id: 'overview', label: 'Overview', icon: BarChart3 },
-               { id: 'groups', label: 'Groups', icon: BookOpen },
-               { id: 'users', label: 'Users', icon: Users },
-               { id: 'progress', label: 'Progress', icon: BarChart3 },
-               { id: 'messages', label: 'Messages', icon: MessageSquare },
-               { id: 'donations', label: 'Donations', icon: DollarSign },
-               { id: 'password', label: 'Change Password', icon: Shield }
-             ].map((tab) => (
+         <nav className="mb-8 border-b border-purple-600/30">
+           {/* Mobile: Horizontal scrollable tabs */}
+           <div className="md:hidden">
+             <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+               {[
+                 { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'groups', label: 'Groups', icon: BookOpen },
+                 { id: 'users', label: 'Users', icon: Users },
+                 { id: 'progress', label: 'Progress', icon: BarChart3 },
+                 { id: 'messages', label: 'Messages', icon: MessageSquare },
+                 { id: 'donations', label: 'Donations', icon: DollarSign },
+                 { id: 'password', label: 'Password', icon: Shield }
+               ].map((tab) => (
+                 <button
+                   key={tab.id}
+                   onClick={() => setActiveTab(tab.id)}
+                   className={`flex items-center space-x-1 py-3 px-3 border-b-2 font-medium text-xs transition-colors whitespace-nowrap ${
+                     activeTab === tab.id
+                       ? 'border-amber-500 text-amber-500'
+                       : 'border-transparent text-purple-200 hover:text-white hover:border-purple-400'
+                   }`}
+                 >
+                   <tab.icon className="h-4 w-4" />
+                   <span>{tab.label}</span>
+                 </button>
+               ))}
+             </div>
+             
+             {/* Mobile Logout Button */}
+             <div className="mt-4 flex justify-center">
                <button
-                 key={tab.id}
-                 onClick={() => setActiveTab(tab.id)}
-                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                   activeTab === tab.id
-                     ? 'border-amber-500 text-amber-500'
-                     : 'border-transparent text-purple-200 hover:text-white hover:border-purple-400'
-                 }`}
+                 onClick={handleLogout}
+                 className="flex items-center space-x-2 py-2 px-4 text-white hover:text-purple-200 transition-colors bg-red-900 hover:bg-red-950 rounded-lg text-sm"
                >
-                 <tab.icon className="h-5 w-5" />
-                 <span>{tab.label}</span>
+                 <LogOut className="h-4 w-4" />
+                 <span>Logout</span>
                </button>
-             ))}
+             </div>
            </div>
-           
-                       {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 py-4 px-4 text-white hover:text-purple-200 transition-colors bg-red-900 hover:bg-red-950 rounded-lg"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
+
+           {/* Desktop: Full navigation */}
+           <div className="hidden md:flex justify-between items-center">
+             <div className="flex space-x-8">
+               {[
+                 { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'groups', label: 'Groups', icon: BookOpen },
+                 { id: 'users', label: 'Users', icon: Users },
+                 { id: 'progress', label: 'Progress', icon: BarChart3 },
+                 { id: 'messages', label: 'Messages', icon: MessageSquare },
+                 { id: 'donations', label: 'Donations', icon: DollarSign },
+                 { id: 'password', label: 'Change Password', icon: Shield }
+               ].map((tab) => (
+                 <button
+                   key={tab.id}
+                   onClick={() => setActiveTab(tab.id)}
+                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                     activeTab === tab.id
+                       ? 'border-amber-500 text-amber-500'
+                       : 'border-transparent text-purple-200 hover:text-white hover:border-purple-400'
+                   }`}
+                 >
+                   <tab.icon className="h-5 w-5" />
+                   <span>{tab.label}</span>
+                 </button>
+               ))}
+             </div>
+             
+             {/* Desktop Logout Button */}
+             <button
+               onClick={handleLogout}
+               className="flex items-center space-x-2 py-4 px-4 text-white hover:text-purple-200 transition-colors bg-red-900 hover:bg-red-950 rounded-lg"
+             >
+               <LogOut className="h-5 w-5" />
+               <span>Logout</span>
+             </button>
+           </div>
          </nav>
 
         {/* Content */}
