@@ -19,17 +19,23 @@ const LegacyIntake = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError('Please enter a valid email.'); return }
     try {
       setLoading(true)
+      const body = new URLSearchParams({
+        name: trimmedName,
+        email: trimmedEmail,
+        source: 'alumni-intake',
+        userAgent: navigator.userAgent
+      })
       const res = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, source: 'alumni-intake', userAgent: navigator.userAgent })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString()
       })
       if (!res.ok) throw new Error('Submission failed')
       setSuccess('Thank you! We received your information and will create your account. Watch your email for next steps.')
       setName('')
       setEmail('')
     } catch (e) {
-      setError('Could not submit right now. Please try again in a moment.')
+      setError('Could not submit right now. Please try again in a moment or email us directly.')
     } finally {
       setLoading(false)
     }
