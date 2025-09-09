@@ -343,7 +343,6 @@ const MessageBoard = () => {
                   </span>
                 )}
               </div>
-              <p className="text-purple-200">Stay connected with your Bible reading group</p>
             </div>
           </div>
 
@@ -388,15 +387,6 @@ const MessageBoard = () => {
                 </option>
               ))}
             </select>
-            {getUnreadCount() > 0 && (
-              <button
-                onClick={markAsRead}
-                className="px-3 py-2 min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                title="Mark all as read"
-              >
-                Mark
-              </button>
-            )}
           </div>
         </div>
         
@@ -493,9 +483,6 @@ const MessageBoard = () => {
                       <span className="text-xs">{message.comment_count}</span>
                     </button>
                   )}
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(message.priority)}`}>
-                    {message.priority}
-                  </span>
                   {localStorage.getItem('adminToken') && (
                     <button
                       onClick={() => handleAdminDelete(message)}

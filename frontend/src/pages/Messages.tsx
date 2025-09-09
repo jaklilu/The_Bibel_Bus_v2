@@ -13,7 +13,6 @@ const Messages = () => {
         >
           <div>
             <h1 className="text-3xl font-heading text-white">Messages</h1>
-            <p className="text-purple-200">All your group messages in one place</p>
           </div>
           <Link
             to="/dashboard"
