@@ -7,7 +7,7 @@ const LegacyIntake = () => {
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const webhookUrl = (import.meta as any).env?.VITE_N8N_WEBHOOK_URL || 'https://jakilu.app.n8n.cloud/webhook/9b83a615-173d-4b7a-b992-af9554463898'
+  const webhookUrl = (import.meta as any).env?.VITE_N8N_WEBHOOK_URL || 'https://jakilu.app.n8n.cloud/webhook/BibelBusLegacy'
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,6 +35,7 @@ const LegacyIntake = () => {
       setName('')
       setEmail('')
     } catch (e) {
+      try { console.error('alumni-intake submission error', e) } catch {}
       setError('Could not submit right now. Please try again in a moment or email us directly.')
     } finally {
       setLoading(false)
