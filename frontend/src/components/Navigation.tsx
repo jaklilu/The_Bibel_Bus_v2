@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, Menu, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Navigation = () => {
@@ -134,7 +134,7 @@ const Navigation = () => {
       {/* Mobile backdrop and sheet */}
       <AnimatePresence>
         {open && (
-          <>
+          <Fragment>
             {/* Backdrop - click to close */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -208,7 +208,7 @@ const Navigation = () => {
                 </Link>
               </motion.div>
             </motion.div>
-          </>
+          </Fragment>
         )}
       </AnimatePresence>
     </nav>
