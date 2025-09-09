@@ -39,7 +39,7 @@ const LegacyIntake = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col items-center mb-4">
-          <img src="/BibleBusLogo.jpg" alt="The Bible Bus" className="h-24 w-24 border border-purple-500/40 mb-2 object-cover" />
+          <img src="/BibleBusLogo.jpg" alt="The Bible Bus" className="h-24 w-32 rounded-2xl border border-purple-500/40 mb-2 object-cover" />
           <div className="text-amber-400 font-semibold">The Bible Bus</div>
         </div>
         <h1 className="text-3xl font-heading text-white text-center mb-2">Alumni Intake</h1>
