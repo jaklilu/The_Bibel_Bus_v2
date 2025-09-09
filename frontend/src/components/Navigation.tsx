@@ -54,6 +54,11 @@ const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path
 
+  // Close menu when route changes
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname])
+
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-800 to-purple-700 backdrop-blur-sm border-b border-purple-600/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,16 +131,27 @@ const Navigation = () => {
           </motion.button>
         </div>
       </div>
-      {/* Mobile sheet */}
+      {/* Mobile backdrop and sheet */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50 overflow-hidden"
-          >
+          <>
+            {/* Backdrop - click to close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setOpen(false)}
+            />
+            {/* Mobile sheet */}
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50 overflow-hidden relative z-50"
+            >
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -192,7 +208,7 @@ const Navigation = () => {
                 </Link>
               </motion.div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>
