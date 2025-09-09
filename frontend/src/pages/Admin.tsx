@@ -1067,6 +1067,9 @@ const Admin = () => {
                               {member.city && (
                                 <p className="text-purple-400 text-xs mt-1">📍 {member.city}</p>
                               )}
+                              {member.completed_at && (
+                                <p className="text-green-300 text-xs mt-1">🏁 Completed: {formatDate(member.completed_at)}</p>
+                              )}
                             </div>
                             <div className="text-right">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -1077,6 +1080,34 @@ const Admin = () => {
                               <p className="text-purple-400 text-xs mt-1">
                                 Joined: {formatDate(member.join_date)}
                               </p>
+                              <button
+                                onClick={async () => {
+                                  const token = localStorage.getItem('adminToken')
+                                  if (!token || !selectedGroup) return
+                                  if (member.completed_at) return
+                                  try {
+                                    const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members/${member.user_id}/complete`, {
+                                      method: 'POST',
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    })
+                                    const data = await res.json()
+                                    if (data.success) {
+                                      // Refresh list
+                                      const fresh = await fetch(`/api/admin/groups/${selectedGroup.id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+                                      const freshData = await fresh.json()
+                                      setGroupMembers(freshData?.data?.members || [])
+                                    } else {
+                                      alert(data.error?.message || 'Failed to mark completed')
+                                    }
+                                  } catch (e) {
+                                    console.error(e)
+                                  }
+                                }}
+                                disabled={!!member.completed_at}
+                                className={`mt-2 px-3 py-1 rounded text-xs ${member.completed_at ? 'bg-green-700/50 text-white cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                              >
+                                {member.completed_at ? 'Completed' : 'Mark Completed'}
+                              </button>
                               <button
                                 onClick={async () => {
                                   const token = localStorage.getItem('adminToken')
@@ -1092,7 +1123,7 @@ const Admin = () => {
                                     alert(data.error?.message || 'Failed to remove member')
                                   }
                                 }}
-                                className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                className="mt-2 ml-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                               >
                                 Remove
                               </button>
