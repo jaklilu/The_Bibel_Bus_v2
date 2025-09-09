@@ -99,7 +99,7 @@ const Trophies = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
-          <h1 className="text-4xl font-heading text-white mb-1">My Awards</h1>
+          <h1 className="text-4xl font-heading text-white mb-1">Awards</h1>
           <p className="text-amber-400">{name}</p>
         </motion.div>
 
@@ -108,7 +108,7 @@ const Trophies = () => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="relative overflow-hidden bg-gradient-to-br from-amber-500/20 via-pink-500/10 to-purple-500/20 rounded-2xl border border-amber-400/30 p-6 mb-6"
+          className="relative overflow-hidden bg-gradient-to-br from-amber-500/20 via-pink-500/10 to-purple-500/20 rounded-2xl border border-amber-400/30 p-6 mb-6 text-center"
         >
           {/* Confetti dots */}
           <div className="pointer-events-none absolute inset-0">
@@ -128,9 +128,9 @@ const Trophies = () => {
           </div>
 
           <div className="relative">
-            <div className="text-amber-300 text-sm mb-1">Congratulations!</div>
+            <div className="text-amber-300 text-3xl font-extrabold mb-2">Congratulations!</div>
             <h2 className="text-white text-xl font-heading mb-2">These travelers have completed reading the entire Scripture</h2>
-            <p className="text-purple-100/90 text-sm">Genesis to Revelation — this page is their acknowledgment. Plaques are awarded for the <span className="text-amber-300 font-semibold">first completion</span>; every completion counts toward tiers.</p>
+            <p className="text-purple-100/90 text-sm">Genesis to Revelation — this page is their acknowledgment. The number next to each traveler shows how many times they’ve read the entire Scripture.</p>
           </div>
         </motion.div>
 
