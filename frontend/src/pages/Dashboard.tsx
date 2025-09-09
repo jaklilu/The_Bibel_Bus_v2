@@ -213,9 +213,6 @@ const Dashboard = () => {
             <h1 className="text-4xl font-heading text-white mb-2">
               Welcome back, {userData?.name || 'Friend'}! 🚌
             </h1>
-            <p className="text-xl text-amber-500">
-              Your Bible reading journey continues...
-            </p>
           </div>
           <button
             onClick={handleLogout}
@@ -239,7 +236,6 @@ const Dashboard = () => {
                 <MessageSquare className="h-6 w-6 text-amber-500 mr-2" />
                 Message Board
               </h2>
-              <p className="text-purple-200">Stay connected with your Bible reading group</p>
               {!inGroup && (
                 <p className="mt-1 text-sm text-amber-300">We’ll place you into a group soon. You can still read messages when assigned.</p>
               )}
@@ -293,79 +289,6 @@ const Dashboard = () => {
 
         
 
-        {/* Join Next Group Banner (moved to bottom) */}
-        {nextGroup && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-purple-800/60 border border-purple-700/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between"
-          >
-            <div className="text-white mb-3 md:mb-0">
-              <div className="font-heading text-amber-400">Next Group: {nextGroup.name}</div>
-              <div className="text-sm text-purple-200">
-                Starts {new Date(nextGroup.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                {' '}• Registration closes {new Date(nextGroup.registration_deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </div>
-              <div className="text-xs text-purple-300">{nextGroup.member_count}/{nextGroup.max_members} joined</div>
-            </div>
-            <div className="flex items-center space-x-2">
-              {!nextGroup.alreadyJoined && nextGroup.canJoin && (
-                <button
-                  disabled={joining}
-                  onClick={async () => {
-                    try {
-                      setJoining(true)
-                      const token = localStorage.getItem('userToken') || ''
-                      const res = await fetch(`/api/auth/groups/${nextGroup.id}/join`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      })
-                      const r = await res.json()
-                      if (r?.success) {
-                        setNextGroup({ ...nextGroup, alreadyJoined: true, member_count: Math.min(nextGroup.member_count + 1, nextGroup.max_members) })
-                      }
-                    } finally {
-                      setJoining(false)
-                    }
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
-                >
-                  {joining ? 'Joining...' : 'Join Next Group'}
-                </button>
-              )}
-              {nextGroup.alreadyJoined && (
-                <>
-                  <span className="text-purple-200 text-sm mr-2">Scheduled for next group</span>
-                  <button
-                    disabled={joining}
-                    onClick={async () => {
-                      try {
-                        setJoining(true)
-                        const token = localStorage.getItem('userToken') || ''
-                        const res = await fetch(`/api/auth/groups/${nextGroup.id}/cancel`, {
-                          method: 'POST',
-                          headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        const r = await res.json()
-                        if (r?.success) {
-                          setNextGroup({ ...nextGroup, alreadyJoined: false, member_count: Math.max(nextGroup.member_count - 1, 0) })
-                        }
-                      } finally {
-                        setJoining(false)
-                      }
-                    }}
-                    className="bg-purple-700 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg border border-purple-500"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-              {!nextGroup.canJoin && !nextGroup.alreadyJoined && (
-                <span className="text-purple-300 text-sm">Registration closed or group full</span>
-              )}
-            </div>
-          </motion.div>
-        )}
 
         {/* Quick Actions */}
         <motion.div
@@ -482,65 +405,138 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Accept Your Invitation (moved to bottom) */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all mb-8">
-            <div className="flex items-center mb-4">
-              <Users className="h-12 w-12 text-orange-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
-            </div>
-            <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : `Available on ${inviteDateLabel}`}</p>
-            {!inviteAvailable && inviteStartAt && (
-              <div className="mb-4 flex justify-center">
-                <Countdown
-                  date={inviteStartAt}
-                  renderer={({ days, hours, minutes, seconds }) => (
-                    <div className="grid grid-cols-4 gap-3">
-                      <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                        <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
-                        <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
-                      </div>
-                      <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                        <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
-                        <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
-                      </div>
-                      <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                        <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
-                        <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
-                      </div>
-                      <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
-                        <AnimatePresence initial={false}>
-                          <motion.div
-                            key={seconds}
-                            initial={{ rotateX: -90, opacity: 0 }}
-                            animate={{ rotateX: 0, opacity: 1 }}
-                            exit={{ rotateX: 90, opacity: 0 }}
-                            transition={{ duration: 0.35, ease: 'easeInOut' }}
-                            className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
-                            style={{ transformOrigin: 'top center' }}
-                          >
-                            <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
-                            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
-                          </motion.div>
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                  )}
-                />
-              </div>
-            )}
-            <a
-              href={inviteAvailable ? inviteLink : '#'}
-              target={inviteAvailable ? '_blank' : undefined}
-              rel={inviteAvailable ? 'noopener noreferrer' : undefined}
-              className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center`}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Join Reading Group
-            </a>
-          </motion.div>
         </motion.div>
 
-        
+        {/* Next Group Banner (moved to very end) */}
+        {nextGroup && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-purple-800/60 border border-purple-700/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between"
+          >
+            <div className="text-white mb-3 md:mb-0">
+              <div className="font-heading text-amber-400">Next Group: {nextGroup.name}</div>
+              <div className="text-sm text-purple-200">
+                Starts {new Date(nextGroup.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {' '}• Registration closes {new Date(nextGroup.registration_deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </div>
+              <div className="text-xs text-purple-300">{nextGroup.member_count}/{nextGroup.max_members} joined</div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {!nextGroup.alreadyJoined && nextGroup.canJoin && (
+                <button
+                  disabled={joining}
+                  onClick={async () => {
+                    try {
+                      setJoining(true)
+                      const token = localStorage.getItem('userToken') || ''
+                      const res = await fetch(`/api/auth/groups/${nextGroup.id}/join`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      })
+                      const r = await res.json()
+                      if (r?.success) {
+                        setNextGroup({ ...nextGroup, alreadyJoined: true, member_count: Math.min(nextGroup.member_count + 1, nextGroup.max_members) })
+                      }
+                    } finally {
+                      setJoining(false)
+                    }
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+                >
+                  {joining ? 'Joining...' : 'Join Next Group'}
+                </button>
+              )}
+              {nextGroup.alreadyJoined && (
+                <>
+                  <span className="text-purple-200 text-sm mr-2">Scheduled for next group</span>
+                  <button
+                    disabled={joining}
+                    onClick={async () => {
+                      try {
+                        setJoining(true)
+                        const token = localStorage.getItem('userToken') || ''
+                        const res = await fetch(`/api/auth/groups/${nextGroup.id}/cancel`, {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        const r = await res.json()
+                        if (r?.success) {
+                          setNextGroup({ ...nextGroup, alreadyJoined: false, member_count: Math.max(nextGroup.member_count - 1, 0) })
+                        }
+                      } finally {
+                        setJoining(false)
+                      }
+                    }}
+                    className="bg-purple-700 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg border border-purple-500"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              {!nextGroup.canJoin && !nextGroup.alreadyJoined && (
+                <span className="text-purple-300 text-sm">Registration closed or group full</span>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Accept Your Invitation (moved to very end) */}
+        <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="flex items-center mb-4">
+            <Users className="h-12 w-12 text-orange-500 mr-3" />
+            <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
+          </div>
+          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : `Available on ${inviteDateLabel}`}</p>
+          {!inviteAvailable && inviteStartAt && (
+            <div className="mb-4 flex justify-center">
+              <Countdown
+                date={inviteStartAt}
+                renderer={({ days, hours, minutes, seconds }) => (
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
+                      <AnimatePresence initial={false}>
+                        <motion.div
+                          key={seconds}
+                          initial={{ rotateX: -90, opacity: 0 }}
+                          animate={{ rotateX: 0, opacity: 1 }}
+                          exit={{ rotateX: 90, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: 'easeInOut' }}
+                          className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
+                          style={{ transformOrigin: 'top center' }}
+                        >
+                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                )}
+              />
+            </div>
+          )}
+          <a
+            href={inviteAvailable ? inviteLink : '#'}
+            target={inviteAvailable ? '_blank' : undefined}
+            rel={inviteAvailable ? 'noopener noreferrer' : undefined}
+            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center`}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Join Reading Group
+          </a>
+        </motion.div>
       </div>
     </div>
   )
