@@ -219,7 +219,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-800 hover:bg-red-900 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center"
+            className="text-purple-200 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 font-medium py-2 px-3 rounded-md transition-colors flex items-center"
             aria-label="Logout"
           >
             <LogOut className="h-5 w-5 mr-2" />
