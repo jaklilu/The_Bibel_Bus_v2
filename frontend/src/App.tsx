@@ -30,6 +30,7 @@ function App() {
         <Route path="/awards" element={<Awards />} />
         <Route path="/trophies" element={<Awards />} />
         <Route path="/legacy" element={<LegacyIntake />} />
+        <Route path="/alumni" element={<LegacyIntake />} />
       </Routes>
       </Suspense>
     </div>

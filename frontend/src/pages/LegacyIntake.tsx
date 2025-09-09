@@ -22,10 +22,10 @@ const LegacyIntake = () => {
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, source: 'legacy-intake', userAgent: navigator.userAgent })
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, source: 'alumni-intake', userAgent: navigator.userAgent })
       })
       if (!res.ok) throw new Error('Submission failed')
-      setSuccess('Thanks! We received your information. We will set up your account and awards shortly.')
+      setSuccess('Thank you! We received your information and will create your account. Watch your email for next steps.')
       setName('')
       setEmail('')
     } catch (e) {
@@ -38,8 +38,8 @@ const LegacyIntake = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-3xl font-heading text-white text-center mb-2">Legacy Traveler Intake</h1>
-        <p className="text-purple-100 text-center mb-6">If you have completed the Bible with us in the past, share your info so we can create your account, place you in the right group, and grant your awards.</p>
+        <h1 className="text-3xl font-heading text-white text-center mb-2">Alumni Intake</h1>
+        <p className="text-purple-100 text-center mb-6">We’re moving the Bible Bus to a new platform. If you’ve been on this journey with us — whether you finished or not — please share your info so we can create your account and place you in the right group.</p>
 
         {success && (
           <div className="mb-4 p-3 rounded-lg border border-green-500/40 bg-green-900/20 text-green-200 text-sm">{success}</div>
