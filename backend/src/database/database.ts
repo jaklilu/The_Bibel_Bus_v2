@@ -5,7 +5,18 @@ import dotenv from 'dotenv'
 // Load environment variables
 dotenv.config()
 
-const dbPath = path.join(process.cwd(), 'data', 'biblebus.db')
+// Resolve database path (supports persistent storage via DB_PATH)
+// If DB_PATH is absolute, use it as-is; if relative, resolve from process.cwd().
+const resolveDbPath = (): string => {
+  const configured = process.env.DB_PATH?.trim()
+  if (configured && configured.length > 0) {
+    return path.isAbsolute(configured)
+      ? configured
+      : path.join(process.cwd(), configured)
+  }
+  return path.join(process.cwd(), 'data', 'biblebus.db')
+}
+const dbPath = resolveDbPath()
 
 // Create database directory if it doesn't exist
 import fs from 'fs'
