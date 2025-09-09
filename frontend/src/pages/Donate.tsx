@@ -10,6 +10,7 @@ const Donate = () => {
     email: '',
     anonymous: false
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const presetAmounts = [25, 50, 100, 250, 500, 1000]
 
@@ -21,9 +22,44 @@ const Donate = () => {
       return
     }
 
-    // In production, this will redirect to a payment provider (Stripe/PayPal)
-    
-    alert('Thank you for your donation! You will be redirected to complete your payment.')
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch('/api/auth/donations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          donor_name: donorInfo.fullName,
+          donor_email: donorInfo.email,
+          amount: totalAmount,
+          type: donationType,
+          anonymous: donorInfo.anonymous
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`Thank you for your donation of $${totalAmount.toFixed(2)}! Your donation has been recorded. We'll contact you soon to complete the payment process.`)
+        
+        // Reset form
+        setDonationAmount('')
+        setDonorInfo({
+          fullName: '',
+          email: '',
+          anonymous: false
+        })
+      } else {
+        const errorData = await response.json()
+        alert(`Error: ${errorData.error?.message || 'Failed to process donation. Please try again.'}`)
+      }
+    } catch (error) {
+      console.error('Error submitting donation:', error)
+      alert('Failed to process donation. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,10 +302,10 @@ const Donate = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!donationAmount || !donorInfo.fullName || !donorInfo.email}
+              disabled={!donationAmount || !donorInfo.fullName || !donorInfo.email || isSubmitting}
               className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-purple-900 font-semibold py-4 px-12 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
-              Complete Donation
+              {isSubmitting ? 'Processing...' : 'Complete Donation'}
             </button>
 
             <p className="text-purple-300 text-sm max-w-2xl mx-auto">

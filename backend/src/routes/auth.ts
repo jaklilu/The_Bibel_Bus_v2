@@ -1007,4 +1007,50 @@ router.post('/groups/:id/cancel', userAuth, async (req: Request, res: Response) 
   }
 })
 
+// Create donation (public endpoint)
+router.post('/donations', [
+  body('donor_name').trim().isLength({ min: 2 }).withMessage('Donor name must be at least 2 characters'),
+  body('donor_email').isEmail().withMessage('Must be a valid email'),
+  body('amount').isFloat({ min: 1 }).withMessage('Amount must be at least $1'),
+  body('type').optional().isIn(['one-time', 'monthly']).withMessage('Type must be one-time or monthly'),
+  body('anonymous').optional().isBoolean().withMessage('Anonymous must be boolean')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          details: errors.array()
+        }
+      })
+    }
+
+    const { donor_name, donor_email, amount, type = 'one-time', anonymous = false } = req.body
+
+    // Create donation record
+    const result = await runQuery(
+      'INSERT INTO donations (donor_name, donor_email, amount, type, anonymous, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [donor_name, donor_email, amount, type, anonymous ? 1 : 0, 'pending']
+    )
+
+    const donation = await getRow('SELECT * FROM donations WHERE id = ?', [result.id])
+
+    res.status(201).json({
+      success: true,
+      message: 'Donation created successfully',
+      data: donation
+    })
+  } catch (error) {
+    console.error('Error creating donation:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Failed to create donation'
+      }
+    })
+  }
+})
+
 export default router
