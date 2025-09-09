@@ -197,14 +197,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-heading text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-heading text-white mb-2">
             Welcome back, {userData?.name || 'Friend'}! 🚌
           </h1>
         </motion.div>
@@ -222,7 +222,7 @@ const Dashboard = () => {
                 Message Board
               </h2>
               {!inGroup && (
-                <p className="mt-1 text-sm text-amber-300">We’ll place you into a group soon. You can still read messages when assigned.</p>
+                <p className="mt-1 text-sm text-amber-300">We'll place you into a group soon. You can still read messages when assigned.</p>
               )}
             </div>
             <Link
@@ -235,41 +235,67 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Progress Section */}
-        <motion.div
+        {/* Accept Your Invitation (moved to top) */}
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02 }} 
+          className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all mb-8"
         >
-          <h2 className="text-2xl font-heading text-white mb-4 flex items-center">
-            <Target className="h-6 w-6 text-amber-500 mr-2" />
-            Reading Progress
-          </h2>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-white mb-2">
-              <span>Progress</span>
-              <span>{userData?.progress || 0}%</span>
-            </div>
-            <div className="w-full bg-purple-700 rounded-full h-3">
-              <div 
-                className="bg-amber-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${userData?.progress || 0}%` }}
-              ></div>
-            </div>
+          <div className="flex items-center mb-4">
+            <Users className="h-12 w-12 text-orange-500 mr-3" />
+            <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center text-white">
-              <Clock className="h-4 w-4 text-amber-500 mr-2" />
-              <span>Current Group: {userData?.currentGroup || 'Not assigned'}</span>
+          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : `Available on ${inviteDateLabel}`}</p>
+          {!inviteAvailable && inviteStartAt && (
+            <div className="mb-4 flex justify-center">
+              <Countdown
+                date={inviteStartAt}
+                renderer={({ days, hours, minutes, seconds }) => (
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
+                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
+                    </div>
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
+                      <AnimatePresence initial={false}>
+                        <motion.div
+                          key={seconds}
+                          initial={{ rotateX: -90, opacity: 0 }}
+                          animate={{ rotateX: 0, opacity: 1 }}
+                          exit={{ rotateX: 90, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: 'easeInOut' }}
+                          className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
+                          style={{ transformOrigin: 'top center' }}
+                        >
+                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                )}
+              />
             </div>
-            <div className="flex items-center text-white">
-              <CheckCircle className="h-4 w-4 text-amber-500 mr-2" />
-              <span>Next Milestone: {userData?.nextMilestone || 'Keep reading!'}</span>
-            </div>
-          </div>
+          )}
+          <a
+            href={inviteAvailable ? inviteLink : '#'}
+            target={inviteAvailable ? '_blank' : undefined}
+            rel={inviteAvailable ? 'noopener noreferrer' : undefined}
+            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center`}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Join Reading Group
+          </a>
         </motion.div>
 
         
@@ -392,6 +418,43 @@ const Dashboard = () => {
 
         </motion.div>
 
+        {/* Reading Progress Section (moved to end) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
+        >
+          <h2 className="text-2xl font-heading text-white mb-4 flex items-center">
+            <Target className="h-6 w-6 text-amber-500 mr-2" />
+            Reading Progress
+          </h2>
+          
+          <div className="mb-4">
+            <div className="flex justify-between text-sm text-white mb-2">
+              <span>Progress</span>
+              <span>{userData?.progress || 0}%</span>
+            </div>
+            <div className="w-full bg-purple-700 rounded-full h-3">
+              <div 
+                className="bg-amber-500 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${userData?.progress || 0}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center text-white">
+              <Clock className="h-4 w-4 text-amber-500 mr-2" />
+              <span>Current Group: {userData?.currentGroup || 'Not assigned'}</span>
+            </div>
+            <div className="flex items-center text-white">
+              <CheckCircle className="h-4 w-4 text-amber-500 mr-2" />
+              <span>Next Milestone: {userData?.nextMilestone || 'Keep reading!'}</span>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Next Group Banner (moved to very end) */}
         {nextGroup && (
           <motion.div
@@ -466,62 +529,6 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Accept Your Invitation (moved to very end) */}
-        <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
-          <div className="flex items-center mb-4">
-            <Users className="h-12 w-12 text-orange-500 mr-3" />
-            <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
-          </div>
-          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : `Available on ${inviteDateLabel}`}</p>
-          {!inviteAvailable && inviteStartAt && (
-            <div className="mb-4 flex justify-center">
-              <Countdown
-                date={inviteStartAt}
-                renderer={({ days, hours, minutes, seconds }) => (
-                  <div className="grid grid-cols-4 gap-3">
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
-                      <AnimatePresence initial={false}>
-                        <motion.div
-                          key={seconds}
-                          initial={{ rotateX: -90, opacity: 0 }}
-                          animate={{ rotateX: 0, opacity: 1 }}
-                          exit={{ rotateX: 90, opacity: 0 }}
-                          transition={{ duration: 0.35, ease: 'easeInOut' }}
-                          className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
-                          style={{ transformOrigin: 'top center' }}
-                        >
-                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                )}
-              />
-            </div>
-          )}
-          <a
-            href={inviteAvailable ? inviteLink : '#'}
-            target={inviteAvailable ? '_blank' : undefined}
-            rel={inviteAvailable ? 'noopener noreferrer' : undefined}
-            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center`}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Join Reading Group
-          </a>
-        </motion.div>
       </div>
     </div>
   )
