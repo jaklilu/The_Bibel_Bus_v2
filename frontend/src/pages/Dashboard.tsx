@@ -333,7 +333,7 @@ const Dashboard = () => {
               <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">{groupName}</h3>
             </div>
-            <p className="text-purple-100 mb-4">Connect with fellow Bible Bus travelers</p>
+            <p className="text-purple-100 mb-4">Introduce yourself to your WhatsApp group</p>
             <a
               href="#"
               id="join-whatsapp-link"
