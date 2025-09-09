@@ -42,7 +42,6 @@ const MessageBoard = () => {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showCreateMessage, setShowCreateMessage] = useState(false)
   const [newMessage, setNewMessage] = useState({ content: '' })
-  const [newComment, setNewComment] = useState<{ [key: number]: string }>({})
   const [lastReadTime, setLastReadTime] = useState<string | null>(null)
   const [_, setForceUpdate] = useState(0)
 
@@ -158,31 +157,6 @@ const MessageBoard = () => {
     }
   }
 
-  const handleAddComment = async (messageId: number) => {
-    try {
-      const token = localStorage.getItem('userToken')
-      if (!token) return
-
-      const content = newComment[messageId]
-      if (!content.trim()) return
-
-      const response = await fetch('/api/auth/add-comment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ messageId, content })
-      })
-
-      if (response.ok) {
-        setNewComment({ ...newComment, [messageId]: '' })
-        fetchMessages()
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error)
-    }
-  }
 
   // Admin-only delete (available if adminToken exists)
   const handleAdminDelete = async (message: GroupMessage) => {
@@ -480,43 +454,6 @@ const MessageBoard = () => {
                 <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
               )}
 
-              {/* Comments Section */}
-              {expandedMessage === message.id && (
-                <div className="mt-4 pt-4 border-t border-purple-600/20">
-                  {/* Comments List */}
-                  {message.comments && message.comments.length > 0 && (
-                    <div className="space-y-3 mb-4">
-                      {message.comments.map((comment) => (
-                        <div key={comment.id} className="bg-purple-700/30 rounded-lg p-3">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <User className="h-4 w-4 text-purple-300" />
-                            <span className="text-sm font-medium text-purple-200">{comment.user_name}</span>
-                            <span className="text-xs text-purple-400">{formatDate(comment.created_at)}</span>
-                          </div>
-                          <p className="text-purple-200 text-sm">{comment.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add Comment Form */}
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={newComment[message.id] || ''}
-                      onChange={(e) => setNewComment({ ...newComment, [message.id]: e.target.value })}
-                      placeholder="Add a comment..."
-                      className="flex-1 px-3 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:border-yellow-400"
-                    />
-                    <button
-                      onClick={() => handleAddComment(message.id)}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                    >
-                      <Send className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
 
             </motion.div>
           ))}
