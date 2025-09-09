@@ -293,7 +293,7 @@ const Dashboard = () => {
 
         
 
-        {/* Join Next Group Banner */}
+        {/* Join Next Group Banner (moved to bottom) */}
         {nextGroup && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
