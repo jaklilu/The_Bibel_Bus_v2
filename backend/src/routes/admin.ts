@@ -153,6 +153,35 @@ router.post('/groups', [
   }
 })
 
+// Backfill quarterly groups in sequence
+router.post('/groups/backfill-quarterly', [
+  body('start_date').isISO8601().withMessage('start_date must be YYYY-MM-DD'),
+  body('count').isInt({ min: 1, max: 100 }).withMessage('count must be 1-100'),
+  body('status').optional().isIn(['upcoming','active','closed','completed']).withMessage('Invalid status')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: { message: 'Validation failed', details: errors.array() } })
+    }
+    const { start_date, count, status } = req.body as { start_date: string; count: number; status?: any }
+    const created: any[] = []
+    let d = new Date(start_date)
+    for (let i = 0; i < count; i++) {
+      const iso = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().split('T')[0]
+      const g = await GroupService.createGroupWithStart(iso, 50, status || 'completed')
+      created.push(g)
+      d.setUTCMonth(d.getUTCMonth() + 3)
+    }
+    // Refresh statuses based on today
+    await GroupService.updateGroupStatuses()
+    res.json({ success: true, message: 'Quarterly groups created', data: { count: created.length } })
+  } catch (error) {
+    console.error('Error backfilling quarterly groups:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to backfill groups' } })
+  }
+})
+
 // Update a group (name, status, start_date, max_members)
 router.put('/groups/:id', [
   body('name').optional().isString().isLength({ min: 3, max: 200 }).withMessage('name must be 3-200 chars'),
