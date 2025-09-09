@@ -40,7 +40,7 @@ const Donate = () => {
       })
 
       if (response.ok) {
-        const data = await response.json()
+        await response.json() // Just consume the response
         alert(`Thank you for your donation of $${totalAmount.toFixed(2)}! Your donation has been recorded. We'll contact you soon to complete the payment process.`)
         
         // Reset form
