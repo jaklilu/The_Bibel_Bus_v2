@@ -482,8 +482,8 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Accept Your Invitation */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-3">
+          {/* Accept Your Invitation (moved to bottom) */}
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all mb-8">
             <div className="flex items-center mb-4">
               <Users className="h-12 w-12 text-orange-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
