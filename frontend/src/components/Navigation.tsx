@@ -57,15 +57,19 @@ const Navigation = () => {
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-800 to-purple-700 backdrop-blur-sm border-b border-purple-600/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center h-16">
-          {/* Left: icon */}
+          {/* Left: brand */}
           <Link to="/" className="flex items-center space-x-2">
             <BookOpen className="h-8 w-8 text-white" />
+            <span className="hidden md:inline text-lg font-heading text-white">
+              <span className="text-white">The </span>
+              <span className="text-amber-500">Bible Bus</span>
+            </span>
           </Link>
 
-          {/* Center: brand title */}
+          {/* Center: brand title (mobile only) */}
           <Link
             to="/"
-            className="absolute left-1/2 -translate-x-1/2 text-xl font-heading text-white hover:text-purple-200 transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 text-xl font-heading text-white hover:text-purple-200 transition-colors md:hidden"
           >
             <span className="text-white">The </span>
             <span className="text-amber-500">Bible Bus</span>
