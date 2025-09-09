@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle } from 'lucide-react'
+import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
@@ -17,8 +17,6 @@ const Register = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [groupInfo, setGroupInfo] = useState<any>(null)
-  const [currentGroup, setCurrentGroup] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,40 +63,6 @@ const Register = () => {
     })
   }
 
-  // Fetch current active group from API
-  useEffect(() => {
-    const fetchCurrentGroup = async () => {
-      try {
-        const response = await fetch('/api/admin/groups/current/active')
-        const data = await response.json()
-
-        if (data.success && data.data) {
-          setCurrentGroup(data.data)
-        } else {
-          // Fallback to hardcoded logic if no active group
-          const fallbackGroup = {
-            name: 'Bible Bus October 2025 Travelers',
-            start_date: '2025-10-01',
-            registration_deadline: '2025-10-17'
-          }
-          setCurrentGroup(fallbackGroup)
-        }
-      } catch (error) {
-        console.error('Error fetching current group:', error)
-        // Fallback to hardcoded logic
-        const fallbackGroup = {
-          name: 'Bible Bus October 2025 Travelers',
-          start_date: '2025-10-01',
-          registration_deadline: '2025-10-17'
-        }
-        setCurrentGroup(fallbackGroup)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchCurrentGroup()
-  }, [])
 
   return (
     <div className="min-h-screen py-8">
@@ -111,48 +75,8 @@ const Register = () => {
           className="text-center mb-12"
         >
           <h1 className="text-4xl font-bold text-white mb-4">Register for Next Group</h1>
-          <p className="text-xl text-purple-200">Join The Bible Bus and start your 365-day Bible reading journey</p>
         </motion.div>
 
-        {/* Group Information Card */}
-        {loading ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 mb-8"
-          >
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto mb-4"></div>
-              <p className="text-purple-200">Loading group information...</p>
-            </div>
-          </motion.div>
-        ) : currentGroup ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 mb-8"
-          >
-            <div className="flex items-center space-x-3 mb-4">
-              <Calendar className="h-6 w-6 text-yellow-400" />
-              <h2 className="text-2xl font-bold text-white">Group Details</h2>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-6 text-white">
-              <div>
-                <h3 className="text-lg font-semibold text-yellow-400 mb-2">
-                  {currentGroup?.name || 'Loading...'}
-                </h3>
-                <p className="text-purple-200">365-day Bible reading journey</p>
-                <p className="text-purple-200">Starts: {currentGroup ? new Date(currentGroup.start_date).toLocaleDateString() : 'Loading...'}</p>
-                <p className="text-purple-200">Complete by: {currentGroup ? new Date(new Date(currentGroup.start_date).getTime() + (365 * 24 * 60 * 60 * 1000)).toLocaleDateString() : 'Loading...'}</p>
-              </div>
-              
-              <div></div>
-            </div>
-          </motion.div>
-        ) : null}
 
         {/* Registration Form */}
         <motion.div 
@@ -287,9 +211,6 @@ const Register = () => {
                   placeholder="Name of person who referred you"
                 />
               </div>
-              <p className="text-sm text-purple-300 mt-1">
-                Help us thank the person who introduced you to Bible Bus
-              </p>
             </div>
 
             {/* Mailing Address */}
