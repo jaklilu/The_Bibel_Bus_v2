@@ -12,6 +12,12 @@ const Trophies = () => {
   const [open, setOpen] = useState<Record<string, boolean>>({ diamond: false, platinum: false, gold: false, silver: false, bronze: false })
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      navigate('/login')
+      return
+    }
     const stored = localStorage.getItem('userData')
     if (stored) {
       try {

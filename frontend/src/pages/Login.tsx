@@ -133,14 +133,14 @@ const Login = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-8 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700 py-8 px-4">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-8"
+          className="text-center mb-8 mt-8"
         >
           <h1 className="text-3xl font-heading text-white mb-2">Welcome Back</h1>
           <p className="text-lg text-amber-500">Sign in to continue your Bible journey</p>
