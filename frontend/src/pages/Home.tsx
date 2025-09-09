@@ -319,6 +319,16 @@ const Home = () => {
               transition={{ duration: 0.8, delay: 1.2 }}
               className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-700/40"
             >
+              <h3 className="text-xl font-semibold text-amber-500 mb-3">What investment is required?</h3>
+              <p className="text-white">Only 15 precious minutes each day—a small offering of time that yields eternal dividends in spiritual growth.</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.3 }}
+              className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-700/40"
+            >
               <h3 className="text-xl font-semibold text-amber-500 mb-3">What treasures await you?</h3>
               <ul className="text-white space-y-1">
                 <li>• Deep knowledge of Scripture's truths and wisdom</li>
@@ -328,16 +338,6 @@ const Home = () => {
                 <li>• Unwavering support from fellow travelers</li>
                 <li>• The joy of reaching our destination together</li>
               </ul>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.3 }}
-              className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-700/40"
-            >
-              <h3 className="text-xl font-semibold text-amber-500 mb-3">What investment is required?</h3>
-              <p className="text-white">Only 15 precious minutes each day—a small offering of time that yields eternal dividends in spiritual growth.</p>
             </motion.div>
           </div>
         </div>
