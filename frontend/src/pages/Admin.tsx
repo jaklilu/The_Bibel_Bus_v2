@@ -7,7 +7,6 @@ import {
   MessageSquare, 
   DollarSign, 
   BarChart3,
-  LogOut,
   Plus
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
@@ -192,7 +191,9 @@ const Admin = () => {
 
       // If token expired/invalid after a deploy, force re-login instead of showing empty lists
       if ([groupsRes, usersRes, progressRes, messagesRes, donationsRes].some(r => r.status === 401)) {
-        handleLogout()
+        localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
+        setAdminData({ groups: [], users: [], progress: [], messages: [], donations: [] })
         setError('Your admin session expired. Please sign in again.')
         return
       }
@@ -215,11 +216,6 @@ const Admin = () => {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    setIsLoggedIn(false)
-    setAdminData({ groups: [], users: [], progress: [], messages: [], donations: [] })
-  }
 
   // removed unused sendMessage helper
 
@@ -294,7 +290,9 @@ const Admin = () => {
         fetchAdminData() // Refresh data
       } else if (response.status === 401 || response.status === 403) {
         setPostMessageError('Your admin session expired. Please sign in again.')
-        handleLogout()
+        localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
+        setAdminData({ groups: [], users: [], progress: [], messages: [], donations: [] })
       } else {
         const data = await response.json().catch(() => null)
         setPostMessageError(data?.error?.message || 'Failed to post message')
@@ -570,17 +568,6 @@ const Admin = () => {
                  </button>
                ))}
              </div>
-             
-             {/* Mobile Logout Button */}
-             <div className="mt-4 flex justify-center">
-               <button
-                 onClick={handleLogout}
-                 className="flex items-center space-x-2 py-2 px-4 text-white hover:text-purple-200 transition-colors bg-red-900 hover:bg-red-950 rounded-lg text-sm"
-               >
-                 <LogOut className="h-4 w-4" />
-                 <span>Logout</span>
-               </button>
-             </div>
            </div>
 
            {/* Desktop: Full navigation */}
@@ -609,15 +596,6 @@ const Admin = () => {
                  </button>
                ))}
              </div>
-             
-             {/* Desktop Logout Button */}
-             <button
-               onClick={handleLogout}
-               className="flex items-center space-x-2 py-4 px-4 text-white hover:text-purple-200 transition-colors bg-red-900 hover:bg-red-950 rounded-lg"
-             >
-               <LogOut className="h-5 w-5" />
-               <span>Logout</span>
-             </button>
            </div>
          </nav>
 
