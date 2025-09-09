@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Gem, Crown, Star, Shield, Award as AwardIcon } from 'lucide-react'
+import { Gem, Crown, Star, Shield, Award as AwardIcon, ChevronDown, ChevronRight } from 'lucide-react'
 
 const Trophies = () => {
   const navigate = useNavigate()
@@ -9,6 +9,7 @@ const Trophies = () => {
   const [count, setCount] = useState<number>(0)
   const [publicList, setPublicList] = useState<Array<{id:number;name:string;trophies_count:number;tier:string;avatar_url?:string|null}>>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [open, setOpen] = useState<Record<string, boolean>>({ diamond: false, platinum: false, gold: false, silver: false, bronze: false })
 
   useEffect(() => {
     const stored = localStorage.getItem('userData')
@@ -38,6 +39,8 @@ const Trophies = () => {
     }
     return tiers
   }, [publicList])
+
+  const toggle = (key: string) => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
 
   const tierConfigs: Record<string, { label: string; gradient: string; border: string; icon: JSX.Element; accent: string; subtitle: string }> = {
     diamond: {
@@ -98,16 +101,26 @@ const Trophies = () => {
         {loading ? (
           <div className="text-center text-white">Loading…</div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-4">
             {(['diamond','platinum','gold','silver','bronze'] as const).map((key) => {
               const cfg = tierConfigs[key]
               const members = (grouped as any)[key] as Array<{name:string;count:number;avatar?:string|null}>
               return (
-                <motion.div key={key} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border ${cfg.border} bg-gradient-to-br ${cfg.gradient} p-6 relative overflow-hidden`}>
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl border ${cfg.border} bg-gradient-to-br ${cfg.gradient} p-0 relative overflow-hidden`}
+                >
                   {/* Decorative glow */}
                   <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
 
-                  <div className="flex items-center justify-between mb-4">
+                  {/* Header (tap to expand) */}
+                  <button
+                    type="button"
+                    onClick={() => toggle(key)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between focus:outline-none"
+                  >
                     <div className="flex items-center space-x-3">
                       {cfg.icon}
                       <div>
@@ -115,30 +128,45 @@ const Trophies = () => {
                         <div className="text-sm text-purple-100/80">{cfg.subtitle}</div>
                       </div>
                     </div>
-                    <div className="text-purple-100/80 text-sm">{members.length} {members.length === 1 ? 'member' : 'members'}</div>
-                  </div>
+                    <div className="flex items-center space-x-3 text-purple-100/80 text-sm">
+                      <span>{members.length} {members.length === 1 ? 'member' : 'members'}</span>
+                      {open[key] ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    </div>
+                  </button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {members.length === 0 ? (
-                      <div className="text-purple-100">No entries</div>
-                    ) : (
-                      members.map((m, idx) => (
-                        <div key={idx} className="bg-purple-900/40 border border-purple-700/40 rounded-xl p-4 flex items-center justify-between shadow-lg shadow-black/20">
-                          <div className="flex items-center space-x-3">
-                            {m.avatar ? (
-                              <img src={m.avatar} alt={m.name} className="h-10 w-10 rounded-full object-cover border border-purple-600/50" />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-purple-700/70 border border-purple-700/50 flex items-center justify-center text-white font-semibold">
-                                {m.name.slice(0,1).toUpperCase()}
+                  <AnimatePresence initial={false}>
+                    {open[key] && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="px-6 pb-6"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {members.length === 0 ? (
+                            <div className="text-purple-100">No entries</div>
+                          ) : (
+                            members.map((m, idx) => (
+                              <div key={idx} className="bg-purple-900/40 border border-purple-700/40 rounded-xl p-4 flex items-center justify-between shadow-lg shadow-black/20">
+                                <div className="flex items-center space-x-3">
+                                  {m.avatar ? (
+                                    <img src={m.avatar} alt={m.name} className="h-10 w-10 rounded-full object-cover border border-purple-600/50" />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-full bg-purple-700/70 border border-purple-700/50 flex items-center justify-center text-white font-semibold">
+                                      {m.name.slice(0,1).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className="text-white">{m.name}</div>
+                                </div>
+                                <div className="text-amber-300 font-bold">{m.count}</div>
                               </div>
-                            )}
-                            <div className="text-white">{m.name}</div>
-                          </div>
-                          <div className="text-amber-300 font-bold">{m.count}</div>
+                            ))
+                          )}
                         </div>
-                      ))
+                      </motion.div>
                     )}
-                  </div>
+                  </AnimatePresence>
                 </motion.div>
               )
             })}
