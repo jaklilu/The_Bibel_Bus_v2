@@ -61,6 +61,7 @@ const Admin = () => {
   const [newUserError, setNewUserError] = useState('')
   const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' })
   const [editingUser, setEditingUser] = useState<any | null>(null)
+  const [trophySetValue, setTrophySetValue] = useState<string>('')
   // Select users to add to group
   const [showSelectUsersModal, setShowSelectUsersModal] = useState(false)
   const [allUsers, setAllUsers] = useState<any[]>([])
@@ -760,6 +761,7 @@ const Admin = () => {
                      <tr>
                        <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Name</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Email</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophies</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Role</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">City</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Status</th>
@@ -771,6 +773,46 @@ const Admin = () => {
                        <tr key={user.id}>
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{user.name}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{user.email}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                           <div className="flex items-center space-x-2">
+                             <span className="inline-block min-w-[1.5rem] text-center font-semibold text-white">{user.trophies_count || 0}</span>
+                             <button
+                               onClick={async () => {
+                                 const token = localStorage.getItem('adminToken'); if (!token) return
+                                 await fetch(`/api/admin/users/${user.id}/trophies`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'decrement' }) })
+                                 fetchAdminData()
+                               }}
+                               className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
+                               title="-1"
+                             >–</button>
+                             <button
+                               onClick={async () => {
+                                 const token = localStorage.getItem('adminToken'); if (!token) return
+                                 await fetch(`/api/admin/users/${user.id}/trophies`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'increment' }) })
+                                 fetchAdminData()
+                               }}
+                               className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-purple-900 rounded text-xs"
+                               title="+1"
+                             >+1</button>
+                             <input
+                               type="number"
+                               min={0}
+                               placeholder="Set"
+                               className="w-16 px-2 py-1 bg-purple-700/50 border border-purple-600/30 rounded text-white text-xs"
+                               onChange={(e) => setTrophySetValue(e.target.value)}
+                             />
+                             <button
+                               onClick={async () => {
+                                 const token = localStorage.getItem('adminToken'); if (!token) return
+                                 const n = Math.max(0, parseInt(trophySetValue || '0', 10))
+                                 await fetch(`/api/admin/users/${user.id}/trophies`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'set', value: n }) })
+                                 setTrophySetValue('')
+                                 fetchAdminData()
+                               }}
+                               className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                             >Set</button>
+                           </div>
+                         </td>
                          <td className="px-6 py-4 whitespace-nowrap">
                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                              user.role === 'admin' ? 'bg-amber-600 text-purple-900' : 'bg-blue-600 text-white'

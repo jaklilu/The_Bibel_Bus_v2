@@ -338,6 +338,7 @@ router.put('/users/:id', [
   body('phone').optional().isString().trim().isLength({ max: 50 }),
   body('role').optional().isIn(['user','admin']),
   body('status').optional().isIn(['active','inactive']),
+  body('trophies_count').optional().isInt({ min: 0 }).withMessage('trophies_count must be >= 0'),
   body('city').optional().isString().trim().isLength({ max: 200 }),
   body('award_approved').optional().isBoolean(),
   body('avatar_url').optional().isURL(),
@@ -353,7 +354,7 @@ router.put('/users/:id', [
     const existing = await getRow('SELECT * FROM users WHERE id = ?', [id])
     if (!existing) return res.status(404).json({ success: false, error: { message: 'User not found' } })
 
-    const allowed = ['name','email','phone','role','status','award_approved','avatar_url','city','mailing_address','referral'] as const
+    const allowed = ['name','email','phone','role','status','award_approved','avatar_url','city','mailing_address','referral','trophies_count'] as const
     const updates: Record<string, any> = {}
     for (const key of allowed) {
       if (key in req.body && req.body[key] !== undefined) {
@@ -378,6 +379,35 @@ router.put('/users/:id', [
     }
     console.error('Error updating user:', error)
     res.status(500).json({ success: false, error: { message: 'Failed to update user' } })
+  }
+})
+
+// Adjust user trophies (increment, decrement, or set)
+router.post('/users/:id/trophies', [
+  body('op').isIn(['increment','decrement','set']).withMessage('Invalid operation'),
+  body('value').optional().isInt({ min: 0 }).withMessage('value must be a non-negative integer')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: { message: 'Validation failed', details: errors.array() } })
+    }
+    const id = parseInt(req.params.id)
+    const user = await getRow('SELECT id, trophies_count FROM users WHERE id = ?', [id])
+    if (!user) return res.status(404).json({ success: false, error: { message: 'User not found' } })
+
+    const { op, value } = req.body as { op: 'increment'|'decrement'|'set'; value?: number }
+    let newCount = Number(user.trophies_count || 0)
+    if (op === 'increment') newCount = newCount + 1
+    else if (op === 'decrement') newCount = Math.max(0, newCount - 1)
+    else if (op === 'set') newCount = Math.max(0, Number(value || 0))
+
+    await runQuery('UPDATE users SET trophies_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newCount, id])
+    const updated = await getRow('SELECT id, name, email, trophies_count FROM users WHERE id = ?', [id])
+    res.json({ success: true, message: 'Trophies updated', data: updated })
+  } catch (error) {
+    console.error('Error adjusting trophies:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to update trophies' } })
   }
 })
 
