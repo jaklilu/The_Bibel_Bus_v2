@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import Navigation from './components/Navigation'
 import Home from './pages/Home'
@@ -14,9 +14,11 @@ const Messages = lazy(() => import('./pages/Messages.tsx'))
 const LegacyIntake = lazy(() => import('./pages/LegacyIntake'))
 
 function App() {
+  const location = useLocation()
+  const hideNav = location.pathname === '/legacy' || location.pathname === '/alumni'
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
-      <Navigation />
+      {!hideNav && <Navigation />}
       <Suspense fallback={<div className="text-white p-4">Loading...</div>}>
       <Routes>
         <Route path="/" element={<Home />} />
