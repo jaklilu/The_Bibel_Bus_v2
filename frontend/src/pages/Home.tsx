@@ -192,43 +192,46 @@ const Home = () => {
                </p>
              </div>
            </motion.div>
-        </motion.div>
-      </section>
 
-      {/* Action Buttons Section */}
-      <section className="py-6 md:py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-                          <motion.div
-                animate={{ 
-                  opacity: [0.7, 1, 0.7]
-                }}
-                transition={{ 
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Link
-                  to="/register"
-                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg text-lg"
-                >
-                  <span>Register Now</span>
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              </motion.div>
-            
-                          <a 
-              href="https://www.youtube.com/watch?v=c-VWZN76hoc"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-purple-700 hover:bg-amber-500 hover:text-purple-900 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-lg"
-            >
-              <Play className="h-5 w-5" />
-              <span>Watch Introduction</span>
-            </a>
-          </div>
-        </div>
+           {/* Action Buttons - moved up */}
+           <motion.div 
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.8, delay: 1.1 }}
+             className="mt-8"
+           >
+             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+               <motion.div
+                 animate={{ 
+                   opacity: [0.7, 1, 0.7]
+                 }}
+                 transition={{ 
+                   duration: 2,
+                   repeat: Infinity,
+                   ease: "easeInOut"
+                 }}
+               >
+                 <Link
+                   to="/register"
+                   className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg text-lg"
+                 >
+                   <span>Register Now</span>
+                   <ArrowRight className="h-5 w-5" />
+                 </Link>
+               </motion.div>
+             
+               <a 
+                 href="https://www.youtube.com/watch?v=c-VWZN76hoc"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="bg-purple-700 hover:bg-amber-500 hover:text-purple-900 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-lg"
+               >
+                 <Play className="h-5 w-5" />
+                 <span>Watch Introduction</span>
+               </a>
+             </div>
+           </motion.div>
+        </motion.div>
       </section>
 
 
