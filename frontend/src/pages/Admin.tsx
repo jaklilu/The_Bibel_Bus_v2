@@ -49,6 +49,8 @@ const Admin = () => {
   const [groupToManage, setGroupToManage] = useState<any>(null)
   const [showPostMessageModal, setShowPostMessageModal] = useState(false)
   const [newGroupMessage, setNewGroupMessage] = useState({ title: '', content: '', type: 'encouragement', priority: 'normal' })
+  const [postingMessage, setPostingMessage] = useState(false)
+  const [postMessageError, setPostMessageError] = useState('')
   // Removed normalize dates feature per request
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
   const [newGroupStart, setNewGroupStart] = useState('')
@@ -268,6 +270,8 @@ const Admin = () => {
     if (!token || !groupToManage) return
 
     try {
+      setPostingMessage(true)
+      setPostMessageError('')
       const response = await fetch('/api/admin/group-messages', {
         method: 'POST',
         headers: {
@@ -288,9 +292,18 @@ const Admin = () => {
         setShowPostMessageModal(false)
         setShowManageModal(false)
         fetchAdminData() // Refresh data
+      } else if (response.status === 401 || response.status === 403) {
+        setPostMessageError('Your admin session expired. Please sign in again.')
+        handleLogout()
+      } else {
+        const data = await response.json().catch(() => null)
+        setPostMessageError(data?.error?.message || 'Failed to post message')
       }
     } catch (err) {
       console.error('Error posting message:', err)
+      setPostMessageError('Failed to post message. Please try again.')
+    } finally {
+      setPostingMessage(false)
     }
   }
 
@@ -1487,6 +1500,12 @@ const Admin = () => {
                   </button>
                 </div>
                 
+                {postMessageError && (
+                  <div className="mb-4 text-red-300 bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-sm">
+                    {postMessageError}
+                  </div>
+                )}
+
                 <form onSubmit={handlePostMessage} className="space-y-6">
                   {/* Message Title */}
                   <div>
@@ -1556,9 +1575,10 @@ const Admin = () => {
                   <div className="flex space-x-3 pt-4">
                     <button
                       type="submit"
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-purple-900 py-2 px-4 rounded-lg transition-colors font-medium"
+                      disabled={postingMessage}
+                      className={`flex-1 ${postingMessage ? 'bg-amber-600' : 'bg-amber-500 hover:bg-amber-600'} text-purple-900 py-2 px-4 rounded-lg transition-colors font-medium`}
                     >
-                      Post Message
+                      {postingMessage ? 'Posting…' : 'Post Message'}
                     </button>
                     <button 
                       type="button"
