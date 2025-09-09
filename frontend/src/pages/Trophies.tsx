@@ -88,9 +88,40 @@ const Trophies = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h1 className="text-4xl font-heading text-white mb-2">My Awards</h1>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
+          <h1 className="text-4xl font-heading text-white mb-1">My Awards</h1>
           <p className="text-amber-400">{name}</p>
+        </motion.div>
+
+        {/* Celebration hero */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden bg-gradient-to-br from-amber-500/20 via-pink-500/10 to-purple-500/20 rounded-2xl border border-amber-400/30 p-6 mb-6"
+        >
+          {/* Confetti dots */}
+          <div className="pointer-events-none absolute inset-0">
+            {[...Array(30)].map((_, i) => (
+              <span
+                key={i}
+                className="absolute block rounded-full opacity-40"
+                style={{
+                  left: `${(i * 37) % 100}%`,
+                  top: `${(i * 53) % 100}%`,
+                  width: 6 + (i % 4) * 2,
+                  height: 6 + (i % 4) * 2,
+                  background: ['#F59E0B','#F43F5E','#22C55E','#38BDF8','#A78BFA'][i % 5]
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="relative">
+            <div className="text-amber-300 text-sm mb-1">Congratulations!</div>
+            <h2 className="text-white text-xl font-heading mb-2">These travelers have completed reading the entire Scripture</h2>
+            <p className="text-purple-100/90 text-sm">Genesis to Revelation — this page is their acknowledgment. Plaques are awarded for the <span className="text-amber-300 font-semibold">first completion</span>; every completion counts toward tiers.</p>
+          </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center mb-8">
