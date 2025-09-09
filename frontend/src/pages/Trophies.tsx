@@ -136,7 +136,7 @@ const Trophies = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center mb-8">
           <div className="text-6xl font-extrabold text-amber-400">{count}</div>
-          <div className="mt-2 text-purple-200">Your plaques completed</div>
+          <div className="mt-2 text-purple-200">Completed Journey</div>
         </motion.div>
 
         {loading ? (
