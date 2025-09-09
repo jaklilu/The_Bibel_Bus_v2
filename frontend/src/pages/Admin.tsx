@@ -546,7 +546,7 @@ const Admin = () => {
          <nav className="mb-8 border-b border-purple-600/30">
            {/* Mobile: Horizontal scrollable tabs */}
            <div className="md:hidden">
-             <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+             <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
@@ -559,10 +559,10 @@ const Admin = () => {
                  <button
                    key={tab.id}
                    onClick={() => setActiveTab(tab.id)}
-                   className={`flex items-center space-x-1 py-3 px-3 border-b-2 font-medium text-xs transition-colors whitespace-nowrap ${
+                   className={`flex items-center space-x-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap rounded-t-lg ${
                      activeTab === tab.id
-                       ? 'border-amber-500 text-amber-500'
-                       : 'border-transparent text-purple-200 hover:text-white hover:border-purple-400'
+                       ? 'border-amber-500 text-amber-500 bg-purple-700/30'
+                       : 'border-transparent text-purple-200 hover:text-white hover:border-purple-400 hover:bg-purple-700/20'
                    }`}
                  >
                    <tab.icon className="h-4 w-4" />
