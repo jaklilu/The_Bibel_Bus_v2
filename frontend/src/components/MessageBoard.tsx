@@ -438,7 +438,11 @@ const MessageBoard = () => {
                   {getMessageTypeIcon(message.message_type)}
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="text-lg font-semibold text-white">{message.title}</h3>
+                      {message.message_source === 'admin' ? (
+                        <h3 className="text-lg font-semibold text-white">{message.title}</h3>
+                      ) : (
+                        <h3 className="text-lg font-semibold text-white">{message.content.length > 60 ? message.content.slice(0, 57) + '…' : message.content}</h3>
+                      )}
                       {isMessageUnread(message.created_at) && (
                         <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
                           NEW
@@ -482,7 +486,9 @@ const MessageBoard = () => {
               </div>
 
               {/* Message Content */}
-              <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
+              {message.message_source === 'admin' && (
+                <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
+              )}
 
               {/* Comments Section */}
               {expandedMessage === message.id && (
