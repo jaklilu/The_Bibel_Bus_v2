@@ -6,8 +6,10 @@ import MessageBoard from '../components/MessageBoard'
 const Messages = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     // Check if user is logged in
     const token = localStorage.getItem('userToken')
     if (!token) {
@@ -16,6 +18,14 @@ const Messages = () => {
     }
     setLoading(false)
   }, [navigate])
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (

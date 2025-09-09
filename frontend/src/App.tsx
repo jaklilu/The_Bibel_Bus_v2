@@ -10,7 +10,7 @@ import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
-const Messages = lazy(() => import('./pages/Messages.tsx'))
+import Messages from './pages/Messages'
 const LegacyIntake = lazy(() => import('./pages/LegacyIntake'))
 
 function App() {
