@@ -129,71 +129,69 @@ const Home = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.7 }}
-             className="text-xl font-tagline text-amber-500 mb-4 text-right pr-4 md:pr-0 md:w-fit md:ml-auto md:mr-[240px] md:text-right"
+             className="text-xl font-tagline text-amber-500 mb-8 text-right pr-4 md:pr-0 md:w-fit md:ml-auto md:mr-[240px] md:text-right"
            >
              It's a journey...
            </motion.p>
-        </motion.div>
-      </section>
 
-      {/* Countdown Section */}
-      <section className="py-6 md:py-8 px-4">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-4xl mx-auto"
-        >
-          <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-8 border border-purple-700/30">
-            <h2 className="text-2xl font-bold text-white text-center mb-6">
-              {new Date().getTime() < getNextGroupStart().getTime() ? 'Next Group Starts' : 'Registration Closes'}
-            </h2>
-            <p className="text-lg text-white text-center mb-8">
-              {nextStart.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-            
-            {/* Countdown Timer */}
-            <div className="grid grid-cols-4 gap-2 md:gap-4 mb-4">
-              <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
-                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.days}</div>
-                  <div className="text-xs md:text-sm text-white font-medium leading-none">DAYS</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
-                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.hours}</div>
-                  <div className="text-xs md:text-sm text-white font-medium leading-none">HOURS</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
-                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.minutes}</div>
-                  <div className="text-xs md:text-sm text-white font-medium leading-none">MINUTES</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <motion.div
-                  initial={{ opacity: 0.8, backgroundColor: '#3b0764' }}
-                  animate={{ opacity: [0.8, 1, 0.8], backgroundColor: ['#3b0764', '#4c1d95', '#3b0764'] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600"
-                >
-                  <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.seconds}</div>
-                  <div className="text-xs md:text-sm text-white font-medium leading-none">SECONDS</div>
-                </motion.div>
-              </div>
-            </div>
-            
-            <p className="text-sm text-white text-center mb-8">
-              Registration closes 17 days after start date • {registrationEnd.toLocaleDateString()}
-            </p>
-          </div>
+           {/* Countdown Section - moved up */}
+           <motion.div 
+             initial={{ opacity: 0, scale: 0.9 }}
+             animate={{ opacity: 1, scale: 1 }}
+             transition={{ duration: 0.8, delay: 0.9 }}
+             className="max-w-4xl mx-auto"
+           >
+             <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-8 border border-purple-700/30">
+               <h2 className="text-2xl font-bold text-white text-center mb-6">
+                 {new Date().getTime() < getNextGroupStart().getTime() ? 'Next Group Starts' : 'Registration Closes'}
+               </h2>
+               <p className="text-lg text-white text-center mb-8">
+                 {nextStart.toLocaleDateString('en-US', { 
+                   weekday: 'long', 
+                   year: 'numeric', 
+                   month: 'long', 
+                   day: 'numeric' 
+                 })}
+               </p>
+               
+               {/* Countdown Timer */}
+               <div className="grid grid-cols-4 gap-2 md:gap-4 mb-4">
+                 <div className="text-center">
+                   <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                     <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.days}</div>
+                     <div className="text-xs md:text-sm text-white font-medium leading-none">DAYS</div>
+                   </div>
+                 </div>
+                 <div className="text-center">
+                   <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                     <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.hours}</div>
+                     <div className="text-xs md:text-sm text-white font-medium leading-none">HOURS</div>
+                   </div>
+                 </div>
+                 <div className="text-center">
+                   <div className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600">
+                     <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.minutes}</div>
+                     <div className="text-xs md:text-sm text-white font-medium leading-none">MINUTES</div>
+                   </div>
+                 </div>
+                 <div className="text-center">
+                   <motion.div
+                     initial={{ opacity: 0.8, backgroundColor: '#3b0764' }}
+                     animate={{ opacity: [0.8, 1, 0.8], backgroundColor: ['#3b0764', '#4c1d95', '#3b0764'] }}
+                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                     className="bg-purple-900/80 rounded-lg px-3 py-2 md:px-4 md:py-3 h-14 md:h-16 flex flex-col justify-center border border-purple-600"
+                   >
+                     <div className="text-xl md:text-2xl font-bold text-amber-500">{countdown.seconds}</div>
+                     <div className="text-xs md:text-sm text-white font-medium leading-none">SECONDS</div>
+                   </motion.div>
+                 </div>
+               </div>
+               
+               <p className="text-sm text-white text-center mb-8">
+                 Registration closes 17 days after start date • {registrationEnd.toLocaleDateString()}
+               </p>
+             </div>
+           </motion.div>
         </motion.div>
       </section>
 
