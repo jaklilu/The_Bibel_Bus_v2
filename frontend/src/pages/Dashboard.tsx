@@ -241,7 +241,7 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.02 }} 
-          className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all mb-8"
+          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all mb-8"
         >
           <div className="flex items-center mb-4">
             <Users className="h-12 w-12 text-orange-500 mr-3" />
@@ -309,7 +309,7 @@ const Dashboard = () => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
         >
           {/* Awards */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-6">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-6">
             <div className="flex items-center mb-4">
               <Award className="h-12 w-12 text-amber-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Awards</h3>
@@ -328,7 +328,7 @@ const Dashboard = () => {
             <button onClick={() => navigate('/awards')} className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors mt-4">View All</button>
           </motion.div>
           {/* WhatsApp Group */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-1">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-1">
             <div className="flex items-center mb-4">
               <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">{groupName}</h3>
@@ -347,7 +347,7 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Introduction Videos */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-4">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-4">
             <div className="flex items-center mb-4">
               <Play className="h-12 w-12 text-blue-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Introduction Video</h3>
@@ -370,7 +370,7 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Download YouVersion */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-2">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-2">
             <div className="flex items-center mb-4">
               <Download className="h-12 w-12 text-blue-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Download YouVersion</h3>
@@ -388,7 +388,7 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Instructions */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-5">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-5">
             <div className="flex items-center mb-4">
               <BookOpen className="h-12 w-12 text-blue-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Instructions</h3>
