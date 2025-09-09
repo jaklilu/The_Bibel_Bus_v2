@@ -1,4 +1,5 @@
 import express from 'express'
+import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
@@ -9,6 +10,7 @@ import userRoutes from './routes/users'
 import authRoutes from './routes/auth'
 import adminRoutes from './routes/admin'
 import { CronService } from './services/cronService'
+import { getRow, runQuery } from './database/database'
 
 // Load environment variables
 dotenv.config()
@@ -115,6 +117,28 @@ app.listen(PORT, () => {
   console.log(`📱 Frontend (local): http://localhost:3000`)
   console.log(`🔧 API: http://localhost:${PORT}/api`)
   initializeGroupManagement()
+  ensureDefaultAdmin()
 })
 
 export default app
+
+// Ensure a default admin account exists (use env or safe defaults)
+async function ensureDefaultAdmin(): Promise<void> {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || 'JayTheBibleBus@gmail.com'
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
+    const existing = await getRow('SELECT id FROM users WHERE email = ? AND role = ? LIMIT 1', [adminEmail, 'admin'])
+    if (existing?.id) {
+      console.log('👮 Admin user already present')
+      return
+    }
+    const hash = await bcrypt.hash(adminPassword, 12)
+    await runQuery(
+      'INSERT INTO users (name, email, password_hash, role, status, award_approved) VALUES (?, ?, ?, ?, ?, ?)',
+      ['Bible Bus Admin', adminEmail, hash, 'admin', 'active', 0]
+    )
+    console.log(`✅ Default admin created (${adminEmail})`)
+  } catch (e) {
+    console.error('❌ Failed to ensure default admin:', e)
+  }
+}
