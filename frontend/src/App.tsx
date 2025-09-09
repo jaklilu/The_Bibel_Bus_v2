@@ -11,6 +11,7 @@ import ResetPassword from './pages/ResetPassword'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
 const Messages = lazy(() => import('./pages/Messages.tsx'))
+const LegacyIntake = lazy(() => import('./pages/LegacyIntake'))
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/awards" element={<Awards />} />
         <Route path="/trophies" element={<Awards />} />
+        <Route path="/legacy" element={<LegacyIntake />} />
       </Routes>
       </Suspense>
     </div>
