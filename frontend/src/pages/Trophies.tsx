@@ -40,7 +40,17 @@ const Trophies = () => {
     return tiers
   }, [publicList])
 
-  const toggle = (key: string) => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
+  const toggle = (key: string) => setOpen(prev => {
+    const isOpening = !prev[key]
+    return {
+      diamond: false,
+      platinum: false,
+      gold: false,
+      silver: false,
+      bronze: false,
+      [key]: isOpening
+    } as Record<string, boolean>
+  })
 
   const tierConfigs: Record<string, { label: string; gradient: string; border: string; icon: JSX.Element; accent: string; subtitle: string }> = {
     diamond: {
