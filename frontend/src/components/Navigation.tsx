@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const Navigation = () => {
   const location = useLocation()
@@ -109,43 +110,102 @@ const Navigation = () => {
           </div>
 
           {/* Mobile hamburger */}
-          <button
+          <motion.button
             aria-label="Toggle menu"
             className="md:hidden ml-auto p-2 rounded-lg text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-400"
             onClick={() => setOpen(!open)}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.1 }}
           >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            <motion.div
+              animate={{ rotate: open ? 90 : 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </motion.div>
+          </motion.button>
         </div>
       </div>
-      {/* Mobile sheet */}
-      {open && (
-        <div className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50">
-          <div className="px-4 py-3 space-y-1">
-            {navItems.map(item => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`block px-3 py-2 rounded-lg ${
-                  isActive(item.to)
-                    ? 'text-amber-400 bg-purple-700/60'
-                    : 'text-white hover:text-amber-300 hover:bg-purple-700/50'
-                }`}
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link
-              to="/register"
-              className="block px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold"
+      {/* Mobile backdrop and sheet */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setOpen(false)}
+            />
+            {/* Mobile sheet */}
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="md:hidden bg-purple-800/95 backdrop-blur-sm border-t border-purple-700/50 overflow-hidden relative z-50"
             >
-              Join Now
-            </Link>
-          </div>
-        </div>
-      )}
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="px-4 py-3 space-y-1"
+            >
+              {navItems.map((item, index) => {
+                const isMessages = item.to === '/messages'
+                return (
+                  <motion.div
+                    key={item.to}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                  >
+                    <Link
+                      to={item.to}
+                      className={`block px-3 py-3 rounded-lg transition-all duration-200 ${
+                        isActive(item.to)
+                          ? 'text-amber-400 bg-purple-700/60'
+                          : 'text-white hover:text-amber-300 hover:bg-purple-700/50'
+                      }`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="inline-flex items-center">
+                        {item.label}
+                        {isMessages && unread > 0 && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.2, delay: 0.3 }}
+                            className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold rounded-full bg-red-600 text-white"
+                          >
+                            {unread}
+                          </motion.span>
+                        )}
+                      </span>
+                    </Link>
+                  </motion.div>
+                )
+              })}
+              <motion.div
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.2, delay: navItems.length * 0.05 }}
+              >
+                <Link
+                  to="/register"
+                  className="block px-3 py-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold transition-all duration-200"
+                  onClick={() => setOpen(false)}
+                >
+                  Join Now
+                </Link>
+              </motion.div>
+            </motion.div>
+            </>
+          )}
+        </AnimatePresence>
     </nav>
   )
 }
