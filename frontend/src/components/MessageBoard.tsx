@@ -9,7 +9,6 @@ import {
   Calendar,
   MessageSquare,
   Plus,
-  Send,
   Trash2,
   User
 } from 'lucide-react'
