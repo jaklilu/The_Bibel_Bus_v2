@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import Countdown from 'react-countdown'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  LogOut,
   CheckCircle,
   Clock,
   Target,
@@ -187,10 +186,6 @@ const Dashboard = () => {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('userToken')
-    navigate('/')
-  }
 
   if (loading) {
     return (
@@ -207,21 +202,11 @@ const Dashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex items-center justify-between gap-4 flex-wrap"
+          className="mb-8"
         >
-          <div>
-            <h1 className="text-4xl font-heading text-white mb-2">
-              Welcome back, {userData?.name || 'Friend'}! 🚌
-            </h1>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-purple-200 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 font-medium py-2 px-3 rounded-md transition-colors flex items-center"
-            aria-label="Logout"
-          >
-            <LogOut className="h-5 w-5 mr-2" />
-            Logout
-          </button>
+          <h1 className="text-4xl font-heading text-white mb-2">
+            Welcome back, {userData?.name || 'Friend'}! 🚌
+          </h1>
         </motion.div>
 
         {/* Messages Card (link to Messages page) */}

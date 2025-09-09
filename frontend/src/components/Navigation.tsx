@@ -1,10 +1,11 @@
-import { Link, useLocation } from 'react-router-dom'
-import { BookOpen, Menu, X } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { BookOpen, Menu, X, LogOut } from 'lucide-react'
 import { useEffect, useState, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Navigation = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   
   // Show navigation on all pages including admin
@@ -53,6 +54,17 @@ const Navigation = () => {
   }, [])
 
   const isActive = (path: string) => location.pathname === path
+
+  // Check if user is logged in
+  const isLoggedIn = () => {
+    return localStorage.getItem('userToken') !== null
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('userToken')
+    localStorage.removeItem('userData')
+    navigate('/')
+  }
 
   // Close menu when route changes
   useEffect(() => {
@@ -108,6 +120,17 @@ const Navigation = () => {
             <span className="text-white">The </span>
             <span className="text-amber-500">Bible Bus</span>
           </Link>
+
+          {/* Mobile Logout Button */}
+          {isLoggedIn() && (
+            <button
+              onClick={handleLogout}
+              className="md:hidden mr-2 p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          )}
 
           {/* Desktop links */}
           <div className="ml-auto hidden md:flex items-center space-x-8">
