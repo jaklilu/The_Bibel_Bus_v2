@@ -464,15 +464,6 @@ const MessageBoard = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  {message.comment_count && message.comment_count > 0 && (
-                    <button
-                      onClick={() => setExpandedMessage(expandedMessage === message.id ? null : message.id)}
-                      className="flex items-center space-x-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
-                    >
-                      <MessageSquare className="h-3 w-3" />
-                      <span className="text-xs">{message.comment_count}</span>
-                    </button>
-                  )}
                   {localStorage.getItem('adminToken') && (
                     <button
                       onClick={() => handleAdminDelete(message)}
@@ -528,15 +519,6 @@ const MessageBoard = () => {
                 </div>
               )}
 
-              {/* Expand/Collapse Comments Button */}
-              {message.comment_count && message.comment_count > 0 && (
-                <button
-                  onClick={() => setExpandedMessage(expandedMessage === message.id ? null : message.id)}
-                  className="text-sm text-purple-300 hover:text-purple-200 transition-colors"
-                >
-                  {expandedMessage === message.id ? 'Hide comments' : `View ${message.comment_count} comment${message.comment_count > 1 ? 's' : ''}`}
-                </button>
-              )}
             </motion.div>
           ))}
         </div>
