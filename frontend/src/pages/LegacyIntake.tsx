@@ -38,8 +38,12 @@ const LegacyIntake = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col items-center mb-4">
+          <img src="/BibleBusLogo.jpg" alt="The Bible Bus" className="h-16 w-16 rounded-full border border-purple-500/40 mb-2 object-cover" />
+          <div className="text-amber-400 font-semibold">The Bible Bus</div>
+        </div>
         <h1 className="text-3xl font-heading text-white text-center mb-2">Alumni Intake</h1>
-        <p className="text-purple-100 text-center mb-6">We’re moving the Bible Bus to a new platform. If you’ve been on this journey with us — whether you finished or not — please share your info so we can create your account and place you in the right group.</p>
+        <p className="text-purple-100 text-center mb-6">We’re moving the Bible Bus to a new platform. Please share your info so we can create your account and place you in the right group.</p>
 
         {success && (
           <div className="mb-4 p-3 rounded-lg border border-green-500/40 bg-green-900/20 text-green-200 text-sm">{success}</div>
