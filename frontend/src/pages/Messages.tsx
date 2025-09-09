@@ -1,8 +1,30 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import MessageBoard from '../components/MessageBoard'
 
 const Messages = () => {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      navigate('/login')
+      return
+    }
+    setLoading(false)
+  }, [navigate])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading messages...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
