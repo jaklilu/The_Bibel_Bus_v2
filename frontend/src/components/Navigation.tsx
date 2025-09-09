@@ -203,9 +203,9 @@ const Navigation = () => {
                 </Link>
               </motion.div>
             </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }
