@@ -326,7 +326,6 @@ const MessageBoard = () => {
         
         {/* Compact Filter - Dropdown */}
         <div className="mb-4">
-          <label className="block text-purple-200 text-sm font-medium mb-2">Filter messages</label>
           <div className="flex items-center gap-2">
             <select
               value={selectedType}
