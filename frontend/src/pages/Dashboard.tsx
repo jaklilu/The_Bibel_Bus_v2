@@ -49,6 +49,7 @@ const Dashboard = () => {
   const [joining, setJoining] = useState(false)
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [inGroup, setInGroup] = useState<boolean>(true)
+  const [recentAwards, setRecentAwards] = useState<Array<{id:number;name:string;completed_at:string}>>([])
 
   useEffect(() => {
     // Check if user is logged in
@@ -136,6 +137,21 @@ const Dashboard = () => {
           ? msgs.filter(m => new Date(m.created_at) > new Date(lastRead)).length
           : msgs.length
         setUnreadCount(count)
+      } catch {}
+    })()
+    // Fetch recent awards for the user
+    ;(async () => {
+      try {
+        const token = localStorage.getItem('userToken')
+        if (!token) return
+        const res = await fetch('/api/auth/my-awards', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data?.success && Array.isArray(data.data)) {
+          const top = (data.data as any[]).slice(0, 3).map(r => ({ id: r.id, name: r.name, completed_at: r.completed_at }))
+          setRecentAwards(top)
+        }
       } catch {}
     })()
   }, [navigate])
@@ -364,8 +380,18 @@ const Dashboard = () => {
               <Award className="h-12 w-12 text-amber-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Awards</h3>
             </div>
-            <p className="text-purple-100 mb-4">You have earned {userData?.trophies_count || 0} awards</p>
-            <button onClick={() => navigate('/awards')} className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors">View All</button>
+            <p className="text-purple-100">You have earned {userData?.trophies_count || 0} awards</p>
+            {recentAwards.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {recentAwards.map((a, idx) => (
+                  <div key={idx} className="text-sm text-purple-100/90 bg-purple-700/40 border border-purple-500/40 rounded-lg px-3 py-2 flex items-center justify-between">
+                    <span className="truncate">{a.name}</span>
+                    <span className="ml-3 text-amber-300 text-xs">{new Date(a.completed_at).toLocaleDateString('en-US')}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => navigate('/awards')} className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors mt-4">View All</button>
           </motion.div>
           {/* WhatsApp Group */}
           <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all order-1">

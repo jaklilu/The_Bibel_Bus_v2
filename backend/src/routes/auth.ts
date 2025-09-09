@@ -43,6 +43,25 @@ router.get('/public/trophies', async (req: Request, res: Response) => {
   }
 })
 
+// Get the authenticated user's completed groups (awards history)
+router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const rows = await getRows(
+      `SELECT bg.id, bg.name, bg.start_date, bg.end_date, gm.completed_at
+       FROM group_members gm
+       JOIN bible_groups bg ON gm.group_id = bg.id
+       WHERE gm.user_id = ? AND gm.completed_at IS NOT NULL
+       ORDER BY gm.completed_at DESC`,
+      [userId]
+    )
+    res.json({ success: true, data: rows })
+  } catch (error) {
+    console.error('Error fetching my awards:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to fetch awards' } })
+  }
+})
+
 // Register new user
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),

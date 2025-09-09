@@ -82,6 +82,7 @@ const initializeTables = () => {
       group_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
       join_date TEXT NOT NULL,
+      completed_at DATETIME DEFAULT NULL,
       status TEXT DEFAULT 'active',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (group_id) REFERENCES bible_groups (id),
@@ -259,6 +260,15 @@ const initializeTables = () => {
   `, (err) => {
     if (err && !String(err.message).includes('duplicate column name')) {
       console.error('Error adding visibility column to user_messages:', err)
+    }
+  })
+
+  // Add completed_at to group_members if it doesn't exist
+  db.run(`
+    ALTER TABLE group_members ADD COLUMN completed_at DATETIME DEFAULT NULL
+  `, (err) => {
+    if (err && !String(err.message).includes('duplicate column name')) {
+      console.error('Error adding completed_at column to group_members:', err)
     }
   })
 

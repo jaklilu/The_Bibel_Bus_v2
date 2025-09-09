@@ -440,6 +440,29 @@ router.post('/users/:id/trophies', [
   }
 })
 
+// Mark a member as completed for a specific group and increment trophies
+router.post('/groups/:groupId/members/:userId/complete', async (req: Request, res: Response) => {
+  try {
+    const groupId = parseInt(req.params.groupId)
+    const userId = parseInt(req.params.userId)
+    if (Number.isNaN(groupId) || Number.isNaN(userId)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid ids' } })
+    }
+    const membership = await getRow('SELECT id, completed_at FROM group_members WHERE group_id = ? AND user_id = ? AND status = "active"', [groupId, userId])
+    if (!membership) {
+      return res.status(404).json({ success: false, error: { message: 'Membership not found' } })
+    }
+    const nowIso = new Date().toISOString()
+    await runQuery('UPDATE group_members SET completed_at = ? WHERE id = ?', [nowIso, membership.id])
+    await runQuery('UPDATE users SET trophies_count = COALESCE(trophies_count,0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [userId])
+    const updated = await getRow('SELECT id, name, email, trophies_count FROM users WHERE id = ?', [userId])
+    res.json({ success: true, message: 'Member marked completed and trophy awarded', data: updated })
+  } catch (error) {
+    console.error('Error marking completion:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to mark completion' } })
+  }
+})
+
 // Enable/Disable user
 router.post('/users/:id/status', [
   body('status').isIn(['active','inactive']).withMessage('Invalid status')
