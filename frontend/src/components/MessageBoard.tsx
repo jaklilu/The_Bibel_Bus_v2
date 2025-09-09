@@ -42,7 +42,6 @@ const MessageBoard = () => {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showCreateMessage, setShowCreateMessage] = useState(false)
   const [newMessage, setNewMessage] = useState({ content: '' })
-  const [expandedMessage, setExpandedMessage] = useState<number | null>(null)
   const [newComment, setNewComment] = useState<{ [key: number]: string }>({})
   const [lastReadTime, setLastReadTime] = useState<string | null>(null)
   const [_, setForceUpdate] = useState(0)
