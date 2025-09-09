@@ -157,12 +157,6 @@ const Navigation = () => {
                 </Link>
               )
             })}
-            <Link
-              to="/register"
-              className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold px-6 py-2 rounded-lg transition-colors"
-            >
-              Join Now
-            </Link>
           </div>
 
           {/* Mobile hamburger */}
@@ -246,19 +240,6 @@ const Navigation = () => {
                   </motion.div>
                 )
               })}
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.2, delay: navItems.length * 0.05 }}
-              >
-                <Link
-                  to="/register"
-                  className="block px-3 py-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold transition-all duration-200"
-                  onClick={() => setOpen(false)}
-                >
-                  Join Now
-                </Link>
-              </motion.div>
             </motion.div>
             </motion.div>
           </Fragment>
