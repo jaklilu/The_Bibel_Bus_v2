@@ -59,6 +59,34 @@ const Navigation = () => {
     setOpen(false)
   }, [location.pathname])
 
+  // Close menu on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (open) {
+        setOpen(false)
+      }
+    }
+
+    if (open) {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+      return () => window.removeEventListener('scroll', handleScroll)
+    }
+  }, [open])
+
+  // Close menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        setOpen(false)
+      }
+    }
+
+    if (open) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open])
+
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-800 to-purple-700 backdrop-blur-sm border-b border-purple-600/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -143,6 +171,7 @@ const Navigation = () => {
               transition={{ duration: 0.2 }}
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setOpen(false)}
+              onTouchStart={() => setOpen(false)}
             />
             {/* Mobile sheet */}
             <motion.div
