@@ -248,7 +248,7 @@ const Dashboard = () => {
         >
           <div className="flex items-center mb-4">
             <Users className="h-12 w-12 text-orange-500 mr-3" />
-            <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-9">Accept Your Invitation</h3>
+            <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">Accept Your Invitation</h3>
           </div>
           <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : ''}</p>
           {!inviteAvailable && inviteStartAt && (
