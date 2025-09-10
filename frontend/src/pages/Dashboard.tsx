@@ -51,9 +51,12 @@ const Dashboard = () => {
   const [recentAwards, setRecentAwards] = useState<Array<{id:number;name:string;completed_at:string}>>([])
 
   useEffect(() => {
+    console.log('Dashboard useEffect running') // Debug log
     // Check if user is logged in
     const token = localStorage.getItem('userToken')
+    console.log('Dashboard token check:', !!token) // Debug log
     if (!token) {
+      console.log('Dashboard: No token, redirecting to login') // Debug log
       navigate('/login')
       return
     }

@@ -9,10 +9,13 @@ const Messages = () => {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    console.log('Messages useEffect running') // Debug log
     setMounted(true)
     // Check if user is logged in
     const token = localStorage.getItem('userToken')
+    console.log('Messages token check:', !!token) // Debug log
     if (!token) {
+      console.log('Messages: No token, redirecting to login') // Debug log
       navigate('/login')
       return
     }
