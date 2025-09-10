@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { DollarSign, Heart, Shield, Lock } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
@@ -62,7 +62,7 @@ const PaymentForm = ({
       // Confirm payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(data.data.clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement)!,
+          card: elements.getElement(CardNumberElement)!,
           billing_details: {
             name: donorInfo.fullName,
             email: donorInfo.email,
@@ -95,20 +95,65 @@ const PaymentForm = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30">
         <h3 className="text-lg font-semibold text-white mb-4">Payment Information</h3>
-        <div className="bg-white p-4 rounded-lg">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
+        
+        {/* Card Number */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-white mb-2">Card Number</label>
+          <div className="bg-white p-3 rounded-lg border border-gray-300">
+            <CardNumberElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                      color: '#aab7c4',
+                    },
                   },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Expiry and CVC */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Expiry Date</label>
+            <div className="bg-white p-3 rounded-lg border border-gray-300">
+              <CardExpiryElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">CVC</label>
+            <div className="bg-white p-3 rounded-lg border border-gray-300">
+              <CardCvcElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
