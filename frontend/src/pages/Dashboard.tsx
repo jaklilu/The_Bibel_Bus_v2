@@ -114,44 +114,119 @@ const Dashboard = () => {
     }
   }
 
+  // Save milestone progress to database
+  const saveMilestoneProgress = async (milestone: Milestone) => {
+    try {
+      const token = localStorage.getItem('userToken')
+      if (!token) return
+
+      await fetch('/api/auth/milestone-progress', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          milestoneId: milestone.id,
+          milestoneName: milestone.name,
+          dayNumber: milestone.dayNumber,
+          totalDays: milestone.totalDays,
+          missingDays: milestone.missingDays,
+          daysCompleted: milestone.daysCompleted,
+          percentage: milestone.percentage,
+          grade: milestone.grade,
+          completed: milestone.completed
+        })
+      })
+    } catch (error) {
+      console.error('Error saving milestone progress:', error)
+    }
+  }
+
   // Handle missing days input (cumulative from day 1)
-  const handleMissingDaysChange = (milestoneId: number, value: string) => {
+  const handleMissingDaysChange = async (milestoneId: number, value: string) => {
     // Don't update if input is empty (user is typing)
     if (value === '') {
-      setMilestones(prev => prev.map(milestone => 
+      const updatedMilestones = milestones.map(milestone => 
         milestone.id === milestoneId 
           ? { ...milestone, missingDays: 0, daysCompleted: 0, percentage: 0, grade: 'D', completed: false }
           : milestone
-      ))
+      )
+      setMilestones(updatedMilestones)
+      
+      // Save to database
+      const milestone = updatedMilestones.find(m => m.id === milestoneId)
+      if (milestone) {
+        await saveMilestoneProgress(milestone)
+      }
       return
     }
 
     const cumulativeMissingDays = parseInt(value) || 0
-    setMilestones(prev => {
-      const updatedMilestones = prev.map(milestone => {
-        if (milestone.id === milestoneId) {
-          // Calculate days completed for this milestone based on cumulative missing days
-          const daysCompleted = milestone.dayNumber - cumulativeMissingDays
-          const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.dayNumber)
-          return {
-            ...milestone,
-            missingDays: cumulativeMissingDays,
-            daysCompleted,
-            percentage,
-            grade,
-            completed: daysCompleted >= milestone.dayNumber
-          }
+    const updatedMilestones = milestones.map(milestone => {
+      if (milestone.id === milestoneId) {
+        // Calculate days completed for this milestone based on cumulative missing days
+        const daysCompleted = milestone.dayNumber - cumulativeMissingDays
+        const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.dayNumber)
+        return {
+          ...milestone,
+          missingDays: cumulativeMissingDays,
+          daysCompleted,
+          percentage,
+          grade,
+          completed: daysCompleted >= milestone.dayNumber
         }
-        return milestone
-      })
-
-      // Check if journey is completed after updating milestones
-      if (checkJourneyCompletion(updatedMilestones)) {
-        requestTrophyApproval()
       }
-
-      return updatedMilestones
+      return milestone
     })
+
+    setMilestones(updatedMilestones)
+
+    // Save to database
+    const milestone = updatedMilestones.find(m => m.id === milestoneId)
+    if (milestone) {
+      await saveMilestoneProgress(milestone)
+    }
+
+    // Check if journey is completed after updating milestones
+    if (checkJourneyCompletion(updatedMilestones)) {
+      requestTrophyApproval()
+    }
+  }
+
+  // Load existing milestone progress from database
+  const loadMilestoneProgress = async () => {
+    try {
+      const token = localStorage.getItem('userToken')
+      if (!token) return
+
+      const response = await fetch('/api/auth/milestone-progress', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.length > 0) {
+          const savedProgress = data.data
+          setMilestones(prev => prev.map(milestone => {
+            const saved = savedProgress.find((s: any) => s.milestone_id === milestone.id)
+            if (saved) {
+              return {
+                ...milestone,
+                missingDays: saved.missing_days || 0,
+                daysCompleted: saved.days_completed || 0,
+                percentage: saved.percentage || 0,
+                grade: saved.grade || 'D',
+                completed: saved.completed === 1
+              }
+            }
+            return milestone
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Error loading milestone progress:', error)
+    }
   }
 
   useEffect(() => {
@@ -260,6 +335,9 @@ const Dashboard = () => {
         }
       } catch {}
     })()
+
+    // Load existing milestone progress
+    loadMilestoneProgress()
   }, [navigate])
   const UnreadBadge = () => {
     if (!unreadCount || unreadCount <= 0) return null

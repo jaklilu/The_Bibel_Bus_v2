@@ -148,6 +148,28 @@ const initializeTables = () => {
     )
   `)
 
+  // Milestone progress table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS milestone_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      group_id INTEGER NOT NULL,
+      milestone_id INTEGER NOT NULL,
+      milestone_name TEXT NOT NULL,
+      day_number INTEGER NOT NULL,
+      total_days INTEGER NOT NULL,
+      missing_days INTEGER DEFAULT 0,
+      days_completed INTEGER DEFAULT 0,
+      percentage INTEGER DEFAULT 0,
+      grade TEXT DEFAULT 'D',
+      completed BOOLEAN DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (group_id) REFERENCES bible_groups (id),
+      UNIQUE(user_id, group_id, milestone_id)
+    )
+  `)
+
   // Donations table
   db.run(`
     CREATE TABLE IF NOT EXISTS donations (

@@ -553,12 +553,18 @@ router.get('/milestone-progress', async (req: Request, res: Response) => {
         tar.id as trophy_request_id,
         tar.type as trophy_request_type,
         tar.status as trophy_request_status,
-        tar.requested_at as trophy_requested_at
+        tar.requested_at as trophy_requested_at,
+        COUNT(mp.id) as milestones_tracked,
+        SUM(CASE WHEN mp.completed = 1 THEN 1 ELSE 0 END) as milestones_completed,
+        AVG(mp.percentage) as avg_percentage,
+        MAX(mp.updated_at) as last_milestone_update
       FROM users u
       JOIN group_members gm ON u.id = gm.user_id
       JOIN bible_groups bg ON gm.group_id = bg.id
       LEFT JOIN trophy_approval_requests tar ON u.id = tar.user_id AND tar.type = 'journey_completion'
+      LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND bg.id = mp.group_id
       WHERE bg.status = 'active'
+      GROUP BY u.id, bg.id
       ORDER BY bg.start_date DESC, u.name ASC
     `)
 

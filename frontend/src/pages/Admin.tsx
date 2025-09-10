@@ -925,9 +925,10 @@ const Admin = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">User</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Group</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophies</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Milestones</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Avg %</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophy Request</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Requested</th>
                     </tr>
                   </thead>
                   <tbody className="bg-purple-600/50 divide-y divide-purple-600/30">
@@ -939,6 +940,25 @@ const Admin = () => {
                           <div className="flex items-center space-x-2">
                             <span className="inline-block min-w-[1.5rem] text-center font-semibold text-white">{item.trophies_count || 0}</span>
                             <span className="text-xs text-purple-300">trophies</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white font-medium">{item.milestones_completed || 0}</span>
+                            <span className="text-purple-300">/</span>
+                            <span className="text-purple-300">{item.milestones_tracked || 0}</span>
+                            <span className="text-xs text-purple-300">completed</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          <div className="flex items-center">
+                            <div className="w-16 bg-purple-700 rounded-full h-2 mr-2">
+                              <div 
+                                className="bg-amber-500 h-2 rounded-full" 
+                                style={{ width: `${Math.min(100, Math.round(item.avg_percentage || 0))}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs">{Math.round(item.avg_percentage || 0)}%</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
@@ -961,9 +981,6 @@ const Admin = () => {
                           ) : (
                             <span className="text-purple-300">-</span>
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          {item.trophy_requested_at ? formatDate(item.trophy_requested_at) : '-'}
                         </td>
                       </tr>
                     ))}

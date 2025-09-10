@@ -101,6 +101,84 @@ router.post('/request-trophy-approval', userAuth, async (req: Request, res: Resp
   }
 })
 
+// Save milestone progress
+router.post('/milestone-progress', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const { groupId, milestoneId, milestoneName, dayNumber, totalDays, missingDays, daysCompleted, percentage, grade, completed } = req.body
+
+    // Get user's current group if groupId not provided
+    let currentGroupId = groupId
+    if (!currentGroupId) {
+      const userGroup = await getRow(`
+        SELECT gm.group_id 
+        FROM group_members gm 
+        JOIN bible_groups bg ON gm.group_id = bg.id 
+        WHERE gm.user_id = ? AND bg.status = 'active' 
+        ORDER BY bg.start_date DESC 
+        LIMIT 1
+      `, [userId])
+      if (!userGroup) {
+        return res.status(400).json({ success: false, error: { message: 'User not in any active group' } })
+      }
+      currentGroupId = userGroup.group_id
+    }
+
+    // Upsert milestone progress
+    await runQuery(`
+      INSERT OR REPLACE INTO milestone_progress 
+      (user_id, group_id, milestone_id, milestone_name, day_number, total_days, missing_days, days_completed, percentage, grade, completed, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `, [userId, currentGroupId, milestoneId, milestoneName, dayNumber, totalDays, missingDays, daysCompleted, percentage, grade, completed ? 1 : 0])
+
+    res.json({ success: true, message: 'Milestone progress saved successfully' })
+  } catch (error) {
+    console.error('Error saving milestone progress:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to save milestone progress' } })
+  }
+})
+
+// Get milestone progress for user
+router.get('/milestone-progress', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const { groupId } = req.query
+
+    let query = `
+      SELECT * FROM milestone_progress 
+      WHERE user_id = ?
+    `
+    const params = [userId]
+
+    if (groupId) {
+      query += ' AND group_id = ?'
+      params.push(groupId)
+    } else {
+      // Get user's current active group
+      const userGroup = await getRow(`
+        SELECT gm.group_id 
+        FROM group_members gm 
+        JOIN bible_groups bg ON gm.group_id = bg.id 
+        WHERE gm.user_id = ? AND bg.status = 'active' 
+        ORDER BY bg.start_date DESC 
+        LIMIT 1
+      `, [userId])
+      if (userGroup) {
+        query += ' AND group_id = ?'
+        params.push(userGroup.group_id)
+      }
+    }
+
+    query += ' ORDER BY milestone_id ASC'
+
+    const progress = await getRows(query, params)
+    res.json({ success: true, data: progress })
+  } catch (error) {
+    console.error('Error fetching milestone progress:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to fetch milestone progress' } })
+  }
+})
+
 // Get the authenticated user's completed groups (awards history)
 router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
   try {
