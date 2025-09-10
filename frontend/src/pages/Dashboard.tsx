@@ -80,6 +80,51 @@ const Dashboard = () => {
     return { percentage, grade }
   }
 
+  // Check if journey is completed (all 8 milestones with C or better)
+  const checkJourneyCompletion = (milestones: Milestone[]) => {
+    const allCompleted = milestones.every(milestone => 
+      milestone.completed && (milestone.grade === 'A' || milestone.grade === 'B' || milestone.grade === 'C')
+    )
+    return allCompleted
+  }
+
+  // Award trophy for journey completion
+  const awardJourneyTrophy = async () => {
+    const token = localStorage.getItem('userToken')
+    if (!token) return
+
+    try {
+      const response = await fetch('/api/auth/award-trophy', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          type: 'journey_completion',
+          description: 'Completed the entire Bible reading journey with C or better grades on all milestones'
+        })
+      })
+
+      if (response.ok) {
+        // Refresh user data to show updated trophy count
+        const userResponse = await fetch('/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          if (userData.success) {
+            setUserData(prev => prev ? { ...prev, trophies_count: userData.data.user.trophies_count } : null)
+            // Show success message
+            alert('🎉 Congratulations! You have completed the entire Bible reading journey and earned a trophy!')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error awarding trophy:', error)
+    }
+  }
+
   // Handle missing days input (cumulative from day 1)
   const handleMissingDaysChange = (milestoneId: number, value: string) => {
     // Don't update if input is empty (user is typing)
@@ -93,22 +138,31 @@ const Dashboard = () => {
     }
 
     const cumulativeMissingDays = parseInt(value) || 0
-    setMilestones(prev => prev.map(milestone => {
-      if (milestone.id === milestoneId) {
-        // Calculate days completed for this milestone based on cumulative missing days
-        const daysCompleted = milestone.dayNumber - cumulativeMissingDays
-        const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.dayNumber)
-        return {
-          ...milestone,
-          missingDays: cumulativeMissingDays,
-          daysCompleted,
-          percentage,
-          grade,
-          completed: daysCompleted >= milestone.dayNumber
+    setMilestones(prev => {
+      const updatedMilestones = prev.map(milestone => {
+        if (milestone.id === milestoneId) {
+          // Calculate days completed for this milestone based on cumulative missing days
+          const daysCompleted = milestone.dayNumber - cumulativeMissingDays
+          const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.dayNumber)
+          return {
+            ...milestone,
+            missingDays: cumulativeMissingDays,
+            daysCompleted,
+            percentage,
+            grade,
+            completed: daysCompleted >= milestone.dayNumber
+          }
         }
+        return milestone
+      })
+
+      // Check if journey is completed after updating milestones
+      if (checkJourneyCompletion(updatedMilestones)) {
+        awardJourneyTrophy()
       }
-      return milestone
-    }))
+
+      return updatedMilestones
+    })
   }
 
   useEffect(() => {
@@ -485,6 +539,24 @@ const Dashboard = () => {
 
         </motion.div>
 
+
+        {/* Journey Completion Celebration */}
+        {checkJourneyCompletion(milestones) && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-green-600/20 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-green-500/50 text-center"
+          >
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-3xl font-bold text-white mb-2">Journey Complete!</h2>
+            <p className="text-green-200 text-lg mb-4">
+              Congratulations! You have completed the entire Bible reading journey with C or better grades on all milestones.
+            </p>
+            <div className="text-2xl font-bold text-amber-400">
+              You have earned a trophy! 🏆
+            </div>
+          </motion.div>
+        )}
 
         {/* Milestone Progress Section */}
         <motion.div

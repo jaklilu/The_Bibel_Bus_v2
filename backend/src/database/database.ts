@@ -120,6 +120,18 @@ const initializeTables = () => {
     )
   `)
 
+  // User trophies table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_trophies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      description TEXT,
+      awarded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `)
+
   // Donations table
   db.run(`
     CREATE TABLE IF NOT EXISTS donations (

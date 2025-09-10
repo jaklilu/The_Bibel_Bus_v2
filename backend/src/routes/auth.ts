@@ -43,6 +43,64 @@ router.get('/public/trophies', async (req: Request, res: Response) => {
   }
 })
 
+// Award trophy for journey completion
+router.post('/award-trophy', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const { type, description } = req.body
+
+    if (type !== 'journey_completion') {
+      return res.status(400).json({ 
+        success: false, 
+        error: { message: 'Invalid trophy type' } 
+      })
+    }
+
+    // Check if user already has this trophy type (to prevent duplicates)
+    const existingTrophy = await getRow(
+      'SELECT id FROM user_trophies WHERE user_id = ? AND type = ?',
+      [userId, type]
+    )
+
+    if (existingTrophy) {
+      return res.status(400).json({ 
+        success: false, 
+        error: { message: 'Trophy already awarded' } 
+      })
+    }
+
+    // Award the trophy
+    await runQuery(
+      'INSERT INTO user_trophies (user_id, type, description, awarded_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+      [userId, type, description]
+    )
+
+    // Update user's trophy count
+    await runQuery(
+      'UPDATE users SET trophies_count = trophies_count + 1 WHERE id = ?',
+      [userId]
+    )
+
+    // Get updated user data
+    const user = await getRow(
+      'SELECT id, name, email, trophies_count FROM users WHERE id = ?',
+      [userId]
+    )
+
+    res.json({ 
+      success: true, 
+      message: 'Trophy awarded successfully',
+      data: { user }
+    })
+  } catch (error) {
+    console.error('Error awarding trophy:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: { message: 'Failed to award trophy' } 
+    })
+  }
+})
+
 // Get the authenticated user's completed groups (awards history)
 router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
   try {
