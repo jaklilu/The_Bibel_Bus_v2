@@ -143,19 +143,9 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
             </div>
             
             <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
-              This email serves as your receipt for tax purposes. Please keep it for your records.
-            </p>
-            
-            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
               May God bless you abundantly for your generosity!<br><br>
               With gratitude,<br>
               <strong>The Bible Bus Team</strong>
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-            
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-              The Bible Bus is a registered ministry dedicated to helping people grow in their faith through daily Bible reading.
             </p>
           </div>
         </div>
