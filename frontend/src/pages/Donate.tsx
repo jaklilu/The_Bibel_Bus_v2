@@ -91,6 +91,17 @@ const PaymentForm = ({
     )
   }
 
+  // Check if required fields are filled
+  const isFormComplete = donationAmount && donorInfo.fullName && donorInfo.email
+
+  if (!isFormComplete) {
+    return (
+      <div className="bg-yellow-800/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-700/30 text-center">
+        <p className="text-yellow-300">Please fill in the donation amount and donor information above to enable payment.</p>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30">
@@ -361,26 +372,24 @@ const Donate = () => {
             </div>
           </motion.div>
 
-          {/* Payment Information - moved up */}
-          {donationAmount && donorInfo.fullName && donorInfo.email && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
-            >
-              <h2 className="text-2xl font-bold text-white mb-6">Payment Information</h2>
-              <Elements stripe={stripePromise}>
-                <PaymentForm
-                  donationAmount={donationAmount}
-                  donationType={donationType}
-                  donorInfo={donorInfo}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                />
-              </Elements>
-            </motion.div>
-          )}
+          {/* Payment Information - always visible */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
+          >
+            <h2 className="text-2xl font-bold text-white mb-6">Payment Information</h2>
+            <Elements stripe={stripePromise}>
+              <PaymentForm
+                donationAmount={donationAmount}
+                donationType={donationType}
+                donorInfo={donorInfo}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            </Elements>
+          </motion.div>
 
           {/* Donation Summary */}
           <motion.div 
