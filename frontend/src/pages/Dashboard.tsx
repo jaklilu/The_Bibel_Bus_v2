@@ -80,12 +80,12 @@ const Dashboard = () => {
     return { percentage, grade }
   }
 
-  // Check if journey is completed (all 8 milestones with C or better)
+  // Check if journey is completed (all 8 milestones completed, final milestone C or better)
   const checkJourneyCompletion = (milestones: Milestone[]) => {
-    const allCompleted = milestones.every(milestone => 
-      milestone.completed && (milestone.grade === 'A' || milestone.grade === 'B' || milestone.grade === 'C')
-    )
-    return allCompleted
+    const allCompleted = milestones.every(milestone => milestone.completed)
+    const finalMilestone = milestones.find(milestone => milestone.id === 8) // Revelation
+    const finalGradeGood = finalMilestone && (finalMilestone.grade === 'A' || finalMilestone.grade === 'B' || finalMilestone.grade === 'C')
+    return allCompleted && finalGradeGood
   }
 
   // Award trophy for journey completion
@@ -550,7 +550,7 @@ const Dashboard = () => {
             <div className="text-6xl mb-4">🎉</div>
             <h2 className="text-3xl font-bold text-white mb-2">Journey Complete!</h2>
             <p className="text-green-200 text-lg mb-4">
-              Congratulations! You have completed the entire Bible reading journey with C or better grades on all milestones.
+              Congratulations! You have completed the entire Bible reading journey with a strong finish!
             </p>
             <div className="text-2xl font-bold text-amber-400">
               You have earned a trophy! 🏆
