@@ -5,7 +5,7 @@ import Home from './pages/Home'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Donate from './pages/Donate'
-const Dashboard = lazy(() => import('./pages/Dashboard.tsx'))
+import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
 import Trophies from './pages/Trophies'
