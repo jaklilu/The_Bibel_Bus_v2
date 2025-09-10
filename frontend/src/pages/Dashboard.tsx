@@ -26,6 +26,18 @@ interface UserData {
   trophies_count?: number
 }
 
+interface Milestone {
+  id: number
+  name: string
+  dayNumber: number
+  totalDays: number
+  completed: boolean
+  daysCompleted: number
+  missingDays: number
+  percentage: number
+  grade: string
+}
+
 const Dashboard = () => {
   const navigate = useNavigate()
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -48,7 +60,46 @@ const Dashboard = () => {
   const [joining, setJoining] = useState(false)
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [inGroup, setInGroup] = useState<boolean>(true)
+  const [milestones, setMilestones] = useState<Milestone[]>([
+    { id: 1, name: 'The Law', dayNumber: 70, totalDays: 70, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 2, name: 'The History', dayNumber: 152, totalDays: 82, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 3, name: 'The Wisdom', dayNumber: 209, totalDays: 57, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 4, name: 'Major Prophet', dayNumber: 262, totalDays: 53, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 5, name: 'Minor Prophet', dayNumber: 275, totalDays: 13, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 6, name: 'The Gospel', dayNumber: 317, totalDays: 42, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 7, name: 'The Epistles', dayNumber: 360, totalDays: 43, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' },
+    { id: 8, name: 'Revelation', dayNumber: 365, totalDays: 5, completed: false, daysCompleted: 0, missingDays: 0, percentage: 0, grade: 'D' }
+  ])
   const [recentAwards, setRecentAwards] = useState<Array<{id:number;name:string;completed_at:string}>>([])
+
+  // Calculate milestone percentage and grade
+  const calculateMilestoneGrade = (daysCompleted: number, totalDays: number): { percentage: number; grade: string } => {
+    const percentage = Math.round((daysCompleted / totalDays) * 100)
+    let grade = 'D'
+    if (percentage >= 90) grade = 'A'
+    else if (percentage >= 80) grade = 'B'
+    else if (percentage >= 70) grade = 'C'
+    return { percentage, grade }
+  }
+
+  // Handle missing days input
+  const handleMissingDaysChange = (milestoneId: number, missingDays: number) => {
+    setMilestones(prev => prev.map(milestone => {
+      if (milestone.id === milestoneId) {
+        const daysCompleted = milestone.totalDays - missingDays
+        const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.totalDays)
+        return {
+          ...milestone,
+          missingDays,
+          daysCompleted,
+          percentage,
+          grade,
+          completed: daysCompleted >= milestone.totalDays
+        }
+      }
+      return milestone
+    }))
+  }
 
   useEffect(() => {
     console.log('Dashboard useEffect running') // Debug log
@@ -458,6 +509,83 @@ const Dashboard = () => {
               <CheckCircle className="h-4 w-4 text-amber-500 mr-2" />
               <span>Next Milestone: {userData?.nextMilestone || 'Keep reading!'}</span>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Milestone Progress Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
+        >
+          <h2 className="text-2xl font-heading text-white mb-6 flex items-center">
+            <Award className="h-6 w-6 text-amber-500 mr-2" />
+            Milestone Progress
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {milestones.map((milestone) => (
+              <div
+                key={milestone.id}
+                className={`bg-purple-700/50 rounded-xl p-4 border ${
+                  milestone.completed 
+                    ? 'border-green-500/50 bg-green-900/20' 
+                    : 'border-purple-600/30'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-white">
+                    {milestone.completed && <CheckCircle className="h-5 w-5 text-green-400 inline mr-2" />}
+                    {milestone.name}
+                  </h3>
+                  <span className="text-sm text-purple-300">Day {milestone.dayNumber}</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Days Completed:</span>
+                    <span className="text-white font-medium">
+                      {milestone.daysCompleted}/{milestone.totalDays}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Percentage:</span>
+                    <span className="text-white font-medium">{milestone.percentage}%</span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Grade:</span>
+                    <span className={`font-bold ${
+                      milestone.grade === 'A' ? 'text-green-400' :
+                      milestone.grade === 'B' ? 'text-blue-400' :
+                      milestone.grade === 'C' ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`}>
+                      {milestone.grade}
+                    </span>
+                  </div>
+                  
+                  {!milestone.completed && (
+                    <div className="mt-3">
+                      <label className="block text-xs text-purple-200 mb-1">
+                        Missing Days (from YouVersion):
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={milestone.totalDays}
+                        value={milestone.missingDays}
+                        onChange={(e) => handleMissingDaysChange(milestone.id, parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="Enter missing days"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
 
