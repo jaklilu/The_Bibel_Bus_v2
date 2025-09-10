@@ -299,7 +299,7 @@ const Admin = () => {
         setPostMessageError('Your admin session expired. Please sign in again.')
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
       } else {
         const data = await response.json().catch(() => null)
         setPostMessageError(data?.error?.message || 'Failed to post message')
