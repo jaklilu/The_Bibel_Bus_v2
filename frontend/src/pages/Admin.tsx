@@ -645,7 +645,7 @@ const Admin = () => {
                   <DollarSign className="h-8 w-8 text-amber-500" />
                   <div className="ml-4">
                     <p className="text-sm font-medium text-amber-500">Donations</p>
-                    <p className="text-2xl font-bold text-white">{adminData.donations.length}</p>
+                    <p className="text-2xl font-bold text-white">${adminData.donations.reduce((total, donation) => total + parseFloat(donation.amount), 0).toFixed(2)}</p>
               </div>
             </div>
           </div>
