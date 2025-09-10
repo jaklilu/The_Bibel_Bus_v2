@@ -3,8 +3,6 @@ import Countdown from 'react-countdown'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   CheckCircle,
-  Clock,
-  Target,
   BookOpen,
   MessageSquare,
   MessageCircle,
@@ -487,48 +485,12 @@ const Dashboard = () => {
 
         </motion.div>
 
-        {/* Reading Progress Section (moved to end) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
-        >
-          <h2 className="text-2xl font-heading text-white mb-4 flex items-center">
-            <Target className="h-6 w-6 text-amber-500 mr-2" />
-            Reading Progress
-          </h2>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-white mb-2">
-              <span>Progress</span>
-              <span>{userData?.progress || 0}%</span>
-            </div>
-            <div className="w-full bg-purple-700 rounded-full h-3">
-              <div 
-                className="bg-amber-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${userData?.progress || 0}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center text-white">
-              <Clock className="h-4 w-4 text-amber-500 mr-2" />
-              <span>Current Group: {userData?.currentGroup || 'Not assigned'}</span>
-            </div>
-            <div className="flex items-center text-white">
-              <CheckCircle className="h-4 w-4 text-amber-500 mr-2" />
-              <span>Next Milestone: {userData?.nextMilestone || 'Keep reading!'}</span>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Milestone Progress Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.6 }}
           className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
         >
           <h2 className="text-2xl font-heading text-white mb-6 flex items-center">
