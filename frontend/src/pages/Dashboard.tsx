@@ -320,7 +320,7 @@ const Dashboard = () => {
               <Award className="h-12 w-12 text-amber-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Awards</h3>
             </div>
-            <p className="text-purple-100">You have earned {userData?.trophies_count || 0} awards</p>
+            <p className="text-purple-100 text-center">You have earned {userData?.trophies_count || 0} awards</p>
             {recentAwards.length > 0 && (
               <div className="mt-3 space-y-2">
                 {recentAwards.map((a, idx) => (
@@ -339,7 +339,7 @@ const Dashboard = () => {
               <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">{groupName}</h3>
             </div>
-            <p className="text-purple-100 mb-4">Introduce yourself to your WhatsApp group</p>
+            <p className="text-purple-100 mb-4 text-center">Introduce yourself to your WhatsApp group</p>
             <a
               href="#"
               id="join-whatsapp-link"
@@ -381,7 +381,7 @@ const Dashboard = () => {
               <Download className="h-12 w-12 text-blue-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Download YouVersion</h3>
             </div>
-            <p className="text-purple-100 mb-4">Get the Bible app for your device</p>
+            <p className="text-purple-100 mb-4 text-center">Get the Bible app for your device</p>
             <a
               href="#"
               id="youversion-plan-link"
