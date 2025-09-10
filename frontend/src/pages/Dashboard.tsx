@@ -358,7 +358,7 @@ const Dashboard = () => {
               <Play className="h-12 w-12 text-blue-500 mr-3" />
               <h3 className="text-lg font-heading text-amber-500">Introduction Video</h3>
             </div>
-            <p className="text-purple-100 mb-4">Continue watching your introduction video</p>
+            <p className="text-purple-100 mb-4 text-center">Continue watching your introduction video</p>
             <div className="space-y-2">
               <a href="https://www.youtube.com/watch?v=uR_zizeVWxY" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
                 <span className="mr-2">▷</span>
