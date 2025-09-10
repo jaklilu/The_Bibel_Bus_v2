@@ -7,7 +7,8 @@ import {
   MessageSquare, 
   DollarSign, 
   BarChart3,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
 
@@ -602,6 +603,21 @@ const Admin = () => {
                    <span>{tab.label}</span>
                  </button>
                ))}
+             </div>
+             
+             {/* Desktop Logout Button */}
+             <div className="flex items-center space-x-4">
+               <button
+                 onClick={() => {
+                   localStorage.removeItem('adminToken')
+                   setIsLoggedIn(false)
+                   setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
+                 }}
+                 className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+               >
+                 <LogOut className="h-4 w-4" />
+                 <span>Logout</span>
+               </button>
              </div>
            </div>
          </nav>
