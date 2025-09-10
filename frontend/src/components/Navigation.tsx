@@ -251,7 +251,7 @@ const Navigation = () => {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.5 }}
-        className="fixed bottom-6 left-6 z-40 md:hidden"
+        className="fixed top-20 right-16 z-40 md:hidden"
       >
         <Link
           to="/donate"
@@ -275,12 +275,12 @@ const Navigation = () => {
           
           {/* Tooltip */}
           <motion.div
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: 10 }}
             whileHover={{ opacity: 1, x: 0 }}
-            className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg"
+            className="absolute right-full mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg"
           >
             Donate to The Bible Bus
-            <div className="absolute top-1/2 right-full w-0 h-0 border-r-4 border-r-gray-900 border-t-4 border-t-transparent border-b-4 border-b-transparent transform -translate-y-1/2" />
+            <div className="absolute top-1/2 left-full w-0 h-0 border-l-4 border-l-gray-900 border-t-4 border-t-transparent border-b-4 border-b-transparent transform -translate-y-1/2" />
           </motion.div>
         </Link>
       </motion.div>
