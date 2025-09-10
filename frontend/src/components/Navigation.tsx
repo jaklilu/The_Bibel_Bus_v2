@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { BookOpen, Menu, X, LogOut } from 'lucide-react'
+import { BookOpen, Menu, X, LogOut, Heart } from 'lucide-react'
 import { useEffect, useState, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -245,6 +245,45 @@ const Navigation = () => {
           </Fragment>
         )}
       </AnimatePresence>
+
+      {/* Floating Donate Button - Mobile Only */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.5 }}
+        className="fixed bottom-6 right-6 z-40 md:hidden"
+      >
+        <Link
+          to="/donate"
+          className="group relative flex items-center justify-center w-14 h-14 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+        >
+          <Heart className="w-6 h-6 text-white group-hover:text-amber-300 transition-colors duration-200" />
+          
+          {/* Pulse animation */}
+          <motion.div
+            className="absolute inset-0 rounded-full bg-purple-400 opacity-30"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.1, 0.3],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          {/* Tooltip */}
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            whileHover={{ opacity: 1, x: 0 }}
+            className="absolute right-full mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg"
+          >
+            Donate to The Bible Bus
+            <div className="absolute top-1/2 left-full w-0 h-0 border-l-4 border-l-gray-900 border-t-4 border-t-transparent border-b-4 border-b-transparent transform -translate-y-1/2" />
+          </motion.div>
+        </Link>
+      </motion.div>
     </nav>
   )
 }
