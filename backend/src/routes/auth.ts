@@ -1237,23 +1237,36 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
       )
 
       // Send donation confirmation email
+      console.log('Payment succeeded, checking for email sending...')
+      console.log('Metadata:', result.metadata)
+      
       if (result.metadata?.donor_email && result.metadata?.donor_name) {
+        console.log('Sending donation confirmation email to:', result.metadata.donor_email)
         const { sendDonationConfirmationEmail } = await import('../utils/emailService')
         const amount = result.metadata?.amount ? parseFloat(result.metadata.amount) : 0
         const donationType = result.metadata?.donation_type || 'one-time'
         
+        console.log('Email details:', {
+          email: result.metadata.donor_email,
+          name: result.metadata.donor_name,
+          amount,
+          type: donationType
+        })
+        
         try {
-          await sendDonationConfirmationEmail(
+          const emailResult = await sendDonationConfirmationEmail(
             result.metadata.donor_email,
             result.metadata.donor_name,
             amount,
             donationType
           )
-          console.log('Donation confirmation email sent successfully')
+          console.log('Donation confirmation email result:', emailResult)
         } catch (emailError) {
           console.error('Error sending donation confirmation email:', emailError)
           // Don't fail the webhook if email fails
         }
+      } else {
+        console.log('Missing email metadata, cannot send email')
       }
     }
 

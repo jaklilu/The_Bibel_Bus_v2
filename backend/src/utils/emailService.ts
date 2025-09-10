@@ -86,8 +86,17 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
 
 // Send donation confirmation email
 export const sendDonationConfirmationEmail = async (email: string, donorName: string, amount: number, donationType: string) => {
+  console.log('=== EMAIL SERVICE DEBUG ===')
+  console.log('Email:', email)
+  console.log('Donor Name:', donorName)
+  console.log('Amount:', amount)
+  console.log('Type:', donationType)
+  console.log('EMAIL_USER:', process.env.EMAIL_USER)
+  console.log('EMAIL_APP_PASSWORD exists:', !!process.env.EMAIL_APP_PASSWORD)
+  
   try {
     const transporter = createTransporter()
+    console.log('Transporter created successfully')
     
     const mailOptions = {
       from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
