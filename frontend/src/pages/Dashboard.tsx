@@ -118,9 +118,14 @@ const Dashboard = () => {
   const saveMilestoneProgress = async (milestone: Milestone) => {
     try {
       const token = localStorage.getItem('userToken')
-      if (!token) return
+      if (!token) {
+        console.error('No token found for saving milestone progress')
+        return
+      }
 
-      await fetch('/api/auth/milestone-progress', {
+      console.log('Saving milestone progress:', milestone)
+      
+      const response = await fetch('/api/auth/milestone-progress', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,6 +143,13 @@ const Dashboard = () => {
           completed: milestone.completed
         })
       })
+
+      if (response.ok) {
+        console.log('Milestone progress saved successfully')
+      } else {
+        const errorData = await response.json()
+        console.error('Error saving milestone progress:', errorData)
+      }
     } catch (error) {
       console.error('Error saving milestone progress:', error)
     }
@@ -198,19 +210,29 @@ const Dashboard = () => {
   const loadMilestoneProgress = async () => {
     try {
       const token = localStorage.getItem('userToken')
-      if (!token) return
+      if (!token) {
+        console.error('No token found for loading milestone progress')
+        return
+      }
 
+      console.log('Loading milestone progress...')
+      
       const response = await fetch('/api/auth/milestone-progress', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Loaded milestone progress data:', data)
+        
         if (data.success && data.data.length > 0) {
           const savedProgress = data.data
+          console.log('Found saved progress:', savedProgress)
+          
           setMilestones(prev => prev.map(milestone => {
             const saved = savedProgress.find((s: any) => s.milestone_id === milestone.id)
             if (saved) {
+              console.log(`Loading milestone ${milestone.id}:`, saved)
               return {
                 ...milestone,
                 missingDays: saved.missing_days || 0,
@@ -222,7 +244,12 @@ const Dashboard = () => {
             }
             return milestone
           }))
+        } else {
+          console.log('No saved milestone progress found')
         }
+      } else {
+        const errorData = await response.json()
+        console.error('Error loading milestone progress:', errorData)
       }
     } catch (error) {
       console.error('Error loading milestone progress:', error)
