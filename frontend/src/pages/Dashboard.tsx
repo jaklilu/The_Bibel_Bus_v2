@@ -596,6 +596,9 @@ const Dashboard = () => {
                         className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                         placeholder="Enter cumulative missing days"
                       />
+                      <p className="text-xs text-purple-300 mt-1 italic">
+                        To tell the truth, God is watching.
+                      </p>
                     </div>
                   )}
                 </div>
