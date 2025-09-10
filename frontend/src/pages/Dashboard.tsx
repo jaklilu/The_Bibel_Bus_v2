@@ -356,7 +356,7 @@ const Dashboard = () => {
           <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-4">
             <div className="flex items-center mb-4">
               <Play className="h-12 w-12 text-blue-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">Introduction Video</h3>
+              <h3 className="text-lg font-heading text-amber-500 ml-15">Introduction Video</h3>
             </div>
             <p className="text-purple-100 mb-4 text-center">Continue watching your introduction video</p>
             <div className="space-y-2">
