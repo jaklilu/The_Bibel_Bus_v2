@@ -82,19 +82,20 @@ const Dashboard = () => {
     return { percentage, grade }
   }
 
-  // Handle missing days input
-  const handleMissingDaysChange = (milestoneId: number, missingDays: number) => {
+  // Handle missing days input (cumulative from day 1)
+  const handleMissingDaysChange = (milestoneId: number, cumulativeMissingDays: number) => {
     setMilestones(prev => prev.map(milestone => {
       if (milestone.id === milestoneId) {
-        const daysCompleted = milestone.totalDays - missingDays
-        const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.totalDays)
+        // Calculate days completed for this milestone based on cumulative missing days
+        const daysCompleted = milestone.dayNumber - cumulativeMissingDays
+        const { percentage, grade } = calculateMilestoneGrade(daysCompleted, milestone.dayNumber)
         return {
           ...milestone,
-          missingDays,
+          missingDays: cumulativeMissingDays,
           daysCompleted,
           percentage,
           grade,
-          completed: daysCompleted >= milestone.totalDays
+          completed: daysCompleted >= milestone.dayNumber
         }
       }
       return milestone
@@ -546,7 +547,7 @@ const Dashboard = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-200">Days Completed:</span>
                     <span className="text-white font-medium">
-                      {milestone.daysCompleted}/{milestone.totalDays}
+                      {milestone.daysCompleted}/{milestone.dayNumber}
                     </span>
                   </div>
                   
@@ -570,16 +571,16 @@ const Dashboard = () => {
                   {!milestone.completed && (
                     <div className="mt-3">
                       <label className="block text-xs text-purple-200 mb-1">
-                        Missing Days (from YouVersion):
+                        Cumulative Missing Days (from YouVersion):
                       </label>
                       <input
                         type="number"
                         min="0"
-                        max={milestone.totalDays}
+                        max={milestone.dayNumber}
                         value={milestone.missingDays}
                         onChange={(e) => handleMissingDaysChange(milestone.id, parseInt(e.target.value) || 0)}
                         className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                        placeholder="Enter missing days"
+                        placeholder="Enter cumulative missing days"
                       />
                     </div>
                   )}
