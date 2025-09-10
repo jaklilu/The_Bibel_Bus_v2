@@ -910,7 +910,58 @@ const Admin = () => {
              </div>
            )}
 
-                     {activeTab === 'messages' && (
+                     {activeTab === 'progress' && (
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-6">Reading Progress</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-purple-600/30">
+                  <thead className="bg-purple-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Group</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Days Completed</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Last Day Read</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Last Activity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Progress %</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-purple-600/50 divide-y divide-purple-600/30">
+                    {adminData.progress.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{item.user_name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.group_name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.days_completed || 0}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.last_day_read || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          {item.last_activity ? formatDate(item.last_activity) : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          <div className="flex items-center">
+                            <div className="w-16 bg-purple-700 rounded-full h-2 mr-2">
+                              <div 
+                                className="bg-amber-500 h-2 rounded-full" 
+                                style={{ width: `${Math.min(100, Math.round(((item.days_completed || 0) / 365) * 100))}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs">{Math.min(100, Math.round(((item.days_completed || 0) / 365) * 100))}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {adminData.progress.length === 0 && (
+                <div className="text-center py-12">
+                  <BarChart3 className="h-16 w-16 text-purple-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No Progress Data</h3>
+                  <p className="text-purple-300">No reading progress data available yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
             <div>
               <AdminMessageManager />
             </div>
