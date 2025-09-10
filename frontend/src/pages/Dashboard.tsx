@@ -250,7 +250,7 @@ const Dashboard = () => {
             <Users className="h-12 w-12 text-orange-500 mr-3" />
             <h3 className="text-lg font-heading text-amber-500">Accept Your Invitation</h3>
           </div>
-          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : `Available on ${inviteDateLabel}`}</p>
+          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : ''}</p>
           {!inviteAvailable && inviteStartAt && (
             <div className="mb-4 flex justify-center">
               <Countdown
@@ -289,6 +289,9 @@ const Dashboard = () => {
                 )}
               />
             </div>
+          )}
+          {!inviteAvailable && (
+            <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
           )}
           <a
             href={inviteAvailable ? inviteLink : '#'}
