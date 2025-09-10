@@ -54,7 +54,7 @@ export class StripeService {
   }
 
   // Handle webhook events (for payment confirmations)
-  static async handleWebhook(body: string, signature: string) {
+  static async handleWebhook(body: Buffer | string, signature: string) {
     try {
       const event = stripe.webhooks.constructEvent(
         body,
