@@ -43,8 +43,8 @@ router.get('/public/trophies', async (req: Request, res: Response) => {
   }
 })
 
-// Award trophy for journey completion
-router.post('/award-trophy', userAuth, async (req: Request, res: Response) => {
+// Request trophy approval for journey completion
+router.post('/request-trophy-approval', userAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id
     const { type, description } = req.body
@@ -53,6 +53,19 @@ router.post('/award-trophy', userAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ 
         success: false, 
         error: { message: 'Invalid trophy type' } 
+      })
+    }
+
+    // Check if user already has a pending request for this trophy type
+    const existingRequest = await getRow(
+      'SELECT id FROM trophy_approval_requests WHERE user_id = ? AND type = ? AND status = "pending"',
+      [userId, type]
+    )
+
+    if (existingRequest) {
+      return res.status(400).json({ 
+        success: false, 
+        error: { message: 'Trophy approval request already pending' } 
       })
     }
 
@@ -69,34 +82,21 @@ router.post('/award-trophy', userAuth, async (req: Request, res: Response) => {
       })
     }
 
-    // Award the trophy
+    // Create trophy approval request
     await runQuery(
-      'INSERT INTO user_trophies (user_id, type, description, awarded_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+      'INSERT INTO trophy_approval_requests (user_id, type, description, status, requested_at) VALUES (?, ?, ?, "pending", CURRENT_TIMESTAMP)',
       [userId, type, description]
-    )
-
-    // Update user's trophy count
-    await runQuery(
-      'UPDATE users SET trophies_count = trophies_count + 1 WHERE id = ?',
-      [userId]
-    )
-
-    // Get updated user data
-    const user = await getRow(
-      'SELECT id, name, email, trophies_count FROM users WHERE id = ?',
-      [userId]
     )
 
     res.json({ 
       success: true, 
-      message: 'Trophy awarded successfully',
-      data: { user }
+      message: 'Trophy approval request submitted successfully'
     })
   } catch (error) {
-    console.error('Error awarding trophy:', error)
+    console.error('Error requesting trophy approval:', error)
     res.status(500).json({ 
       success: false, 
-      error: { message: 'Failed to award trophy' } 
+      error: { message: 'Failed to submit trophy approval request' } 
     })
   }
 })

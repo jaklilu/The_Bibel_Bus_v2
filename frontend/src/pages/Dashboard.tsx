@@ -88,13 +88,13 @@ const Dashboard = () => {
     return allCompleted && finalGradeGood
   }
 
-  // Award trophy for journey completion
-  const awardJourneyTrophy = async () => {
+  // Request trophy approval for journey completion
+  const requestTrophyApproval = async () => {
     const token = localStorage.getItem('userToken')
     if (!token) return
 
     try {
-      const response = await fetch('/api/auth/award-trophy', {
+      const response = await fetch('/api/auth/request-trophy-approval', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -107,21 +107,10 @@ const Dashboard = () => {
       })
 
       if (response.ok) {
-        // Refresh user data to show updated trophy count
-        const userResponse = await fetch('/api/auth/profile', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (userResponse.ok) {
-          const userData = await userResponse.json()
-          if (userData.success) {
-            setUserData(prev => prev ? { ...prev, trophies_count: userData.data.user.trophies_count } : null)
-            // Show success message
-            alert('🎉 Congratulations! You have completed the entire Bible reading journey and earned a trophy!')
-          }
-        }
+        alert('🎉 Congratulations! You have completed the entire Bible reading journey! Your trophy request has been submitted for admin approval.')
       }
     } catch (error) {
-      console.error('Error awarding trophy:', error)
+      console.error('Error requesting trophy approval:', error)
     }
   }
 
@@ -158,7 +147,7 @@ const Dashboard = () => {
 
       // Check if journey is completed after updating milestones
       if (checkJourneyCompletion(updatedMilestones)) {
-        awardJourneyTrophy()
+        requestTrophyApproval()
       }
 
       return updatedMilestones
@@ -552,9 +541,12 @@ const Dashboard = () => {
             <p className="text-green-200 text-lg mb-4">
               Congratulations! You have completed the entire Bible reading journey with a strong finish!
             </p>
-            <div className="text-2xl font-bold text-amber-400">
-              You have earned a trophy! 🏆
+            <div className="text-2xl font-bold text-amber-400 mb-2">
+              Trophy Request Submitted! 🏆
             </div>
+            <p className="text-green-100 text-sm">
+              Your trophy request has been submitted for admin approval.
+            </p>
           </motion.div>
         )}
 

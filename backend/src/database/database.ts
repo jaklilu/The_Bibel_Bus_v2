@@ -132,6 +132,22 @@ const initializeTables = () => {
     )
   `)
 
+  // Trophy approval requests table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS trophy_approval_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      description TEXT,
+      status TEXT DEFAULT 'pending',
+      requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      approved_at DATETIME,
+      approved_by INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (approved_by) REFERENCES users (id)
+    )
+  `)
+
   // Donations table
   db.run(`
     CREATE TABLE IF NOT EXISTS donations (

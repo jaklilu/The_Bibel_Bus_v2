@@ -839,4 +839,97 @@ router.get('/group-messages/stats/:groupId', async (req: Request, res: Response)
   }
 })
 
+// Get trophy approval requests
+router.get('/trophy-requests', async (req: Request, res: Response) => {
+  try {
+    const requests = await getRows(`
+      SELECT 
+        tar.id,
+        tar.user_id,
+        u.name as user_name,
+        u.email as user_email,
+        tar.type,
+        tar.description,
+        tar.status,
+        tar.requested_at,
+        tar.approved_at,
+        approver.name as approved_by_name
+      FROM trophy_approval_requests tar
+      JOIN users u ON tar.user_id = u.id
+      LEFT JOIN users approver ON tar.approved_by = approver.id
+      ORDER BY tar.requested_at DESC
+    `)
+
+    res.json({
+      success: true,
+      data: requests
+    })
+  } catch (error) {
+    console.error('Error fetching trophy requests:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to fetch trophy requests' }
+    })
+  }
+})
+
+// Approve or reject trophy request
+router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) => {
+  try {
+    const { id, action } = req.params
+    const adminId = (req as any).user?.id
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid action. Must be approve or reject' }
+      })
+    }
+
+    // Get the request
+    const request = await getRow(
+      'SELECT * FROM trophy_approval_requests WHERE id = ? AND status = "pending"',
+      [id]
+    )
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Request not found or already processed' }
+      })
+    }
+
+    if (action === 'approve') {
+      // Award the trophy
+      await runQuery(
+        'INSERT INTO user_trophies (user_id, type, description, awarded_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+        [request.user_id, request.type, request.description]
+      )
+
+      // Update user's trophy count
+      await runQuery(
+        'UPDATE users SET trophies_count = trophies_count + 1 WHERE id = ?',
+        [request.user_id]
+      )
+    }
+
+    // Update request status
+    await runQuery(
+      'UPDATE trophy_approval_requests SET status = ?, approved_at = CURRENT_TIMESTAMP, approved_by = ? WHERE id = ?',
+      [action === 'approve' ? 'approved' : 'rejected', adminId, id]
+    )
+
+    res.json({
+      success: true,
+      message: `Trophy request ${action}d successfully`
+    })
+  } catch (error) {
+    console.error('Error processing trophy request:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to process trophy request' }
+    })
+  }
+})
+
 export default router
