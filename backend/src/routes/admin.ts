@@ -906,9 +906,10 @@ router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) 
         [request.user_id, request.type, request.description]
       )
 
-      // Update user's trophy count
+      // Update user's trophy count (increment existing count by 1)
+      // COALESCE handles cases where trophies_count is NULL, treating it as 0
       await runQuery(
-        'UPDATE users SET trophies_count = trophies_count + 1 WHERE id = ?',
+        'UPDATE users SET trophies_count = COALESCE(trophies_count, 0) + 1 WHERE id = ?',
         [request.user_id]
       )
     }
