@@ -207,7 +207,7 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-2xl sm:text-3xl font-heading text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-heading text-white mb-2 text-center">
             Welcome back, {userData?.name || 'Friend'}! 🚌
           </h1>
         </motion.div>
