@@ -15,6 +15,7 @@ interface AdminData {
   groups: any[]
   users: any[]
   progress: any[]
+  milestoneProgress: any[]
   messages: any[]
   donations: any[]
 }
@@ -33,6 +34,7 @@ const Admin = () => {
     groups: [],
     users: [],
     progress: [],
+    milestoneProgress: [],
     messages: [],
     donations: []
   })
@@ -181,19 +183,20 @@ const Admin = () => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
       
-      const [groupsRes, usersRes, progressRes, messagesRes, donationsRes] = await Promise.all([
+      const [groupsRes, usersRes, progressRes, milestoneProgressRes, messagesRes, donationsRes] = await Promise.all([
         fetch('/api/admin/groups', { headers }),
         fetch('/api/admin/users', { headers }),
         fetch('/api/admin/progress', { headers }),
+        fetch('/api/admin/milestone-progress', { headers }),
         fetch('/api/admin/messages', { headers }),
         fetch('/api/admin/donations', { headers })
       ])
 
       // If token expired/invalid after a deploy, force re-login instead of showing empty lists
-      if ([groupsRes, usersRes, progressRes, messagesRes, donationsRes].some(r => r.status === 401)) {
+      if ([groupsRes, usersRes, progressRes, milestoneProgressRes, messagesRes, donationsRes].some(r => r.status === 401)) {
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
         setError('Your admin session expired. Please sign in again.')
         return
       }
@@ -201,6 +204,7 @@ const Admin = () => {
       const groups = await groupsRes.json()
       const users = await usersRes.json()
       const progress = await progressRes.json()
+      const milestoneProgress = await milestoneProgressRes.json()
       const messages = await messagesRes.json()
       const donations = await donationsRes.json()
 
@@ -210,6 +214,7 @@ const Admin = () => {
         groups: groups.data || [],
         users: users.data || [],
         progress: progress.data || [],
+        milestoneProgress: milestoneProgress.data || [],
         messages: messages.data || [],
         donations: donations.success ? donations.data.donations : []
       })
@@ -912,50 +917,64 @@ const Admin = () => {
 
                      {activeTab === 'progress' && (
             <div>
-              <h2 className="text-xl font-semibold text-white mb-6">Reading Progress</h2>
+              <h2 className="text-xl font-semibold text-white mb-6">Milestone Progress</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-purple-600/30">
                   <thead className="bg-purple-700/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">User</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Group</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Days Completed</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Last Day Read</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Last Activity</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Progress %</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophies</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophy Request</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Requested</th>
                     </tr>
                   </thead>
                   <tbody className="bg-purple-600/50 divide-y divide-purple-600/30">
-                    {adminData.progress.map((item, index) => (
+                    {adminData.milestoneProgress.map((item, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{item.user_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.group_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.days_completed || 0}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.last_day_read || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          {item.last_activity ? formatDate(item.last_activity) : '-'}
+                          <div className="flex items-center space-x-2">
+                            <span className="inline-block min-w-[1.5rem] text-center font-semibold text-white">{item.trophies_count || 0}</span>
+                            <span className="text-xs text-purple-300">trophies</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-purple-700 rounded-full h-2 mr-2">
-                              <div 
-                                className="bg-amber-500 h-2 rounded-full" 
-                                style={{ width: `${Math.min(100, Math.round(((item.days_completed || 0) / 365) * 100))}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs">{Math.min(100, Math.round(((item.days_completed || 0) / 365) * 100))}%</span>
-                          </div>
+                          {item.trophy_request_id ? (
+                            <span className="text-amber-400 font-medium">Journey Completion</span>
+                          ) : (
+                            <span className="text-purple-300">No request</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          {item.trophy_request_status ? (
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              item.trophy_request_status === 'approved' ? 'bg-green-600 text-white' :
+                              item.trophy_request_status === 'rejected' ? 'bg-red-600 text-white' :
+                              item.trophy_request_status === 'pending' ? 'bg-amber-600 text-purple-900' :
+                              'bg-gray-600 text-white'
+                            }`}>
+                              {item.trophy_request_status}
+                            </span>
+                          ) : (
+                            <span className="text-purple-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                          {item.trophy_requested_at ? formatDate(item.trophy_requested_at) : '-'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              {adminData.progress.length === 0 && (
+              {adminData.milestoneProgress.length === 0 && (
                 <div className="text-center py-12">
                   <BarChart3 className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Progress Data</h3>
-                  <p className="text-purple-300">No reading progress data available yet.</p>
+                  <h3 className="text-lg font-medium text-white mb-2">No Milestone Data</h3>
+                  <p className="text-purple-300">No milestone progress data available yet.</p>
                 </div>
               )}
             </div>

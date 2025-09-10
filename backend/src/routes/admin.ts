@@ -539,6 +539,44 @@ router.get('/progress', async (req: Request, res: Response) => {
   }
 })
 
+// Get milestone progress for all users
+router.get('/milestone-progress', async (req: Request, res: Response) => {
+  try {
+    const milestoneProgress = await getRows(`
+      SELECT 
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        bg.name as group_name,
+        bg.status as group_status,
+        u.trophies_count,
+        tar.id as trophy_request_id,
+        tar.type as trophy_request_type,
+        tar.status as trophy_request_status,
+        tar.requested_at as trophy_requested_at
+      FROM users u
+      JOIN group_members gm ON u.id = gm.user_id
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      LEFT JOIN trophy_approval_requests tar ON u.id = tar.user_id AND tar.type = 'journey_completion'
+      WHERE bg.status = 'active'
+      ORDER BY bg.start_date DESC, u.name ASC
+    `)
+
+    res.json({
+      success: true,
+      data: milestoneProgress
+    })
+  } catch (error) {
+    console.error('Error fetching milestone progress:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Create admin message/announcement
 router.post('/messages', [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
