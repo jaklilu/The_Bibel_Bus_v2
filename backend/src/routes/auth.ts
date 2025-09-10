@@ -1218,7 +1218,7 @@ router.post('/donations', [
 router.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req: Request, res: Response) => {
   try {
     const signature = req.headers['stripe-signature'] as string
-    const body = req.body
+    const body = req.body.toString()
 
     const { StripeService } = await import('../services/stripeService')
     const result = await StripeService.handleWebhook(body, signature)
