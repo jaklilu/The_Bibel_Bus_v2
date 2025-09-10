@@ -131,28 +131,13 @@ const Donate = () => {
     email: '',
     anonymous: false
   })
-  const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
   const presetAmounts = [25, 50, 100, 250, 500, 1000]
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!donationAmount || !donorInfo.fullName || !donorInfo.email) {
-      setErrorMessage('Please fill in all required fields and select a donation amount.')
-      return
-    }
-
-    setShowPaymentForm(true)
-    setErrorMessage('')
-    setSuccessMessage('')
-  }
-
   const handlePaymentSuccess = (message: string) => {
     setSuccessMessage(message)
-    setShowPaymentForm(false)
     // Reset form
     setDonationAmount('')
     setDonorInfo({
@@ -190,7 +175,7 @@ const Donate = () => {
           <p className="text-xl text-purple-200">Support The Bible Bus and help us continue our mission</p>
         </motion.div>
 
-        <form onSubmit={handleFormSubmit} className="space-y-8">
+        <div className="space-y-8">
           {/* Donation Type */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -331,31 +316,26 @@ const Donate = () => {
             </div>
           </motion.div>
 
-          {/* Payment Method */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
-          >
-            <h2 className="text-2xl font-bold text-white mb-6">Payment Method</h2>
-            
-            <div className="space-y-4">
-              <button
-                type="button"
-                className="w-full p-4 border-2 border-purple-600 bg-purple-700/30 rounded-lg text-white hover:border-purple-500 transition-colors flex items-center space-x-3"
-              >
-                <CreditCard className="h-6 w-6" />
-                <span>Credit/Debit Card</span>
-              </button>
-              
-              {(!donationAmount || !donorInfo.fullName || !donorInfo.email) && (
-                <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 text-yellow-300">
-                  Please fill in the donation amount and donor information above to enable card payment.
-                </div>
-              )}
-            </div>
-          </motion.div>
+          {/* Payment Information - moved up */}
+          {donationAmount && donorInfo.fullName && donorInfo.email && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
+            >
+              <h2 className="text-2xl font-bold text-white mb-6">Payment Information</h2>
+              <Elements stripe={stripePromise}>
+                <PaymentForm
+                  donationAmount={donationAmount}
+                  donationType={donationType}
+                  donorInfo={donorInfo}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </Elements>
+            </motion.div>
+          )}
 
           {/* Donation Summary */}
           <motion.div 
@@ -403,21 +383,13 @@ const Donate = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={!donationAmount || !donorInfo.fullName || !donorInfo.email}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-purple-900 font-semibold py-4 px-12 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-            >
-              Continue to Payment
-            </button>
 
             <p className="text-purple-300 text-sm max-w-2xl mx-auto">
               Your donation is secure and will be processed by our trusted payment partners. 
               You will receive a confirmation email with your donation receipt.
             </p>
           </motion.div>
-        </form>
+        </div>
 
         {/* Success/Error Messages */}
         {successMessage && (
@@ -440,24 +412,6 @@ const Donate = () => {
           </motion.div>
         )}
 
-        {/* Payment Form */}
-        {showPaymentForm && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8"
-          >
-            <Elements stripe={stripePromise}>
-              <PaymentForm
-                donationAmount={donationAmount}
-                donationType={donationType}
-                donorInfo={donorInfo}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
-            </Elements>
-          </motion.div>
-        )}
       </div>
     </div>
   )
