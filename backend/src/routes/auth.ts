@@ -1154,6 +1154,8 @@ router.post('/donations', [
   try {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
+      console.log('Donation validation errors:', errors.array())
+      console.log('Request body:', req.body)
       return res.status(400).json({
         success: false,
         error: {
