@@ -419,14 +419,14 @@ const Admin = () => {
                     <label className="block text-sm font-medium text-white mb-2">
                       Email
                     </label>
-                                         <input
-                       type="email"
-                       value={email}
-                       onChange={(e) => setEmail(e.target.value)}
-                       className="w-full px-4 py-3 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
-                       placeholder="JayTheBibleBus@gmail.com"
-                       required
-                     />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-3 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
+                      placeholder="Enter your email address"
+                      required
+                    />
                   </div>
 
                   <div>
@@ -438,7 +438,7 @@ const Admin = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
-                      placeholder="••••••••"
+                      placeholder="Enter your password"
                       required
                     />
                   </div>
