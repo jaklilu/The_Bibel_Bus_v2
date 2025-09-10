@@ -83,7 +83,18 @@ const Dashboard = () => {
   }
 
   // Handle missing days input (cumulative from day 1)
-  const handleMissingDaysChange = (milestoneId: number, cumulativeMissingDays: number) => {
+  const handleMissingDaysChange = (milestoneId: number, value: string) => {
+    // Don't update if input is empty (user is typing)
+    if (value === '') {
+      setMilestones(prev => prev.map(milestone => 
+        milestone.id === milestoneId 
+          ? { ...milestone, missingDays: 0, daysCompleted: 0, percentage: 0, grade: 'D', completed: false }
+          : milestone
+      ))
+      return
+    }
+
+    const cumulativeMissingDays = parseInt(value) || 0
     setMilestones(prev => prev.map(milestone => {
       if (milestone.id === milestoneId) {
         // Calculate days completed for this milestone based on cumulative missing days
@@ -547,24 +558,27 @@ const Dashboard = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-200">Days Completed:</span>
                     <span className="text-white font-medium">
-                      {milestone.daysCompleted}/{milestone.dayNumber}
+                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'Enter missing days' : `${milestone.daysCompleted}/${milestone.dayNumber}`}
                     </span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-200">Percentage:</span>
-                    <span className="text-white font-medium">{milestone.percentage}%</span>
+                    <span className="text-white font-medium">
+                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : `${milestone.percentage}%`}
+                    </span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-200">Grade:</span>
                     <span className={`font-bold ${
+                      milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'text-purple-300' :
                       milestone.grade === 'A' ? 'text-green-400' :
                       milestone.grade === 'B' ? 'text-blue-400' :
                       milestone.grade === 'C' ? 'text-yellow-400' :
                       'text-red-400'
                     }`}>
-                      {milestone.grade}
+                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : milestone.grade}
                     </span>
                   </div>
                   
@@ -577,8 +591,8 @@ const Dashboard = () => {
                         type="number"
                         min="0"
                         max={milestone.dayNumber}
-                        value={milestone.missingDays}
-                        onChange={(e) => handleMissingDaysChange(milestone.id, parseInt(e.target.value) || 0)}
+                        value={milestone.missingDays || ''}
+                        onChange={(e) => handleMissingDaysChange(milestone.id, e.target.value)}
                         className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                         placeholder="Enter cumulative missing days"
                       />
