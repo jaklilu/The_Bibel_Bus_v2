@@ -1,6 +1,116 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, DollarSign, Heart, Shield, Lock } from 'lucide-react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
+
+// Payment form component
+const PaymentForm = ({ 
+  donationAmount, 
+  donationType, 
+  donorInfo, 
+  onSuccess, 
+  onError 
+}: {
+  donationAmount: number | string
+  donationType: 'one-time' | 'monthly'
+  donorInfo: { fullName: string; email: string; anonymous: boolean }
+  onSuccess: (message: string) => void
+  onError: (message: string) => void
+}) => {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!stripe || !elements) {
+      onError('Stripe not loaded. Please refresh the page.')
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      // Create payment intent
+      const response = await fetch('/api/auth/donations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          donor_name: donorInfo.fullName,
+          donor_email: donorInfo.email,
+          amount: typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string),
+          type: donationType,
+          anonymous: donorInfo.anonymous
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Failed to create payment intent')
+      }
+
+      // Confirm payment
+      const { error, paymentIntent } = await stripe.confirmCardPayment(data.data.clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+          billing_details: {
+            name: donorInfo.fullName,
+            email: donorInfo.email,
+          },
+        }
+      })
+
+      if (error) {
+        onError(error.message || 'Payment failed')
+      } else if (paymentIntent.status === 'succeeded') {
+        onSuccess(`Thank you for your donation of $${(typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)}! Your payment has been processed successfully.`)
+      }
+    } catch (error) {
+      console.error('Payment error:', error)
+      onError(error instanceof Error ? error.message : 'Payment failed. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30">
+        <h3 className="text-lg font-semibold text-white mb-4">Payment Information</h3>
+        <div className="bg-white p-4 rounded-lg">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-purple-900 font-semibold py-4 px-8 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+      >
+        {isProcessing ? 'Processing Payment...' : `Pay $${(typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)}`}
+      </button>
+    </form>
+  )
+}
 
 const Donate = () => {
   const [donationType, setDonationType] = useState<'one-time' | 'monthly'>('one-time')
@@ -10,56 +120,39 @@ const Donate = () => {
     email: '',
     anonymous: false
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const presetAmounts = [25, 50, 100, 250, 500, 1000]
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!donationAmount || !donorInfo.fullName || !donorInfo.email) {
-      alert('Please fill in all required fields and select a donation amount.')
+      setErrorMessage('Please fill in all required fields and select a donation amount.')
       return
     }
 
-    setIsSubmitting(true)
+    setShowPaymentForm(true)
+    setErrorMessage('')
+    setSuccessMessage('')
+  }
 
-    try {
-      const response = await fetch('/api/auth/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          donor_name: donorInfo.fullName,
-          donor_email: donorInfo.email,
-          amount: totalAmount,
-          type: donationType,
-          anonymous: donorInfo.anonymous
-        })
-      })
+  const handlePaymentSuccess = (message: string) => {
+    setSuccessMessage(message)
+    setShowPaymentForm(false)
+    // Reset form
+    setDonationAmount('')
+    setDonorInfo({
+      fullName: '',
+      email: '',
+      anonymous: false
+    })
+  }
 
-      if (response.ok) {
-        await response.json() // Just consume the response
-        alert(`Thank you for your donation of $${totalAmount.toFixed(2)}! Your donation has been recorded. We'll contact you soon to complete the payment process.`)
-        
-        // Reset form
-        setDonationAmount('')
-        setDonorInfo({
-          fullName: '',
-          email: '',
-          anonymous: false
-        })
-      } else {
-        const errorData = await response.json()
-        alert(`Error: ${errorData.error?.message || 'Failed to process donation. Please try again.'}`)
-      }
-    } catch (error) {
-      console.error('Error submitting donation:', error)
-      alert('Failed to process donation. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handlePaymentError = (message: string) => {
+    setErrorMessage(message)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +179,7 @@ const Donate = () => {
           <p className="text-xl text-purple-200">Support The Bible Bus and help us continue our mission</p>
         </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Donation Type */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -302,10 +395,10 @@ const Donate = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!donationAmount || !donorInfo.fullName || !donorInfo.email || isSubmitting}
+              disabled={!donationAmount || !donorInfo.fullName || !donorInfo.email}
               className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-purple-900 font-semibold py-4 px-12 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
-              {isSubmitting ? 'Processing...' : 'Complete Donation'}
+              Continue to Payment
             </button>
 
             <p className="text-purple-300 text-sm max-w-2xl mx-auto">
@@ -314,6 +407,46 @@ const Donate = () => {
             </p>
           </motion.div>
         </form>
+
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-800/50 backdrop-blur-sm rounded-2xl p-6 border border-green-700/30 text-center"
+          >
+            <p className="text-green-300 text-lg">{successMessage}</p>
+          </motion.div>
+        )}
+
+        {errorMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-800/50 backdrop-blur-sm rounded-2xl p-6 border border-red-700/30 text-center"
+          >
+            <p className="text-red-300 text-lg">{errorMessage}</p>
+          </motion.div>
+        )}
+
+        {/* Payment Form */}
+        {showPaymentForm && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8"
+          >
+            <Elements stripe={stripePromise}>
+              <PaymentForm
+                donationAmount={donationAmount}
+                donationType={donationType}
+                donorInfo={donorInfo}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            </Elements>
+          </motion.div>
+        )}
       </div>
     </div>
   )

@@ -1007,7 +1007,7 @@ router.post('/groups/:id/cancel', userAuth, async (req: Request, res: Response) 
   }
 })
 
-// Create donation (public endpoint)
+// Create donation with payment intent (public endpoint)
 router.post('/donations', [
   body('donor_name').trim().isLength({ min: 2 }).withMessage('Donor name must be at least 2 characters'),
   body('donor_email').isEmail().withMessage('Must be a valid email'),
@@ -1029,7 +1029,7 @@ router.post('/donations', [
 
     const { donor_name, donor_email, amount, type = 'one-time', anonymous = false } = req.body
 
-    // Create donation record
+    // Create donation record first
     const result = await runQuery(
       'INSERT INTO donations (donor_name, donor_email, amount, type, anonymous, status) VALUES (?, ?, ?, ?, ?, ?)',
       [donor_name, donor_email, amount, type, anonymous ? 1 : 0, 'pending']
@@ -1037,10 +1037,32 @@ router.post('/donations', [
 
     const donation = await getRow('SELECT * FROM donations WHERE id = ?', [result.id])
 
+    // Create Stripe payment intent
+    const { StripeService } = await import('../services/stripeService')
+    const paymentResult = await StripeService.createPaymentIntent(
+      amount,
+      donor_email,
+      donor_name,
+      type
+    )
+
+    if (!paymentResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          message: paymentResult.error || 'Failed to create payment intent'
+        }
+      })
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Donation created successfully',
-      data: donation
+      message: 'Donation and payment intent created successfully',
+      data: {
+        donation,
+        clientSecret: paymentResult.clientSecret,
+        paymentIntentId: paymentResult.paymentIntentId
+      }
     })
   } catch (error) {
     console.error('Error creating donation:', error)
@@ -1049,6 +1071,40 @@ router.post('/donations', [
       error: {
         message: 'Failed to create donation'
       }
+    })
+  }
+})
+
+// Stripe webhook endpoint
+router.post('/stripe-webhook', async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['stripe-signature'] as string
+    const body = JSON.stringify(req.body)
+
+    const { StripeService } = await import('../services/stripeService')
+    const result = await StripeService.handleWebhook(body, signature)
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: result.error }
+      })
+    }
+
+    if (result.eventType === 'payment_intent.succeeded' && result.paymentIntentId) {
+      // Update donation status to completed
+      await runQuery(
+        'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
+        ['completed', result.metadata?.donor_email, 'pending']
+      )
+    }
+
+    res.json({ success: true, received: true })
+  } catch (error) {
+    console.error('Webhook error:', error)
+    res.status(400).json({
+      success: false,
+      error: { message: 'Webhook error' }
     })
   }
 })
