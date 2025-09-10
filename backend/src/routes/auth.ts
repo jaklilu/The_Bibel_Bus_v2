@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
@@ -1214,10 +1215,10 @@ router.post('/donations', [
 })
 
 // Stripe webhook endpoint
-router.post('/stripe-webhook', async (req: Request, res: Response) => {
+router.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req: Request, res: Response) => {
   try {
     const signature = req.headers['stripe-signature'] as string
-    const body = JSON.stringify(req.body)
+    const body = req.body
 
     const { StripeService } = await import('../services/stripeService')
     const result = await StripeService.handleWebhook(body, signature)
