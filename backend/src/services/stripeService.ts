@@ -15,6 +15,7 @@ export class StripeService {
           donor_email: donorEmail,
           donor_name: donorName,
           donation_type: donationType,
+          amount: amount.toString(),
         },
         automatic_payment_methods: {
           enabled: true,

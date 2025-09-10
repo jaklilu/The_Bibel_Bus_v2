@@ -1233,6 +1233,26 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
         'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
         ['completed', result.metadata?.donor_email, 'pending']
       )
+
+      // Send donation confirmation email
+      if (result.metadata?.donor_email && result.metadata?.donor_name) {
+        const { sendDonationConfirmationEmail } = await import('../utils/emailService')
+        const amount = result.metadata?.amount ? parseFloat(result.metadata.amount) : 0
+        const donationType = result.metadata?.donation_type || 'one-time'
+        
+        try {
+          await sendDonationConfirmationEmail(
+            result.metadata.donor_email,
+            result.metadata.donor_name,
+            amount,
+            donationType
+          )
+          console.log('Donation confirmation email sent successfully')
+        } catch (emailError) {
+          console.error('Error sending donation confirmation email:', emailError)
+          // Don't fail the webhook if email fails
+        }
+      }
     }
 
     res.json({ success: true, received: true })
