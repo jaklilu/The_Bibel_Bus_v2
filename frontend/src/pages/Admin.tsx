@@ -204,12 +204,14 @@ const Admin = () => {
       const messages = await messagesRes.json()
       const donations = await donationsRes.json()
 
+      console.log('Donations response:', donations) // Debug log
+
       setAdminData({
         groups: groups.data || [],
         users: users.data || [],
         progress: progress.data || [],
         messages: messages.data || [],
-        donations: donations.data || []
+        donations: donations.success ? donations.data.donations : []
       })
     } catch (err) {
       console.error('Error fetching admin data:', err)
