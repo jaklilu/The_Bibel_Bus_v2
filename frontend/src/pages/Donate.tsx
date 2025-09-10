@@ -4,7 +4,10 @@ import { CreditCard, DollarSign, Heart, Shield, Lock } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
+
+// Debug: Log the Stripe key
+console.log('Stripe publishable key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 // Payment form component
 const PaymentForm = ({ 
@@ -78,6 +81,14 @@ const PaymentForm = ({
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  if (!stripe) {
+    return (
+      <div className="bg-red-800/50 backdrop-blur-sm rounded-2xl p-6 border border-red-700/30 text-center">
+        <p className="text-red-300">Stripe is not loaded. Please check your internet connection and refresh the page.</p>
+      </div>
+    )
   }
 
   return (
