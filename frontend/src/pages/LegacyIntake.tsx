@@ -50,7 +50,8 @@ const LegacyIntake = () => {
           <div className="text-amber-400 font-semibold">The Bible Bus</div>
         </div>
         <h1 className="text-3xl font-heading text-white text-center mb-2">Alumni Intake</h1>
-        <p className="text-purple-100 text-center mb-6">We’re moving the Bible Bus to a new platform. Please share your info so we can create your account and place you in the right group.</p>
+        <p className="text-amber-300 text-center mb-4 font-semibold">This is for everyone whoever took a journey on the Bible Bus</p>
+        <p className="text-purple-100 text-center mb-6">We're moving the Bible Bus to a new platform. Please share your info so we can create your account and place you in the right group.</p>
 
         {success && (
           <div className="mb-4 p-3 rounded-lg border border-green-500/40 bg-green-900/20 text-green-200 text-sm">{success}</div>
