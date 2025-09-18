@@ -412,7 +412,7 @@ const MessageBoard = () => {
                       {message.message_source === 'admin' ? (
                         <h3 className="text-lg font-semibold text-white">{message.title}</h3>
                       ) : (
-                        <h3 className="text-lg font-semibold text-white">{message.content.length > 60 ? message.content.slice(0, 57) + '…' : message.content}</h3>
+                        <h3 className="text-lg font-semibold text-white">Message from {message.author_name}</h3>
                       )}
                       {isMessageUnread(message.created_at) && (
                         <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
@@ -448,9 +448,7 @@ const MessageBoard = () => {
               </div>
 
               {/* Message Content */}
-              {message.message_source === 'admin' && (
-                <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
-              )}
+              <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
 
 
             </motion.div>
