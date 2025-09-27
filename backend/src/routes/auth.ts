@@ -1145,6 +1145,64 @@ router.post('/groups/:id/cancel', userAuth, async (req: Request, res: Response) 
   }
 })
 
+// Join the current active group (for existing users who want to join current group)
+router.post('/join-current-group', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+
+    // Get the current active group
+    const currentGroup = await GroupService.getCurrentActiveGroup()
+    if (!currentGroup) {
+      return res.status(404).json({ success: false, error: { message: 'No active group found' } })
+    }
+
+    const groupId = currentGroup.id
+
+    // Check if registration is still open
+    const today = new Date().toISOString().split('T')[0]
+    if (currentGroup.registration_deadline < today) {
+      return res.status(400).json({ success: false, error: { message: 'Registration is closed for the current group' } })
+    }
+
+    // Capacity check
+    const memberCountRow = await getRow('SELECT COUNT(*) as count FROM group_members WHERE group_id = ? AND status = "active"', [groupId])
+    const member_count = memberCountRow?.count || 0
+    if (member_count >= currentGroup.max_members) {
+      return res.status(400).json({ success: false, error: { message: 'Current group is full' } })
+    }
+
+    // Check if user is already in this group
+    const existing = await getRow('SELECT id FROM group_members WHERE group_id = ? AND user_id = ? AND status = "active"', [groupId, userId])
+    if (existing) {
+      return res.json({ success: true, message: 'Already in current group', data: { group_id: groupId, groupName: currentGroup.name } })
+    }
+
+    // Remove user from any other groups first (they can only be in one group at a time)
+    await runQuery('DELETE FROM group_members WHERE user_id = ?', [userId])
+
+    // Add user to current group
+    const todayIso = new Date().toISOString().split('T')[0]
+    await runQuery(
+      'INSERT INTO group_members (group_id, user_id, join_date, status) VALUES (?, ?, ?, "active")',
+      [groupId, userId, todayIso]
+    )
+
+    res.json({ 
+      success: true, 
+      message: 'Successfully joined current group', 
+      data: { 
+        group_id: groupId, 
+        groupName: currentGroup.name,
+        start_date: currentGroup.start_date,
+        registration_deadline: currentGroup.registration_deadline
+      } 
+    })
+  } catch (error) {
+    console.error('Error joining current group:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to join current group' } })
+  }
+})
+
 // Create donation with payment intent (public endpoint)
 router.post('/donations', [
   body('donor_name').trim().isLength({ min: 2 }).withMessage('Donor name must be at least 2 characters'),

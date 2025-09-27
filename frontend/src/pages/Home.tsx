@@ -193,14 +193,15 @@ const Home = () => {
              </div>
            </motion.div>
 
-           {/* Action Buttons - moved up */}
+           {/* Action Buttons - Three User Flows */}
            <motion.div 
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 1.1 }}
-             className="mt-4"
+             className="mt-6"
            >
-             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+             <div className="flex flex-col sm:flex-col gap-4 justify-center max-w-md mx-auto">
+               {/* New Users - Register Now */}
                <motion.div
                  animate={{ 
                    opacity: [0.7, 1, 0.7]
@@ -213,21 +214,43 @@ const Home = () => {
                >
                  <Link
                    to="/register"
-                   className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg text-lg"
+                   className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 shadow-lg text-lg w-full"
                  >
                    <span>Register Now</span>
-                   <ArrowRight className="h-5 w-5" />
+                   <span className="text-sm font-normal opacity-80">New to The Bible Bus?</span>
+                   <ArrowRight className="h-5 w-5 mt-1" />
                  </Link>
                </motion.div>
+
+               {/* Existing Users - Join Current Group */}
+               <Link
+                 to="/join-current-group"
+                 className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 shadow-lg text-lg w-full"
+               >
+                 <span>Join Current Group</span>
+                 <span className="text-sm font-normal opacity-80">Already have login credentials?</span>
+                 <ArrowRight className="h-5 w-5 mt-1" />
+               </Link>
+
+               {/* Existing Users - Login to Dashboard */}
+               <Link
+                 to="/login"
+                 className="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 text-lg w-full"
+               >
+                 <span>Login to Dashboard</span>
+                 <span className="text-sm font-normal opacity-80">Access your current group</span>
+                 <ArrowRight className="h-5 w-5 mt-1" />
+               </Link>
              
+               {/* Watch Introduction - Secondary Action */}
                <a 
                  href="https://www.youtube.com/watch?v=c-VWZN76hoc"
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="bg-purple-700 hover:bg-amber-500 hover:text-purple-900 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-lg"
+                 className="bg-purple-600/50 hover:bg-purple-600 text-white font-medium px-8 md:px-10 py-2.5 md:py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 text-base w-full border border-purple-500"
                >
-                 <Play className="h-5 w-5" />
-                 <span>Watch Introduction</span>
+                 <Play className="h-4 w-4" />
+                 <span>Watch Introduction Video</span>
                </a>
              </div>
            </motion.div>

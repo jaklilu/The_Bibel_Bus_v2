@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Register from './pages/Register'
 import Login from './pages/Login'
+import JoinCurrentGroup from './pages/JoinCurrentGroup'
 import Donate from './pages/Donate'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
@@ -26,6 +27,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/join-current-group" element={<JoinCurrentGroup />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/messages" element={<Messages />} />
