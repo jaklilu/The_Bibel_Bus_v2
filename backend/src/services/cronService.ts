@@ -80,6 +80,20 @@ export class CronService {
 export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
   try {
     const today = new Date().toISOString().split('T')[0]
+    
+    // Check if we've already processed welcome messages today
+    const todayProcessed = await getRows(`
+      SELECT id FROM user_messages 
+      WHERE created_at LIKE ? AND title LIKE '%Welcome%'
+      LIMIT 1
+    `, [`${today}%`])
+    
+    if (todayProcessed && todayProcessed.length > 0) {
+      console.log('Welcome messages already processed today, skipping...')
+      return
+    }
+    
+    console.log('Processing welcome messages for newly active groups...')
     // Newly active groups today with no welcome yet
     const groups = await getRows(`
       SELECT id, name FROM bible_groups 
@@ -100,14 +114,21 @@ export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
       `, [g.id, g.id])
 
       for (const u of newUsers) {
-        // Check if a welcome exists for this user already
+        // Check if a welcome exists for this user already (more comprehensive check)
         const exists = await getRows(
-          `SELECT id FROM user_messages WHERE group_id = ? AND user_id = ? AND title = ? LIMIT 1`,
-          [g.id, u.user_id, 'Welcome to Your Bible Journey!']
+          `SELECT id FROM user_messages 
+           WHERE group_id = ? AND user_id = ? 
+           AND (title LIKE '%Welcome%' OR title LIKE '%welcome%')
+           LIMIT 1`,
+          [g.id, u.user_id]
         )
-        if (exists && exists.length > 0) continue
+        if (exists && exists.length > 0) {
+          console.log(`Welcome message already exists for user ${u.user_id} in group ${g.id}`)
+          continue
+        }
 
-        const content = `Hello Travelers,\n\nI’m so excited that you’ve decided to get on the Bible Bus! There’s nothing like getting to know the God we believe in and worship. All of life’s questions find their answers in His Word.\n\nSome of you have been on this ride multiple times, while for most of you, it’s your first time. So, here are a few words of wisdom before you begin your journey to the heart of God:\n- Set aside 15 minutes a day and commit to reading during that time. Mornings right after waking up or evenings before bed tend to work best.\n- First-timers, focus on the big picture and how the stories connect. Don’t worry if you don’t understand certain verses or topics. Make a note of them, you’ll often find the answers in upcoming chapters or books.\n- If you fall behind, don’t stress. Skip what you missed and stay with the current day’s reading. You can catch up on the weekend when you have time. The most important thing is not to stop or give up, keep going!\n- You also have the option to listen instead of read, which can help you catch up quickly.\n- The goal is to finish reading the Scriptures one day at a time—just 15 minutes a day.\n- You can also choose to read or listen in over 82 different languages.`
+        console.log(`Creating welcome message for new user ${u.user_id} in group ${g.id}`)
+        const content = `Hello Travelers,\n\nI'm so excited that you've decided to get on the Bible Bus! There's nothing like getting to know the God we believe in and worship. All of life's questions find their answers in His Word.\n\nSome of you have been on this ride multiple times, while for most of you, it's your first time. So, here are a few words of wisdom before you begin your journey to the heart of God:\n- Set aside 15 minutes a day and commit to reading during that time. Mornings right after waking up or evenings before bed tend to work best.\n- First-timers, focus on the big picture and how the stories connect. Don't worry if you don't understand certain verses or topics. Make a note of them, you'll often find the answers in upcoming chapters or books.\n- If you fall behind, don't stress. Skip what you missed and stay with the current day's reading. You can catch up on the weekend when you have time. The most important thing is not to stop or give up, keep going!\n- You also have the option to listen instead of read, which can help you catch up quickly.\n- The goal is to finish reading the Scriptures one day at a time—just 15 minutes a day.\n- You can also choose to read or listen in over 82 different languages.`
 
         await UserInteractionService.createUserMessage(
           g.id,
