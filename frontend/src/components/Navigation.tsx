@@ -251,8 +251,7 @@ const Navigation = () => {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.5 }}
-        className="fixed top-20 right-4 z-40 md:hidden"
-        style={{ transform: 'translateX(100px)' }}
+        className="fixed top-20 right-6 z-30 md:hidden"
       >
         <Link
           to="/donate"

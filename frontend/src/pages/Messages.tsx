@@ -49,13 +49,13 @@ const Messages = () => {
           <div>
             <h1 className="text-3xl font-heading text-white">Messages</h1>
           </div>
-          <div className="mr-16">
-            <Link
-              to="/dashboard"
-              className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+          <div className="mr-20">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors"
             >
               Back to Dashboard
-            </Link>
+            </button>
           </div>
         </motion.div>
 

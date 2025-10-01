@@ -436,9 +436,9 @@ cd backend && npm run db:reset
 
 ---
 
-**Last Updated**: December 19, 2024  
-**Session Status**: Join Next Group flow, Welcome Letters, Awards Revamp, and multiple UI/UX improvements implemented  
-**Next Session Goals**: Prep for deployment (VITE_API_BASE, redirects), optional payments scaffold, finalize CORS and envs
+**Last Updated**: September 27, 2025  
+**Session Status**: Three-button landing page implementation completed - solved legacy member group joining issue with intuitive user flow buttons  
+**Next Session Goals**: Monitor message board functionality, continue user experience optimization, and implement any additional features as needed
 
 ## ✨ Recent Updates (Session)
 - Deployment routing fixed for Netlify → Render proxy: corrected domain typo (`the-bibel-bus-v2.onrender.com`). Added Netlify redirects in both `netlify.toml` and `frontend/public/_redirects`. Ensured SPA fallback order.
@@ -825,7 +825,105 @@ cd backend && npm run db:reset
 - **Ready for Production**: Fix is ready for deployment to live environment
 - **Testing**: Local development servers confirmed working correctly
 
+### **21. Three-Button Landing Page Implementation** ✨ **MAJOR UX IMPROVEMENT**
+
+#### **Problem Identified** 🐛
+- **Legacy Member Access Issue**: Legacy members (manually created with credentials) had no simple way to join the current active group
+- **Forced Registration**: Existing users were being forced through registration flow unnecessarily
+- **User Flow Confusion**: No clear distinction between new users, existing users wanting to join current group, and existing users wanting to access their current group
+- **Poor User Experience**: Landing page only had "Register Now" button, not addressing different user types
+
+#### **Root Cause Analysis** 🔍
+- **Single User Flow**: Landing page only catered to completely new users
+- **Missing Functionality**: No dedicated flow for existing users to join current group
+- **Lack of User Choice**: No option for existing users to just access their dashboard without joining new groups
+- **Complex Navigation**: Users had to figure out their own path through login/register confusion
+
+#### **Solutions Implemented** ✅
+
+##### **Landing Page Redesign** (`frontend/src/pages/Home.tsx`)
+- **Three-Button Layout**: Clear separation of user types with dedicated buttons
+- **Integrated Descriptions**: Moved descriptions inside buttons for cleaner, more intuitive design
+- **Mobile-First Design**: Responsive layout optimized for mobile devices
+- **Visual Hierarchy**: Color-coded buttons (amber, green, purple) with consistent styling
+
+##### **Join Current Group Page** (`frontend/src/pages/JoinCurrentGroup.tsx`)
+- **Dedicated Flow**: New page specifically for existing users wanting to join current group
+- **Login + Join Integration**: Seamless flow from login to automatic group joining
+- **Error Handling**: Comprehensive error handling with fallback to dashboard access
+- **Success Feedback**: Clear success messages with group information
+
+##### **Backend API Endpoint** (`backend/src/routes/auth.ts`)
+- **New Endpoint**: `POST /api/auth/join-current-group` for joining current active group
+- **Smart Group Detection**: Automatically finds current active group using `GroupService.getCurrentActiveGroup()`
+- **Capacity Management**: Checks group capacity and registration deadlines
+- **Group Switching**: Removes user from old groups before adding to current group
+- **Comprehensive Validation**: Handles all edge cases (group full, registration closed, already member)
+
+#### **Technical Implementation** 🔧
+
+##### **Frontend Changes**
+```typescript
+// Three-button layout with integrated descriptions
+<div className="flex flex-col gap-4 justify-center max-w-md mx-auto">
+  <Link className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 shadow-lg text-lg w-full">
+    <span>Register Now</span>
+    <span className="text-sm font-normal opacity-80">New to The Bible Bus?</span>
+    <ArrowRight className="h-5 w-5 mt-1" />
+  </Link>
+  // ... similar structure for other buttons
+</div>
+```
+
+##### **Backend Endpoint**
+```typescript
+router.post('/join-current-group', userAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id
+  const currentGroup = await GroupService.getCurrentActiveGroup()
+  // ... comprehensive validation and group joining logic
+})
+```
+
+#### **User Flow Improvements** 🎯
+
+##### **New Users**
+1. Landing page → "Register Now" → Registration form → Auto-assigned to current group
+
+##### **Existing Users (Join Current Group)**
+1. Landing page → "Join Current Group" → Login form → Join current group → Dashboard with success message
+
+##### **Existing Users (Access Current Group)**
+1. Landing page → "Login to Dashboard" → Login form → Dashboard with existing group
+
+#### **Mobile Optimization** 📱
+- **Responsive Design**: Full-width buttons with proper touch targets
+- **Stacked Layout**: Vertical button arrangement for mobile scrolling
+- **Consistent Spacing**: Proper gaps and padding for mobile interaction
+- **Touch-Friendly**: Large buttons with adequate spacing between elements
+
+#### **Results Achieved** ✅
+- ✅ **Clear User Paths**: Each user type has a dedicated, obvious button
+- ✅ **Legacy Member Solution**: Existing users can easily join current group
+- ✅ **No Forced Actions**: Users can choose to access their current group or join new one
+- ✅ **Mobile Optimized**: Perfect mobile experience with intuitive button layout
+- ✅ **Clean Design**: Integrated descriptions eliminate visual clutter
+- ✅ **Comprehensive Backend**: Robust API handling all edge cases
+
+#### **User Experience Impact** 📈
+- **Before**: Confusing single "Register Now" button for all users
+- **After**: Clear three-button system addressing all user types
+- **Legacy Members**: Can now easily join current group without registration pressure
+- **New Users**: Clear registration path maintained
+- **Existing Users**: Choice between joining new group or accessing current group
+
+#### **Deployment Status** 🚀
+- **Frontend Built**: Vite compilation successful with hot module reloading
+- **Backend Built**: TypeScript compilation successful
+- **Git Committed**: Changes committed with comprehensive commit message
+- **Ready for Production**: All functionality tested and working correctly
+- **Mobile Tested**: Responsive design verified across device sizes
+
 ---
-Last Updated: September 18, 2025
-Session Status: Interactive Message Board user content fix completed - resolved user message display issue where content was showing in title field instead of message body. All user messages now display full content properly with consistent UI.
+Last Updated: September 27, 2025
+Session Status: Three-button landing page implementation completed - solved legacy member group joining issue with intuitive user flow buttons
 Next Session Goals: Monitor message board functionality, continue user experience optimization, and implement any additional features as needed
