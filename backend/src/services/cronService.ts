@@ -83,7 +83,7 @@ export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
     
     // Check if we've already processed welcome messages today
     const todayProcessed = await getRows(`
-      SELECT id FROM user_messages 
+      SELECT id FROM group_messages 
       WHERE created_at LIKE ? AND title LIKE '%Welcome%'
       LIMIT 1
     `, [`${today}%`])
@@ -101,7 +101,21 @@ export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
     `, [today])
 
     for (const g of groups) {
-      // Find users in this group who have no prior memberships (new users)
+      // Check if a welcome message already exists for this group
+      const exists = await getRows(
+        `SELECT id FROM group_messages 
+         WHERE group_id = ? 
+         AND (title LIKE '%Welcome%' OR title LIKE '%welcome%')
+         LIMIT 1`,
+        [g.id]
+      )
+      
+      if (exists && exists.length > 0) {
+        console.log(`Welcome message already exists for group ${g.id} (${g.name})`)
+        continue
+      }
+
+      // Check if this group has any new users (users with no prior memberships)
       const newUsers = await getRows(`
         SELECT DISTINCT gm.user_id
         FROM group_members gm
@@ -113,31 +127,24 @@ export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
           )
       `, [g.id, g.id])
 
-      for (const u of newUsers) {
-        // Check if a welcome exists for this user already (more comprehensive check)
-        const exists = await getRows(
-          `SELECT id FROM user_messages 
-           WHERE group_id = ? AND user_id = ? 
-           AND (title LIKE '%Welcome%' OR title LIKE '%welcome%')
-           LIMIT 1`,
-          [g.id, u.user_id]
-        )
-        if (exists && exists.length > 0) {
-          console.log(`Welcome message already exists for user ${u.user_id} in group ${g.id}`)
-          continue
-        }
-
-        console.log(`Creating welcome message for new user ${u.user_id} in group ${g.id}`)
+      if (newUsers && newUsers.length > 0) {
+        console.log(`Creating welcome message for group ${g.id} (${g.name}) with ${newUsers.length} new users`)
         const content = `Hello Travelers,\n\nI'm so excited that you've decided to get on the Bible Bus! There's nothing like getting to know the God we believe in and worship. All of life's questions find their answers in His Word.\n\nSome of you have been on this ride multiple times, while for most of you, it's your first time. So, here are a few words of wisdom before you begin your journey to the heart of God:\n- Set aside 15 minutes a day and commit to reading during that time. Mornings right after waking up or evenings before bed tend to work best.\n- First-timers, focus on the big picture and how the stories connect. Don't worry if you don't understand certain verses or topics. Make a note of them, you'll often find the answers in upcoming chapters or books.\n- If you fall behind, don't stress. Skip what you missed and stay with the current day's reading. You can catch up on the weekend when you have time. The most important thing is not to stop or give up, keep going!\n- You also have the option to listen instead of read, which can help you catch up quickly.\n- The goal is to finish reading the Scriptures one day at a time—just 15 minutes a day.\n- You can also choose to read or listen in over 82 different languages.`
 
-        await UserInteractionService.createUserMessage(
-          g.id,
-          u.user_id,
-          'Welcome to Your Bible Journey!',
-          content,
-          'encouragement',
-          'new_user'
-        )
+        // Get admin user ID for creating the welcome message
+        const adminUser = await getRows('SELECT id FROM users WHERE role = ? LIMIT 1', ['admin'])
+        const adminId = adminUser && adminUser.length > 0 ? adminUser[0].id : 1
+
+        await MessageService.createMessage({
+          group_id: g.id,
+          title: 'Welcome to Your Bible Journey!',
+          content: content,
+          message_type: 'encouragement',
+          priority: 'normal',
+          created_by: adminId
+        })
+      } else {
+        console.log(`No new users found in group ${g.id} (${g.name}), skipping welcome message`)
       }
     }
   } catch (e) {
