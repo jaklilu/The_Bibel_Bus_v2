@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {  Play, ArrowRight, } from 'lucide-react'
 
+// Force frontend rebuild to trigger both Netlify and Render deployments
+
 const Home = () => {
   const [countdown, setCountdown] = useState({
     days: 0,
