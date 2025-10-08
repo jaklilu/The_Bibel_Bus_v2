@@ -448,7 +448,7 @@ const MessageBoard = () => {
               </div>
 
               {/* Message Content */}
-              <p className="text-purple-200 leading-relaxed mb-4">{message.content}</p>
+              <p className="text-purple-200 leading-relaxed mb-4 whitespace-pre-wrap">{message.content}</p>
 
 
             </motion.div>

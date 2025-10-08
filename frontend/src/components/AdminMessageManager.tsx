@@ -418,7 +418,7 @@ const AdminMessageManager = () => {
             </div>
 
             {/* Message Content */}
-            <p className="text-purple-200 leading-relaxed">{message.content}</p>
+            <p className="text-purple-200 leading-relaxed whitespace-pre-wrap">{message.content}</p>
           </motion.div>
         ))}
       </div>
