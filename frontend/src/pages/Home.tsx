@@ -34,14 +34,25 @@ const Home = () => {
   useEffect(() => {
     if (!currentGroup) return
 
+    const groupStartDate = new Date(currentGroup.start_date + 'T00:00:00')
     const registrationDeadline = new Date(currentGroup.registration_deadline + 'T23:59:59')
     
     const timer = setInterval(() => {
       const now = new Date().getTime()
+      const distanceToStart = groupStartDate.getTime() - now
       const distanceToDeadline = registrationDeadline.getTime() - now
       
-      // Count down to registration deadline
-      if (distanceToDeadline > 0) {
+      // If group hasn't started yet, count down to start date
+      if (distanceToStart > 0) {
+        setCountdown({
+          days: Math.floor(distanceToStart / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distanceToStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distanceToStart % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distanceToStart % (1000 * 60)) / 1000)
+        })
+      }
+      // If group has started but registration is still open, count down to registration deadline
+      else if (distanceToDeadline > 0) {
         setCountdown({
           days: Math.floor(distanceToDeadline / (1000 * 60 * 60 * 24)),
           hours: Math.floor((distanceToDeadline % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
@@ -138,15 +149,25 @@ const Home = () => {
                      {currentGroup.name}
                    </h2>
                    <h3 className="text-lg font-semibold text-amber-500 text-center mb-4">
-                     Registration Closes In
+                     {new Date(currentGroup.start_date).getTime() > new Date().getTime() 
+                       ? 'Group Starts In' 
+                       : 'Registration Closes In'}
                    </h3>
                    <p className="text-base text-white text-center mb-6">
-                     {new Date(currentGroup.registration_deadline).toLocaleDateString('en-US', { 
-                       weekday: 'long', 
-                       year: 'numeric', 
-                       month: 'long', 
-                       day: 'numeric' 
-                     })}
+                     {new Date(currentGroup.start_date).getTime() > new Date().getTime()
+                       ? new Date(currentGroup.start_date).toLocaleDateString('en-US', { 
+                           weekday: 'long', 
+                           year: 'numeric', 
+                           month: 'long', 
+                           day: 'numeric' 
+                         })
+                       : new Date(currentGroup.registration_deadline).toLocaleDateString('en-US', { 
+                           weekday: 'long', 
+                           year: 'numeric', 
+                           month: 'long', 
+                           day: 'numeric' 
+                         })
+                     }
                    </p>
                  </>
                ) : (
