@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import {  Play, ArrowRight, } from 'lucide-react'
 
 const Home = () => {
-  // Trigger rebuild for backend changes
+  // Trigger rebuild for backend email fix
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
