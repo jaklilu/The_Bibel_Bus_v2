@@ -22,6 +22,42 @@ const getTrophyTier = (count: number): 'diamond' | 'platinum' | 'gold' | 'silver
   if (count >= 2 && count <= 3) return 'silver'
   return 'bronze'
 }
+// Public: Get current active group for landing page
+router.get('/public/current-group', async (req: Request, res: Response) => {
+  try {
+    const currentGroup = await GroupService.getCurrentActiveGroup()
+    
+    if (!currentGroup) {
+      return res.json({
+        success: false,
+        message: 'No active group found'
+      })
+    }
+
+    // Get member count
+    const memberCount = await getRow(`
+      SELECT COUNT(*) as count FROM group_members WHERE group_id = ? AND status = 'active'
+    `, [currentGroup.id])
+
+    res.json({
+      success: true,
+      data: {
+        id: currentGroup.id,
+        name: currentGroup.name,
+        start_date: currentGroup.start_date,
+        end_date: currentGroup.end_date,
+        registration_deadline: currentGroup.registration_deadline,
+        max_members: currentGroup.max_members,
+        member_count: memberCount?.count || 0,
+        status: currentGroup.status
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching current group:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to fetch current group' } })
+  }
+})
+
 // Public: list all members' trophy counts with tiers (only active users)
 router.get('/public/trophies', async (req: Request, res: Response) => {
   try {

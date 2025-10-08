@@ -4,62 +4,52 @@ import { motion } from 'framer-motion'
 import {  Play, ArrowRight, } from 'lucide-react'
 
 const Home = () => {
-  // Trigger rebuild for backend email fix
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0
   })
+  const [currentGroup, setCurrentGroup] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Calculate next group start date (quarterly: Jan 1, Apr 1, Jul 1, Oct 1)
-  const getNextGroupStart = () => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const quarters = [
-      new Date(currentYear, 0, 1),   // Jan 1
-      new Date(currentYear, 3, 1),   // Apr 1
-      new Date(currentYear, 6, 1),   // Jul 1
-      new Date(currentYear, 9, 1)    // Oct 1
-    ]
-    
-    let nextStart = quarters.find(date => date > now)
-    if (!nextStart) {
-      nextStart = new Date(currentYear + 1, 0, 1) // Next year Jan 1
+  // Fetch current active group from backend
+  useEffect(() => {
+    const fetchCurrentGroup = async () => {
+      try {
+        const response = await fetch('/api/auth/public/current-group')
+        const data = await response.json()
+        if (data.success && data.data) {
+          setCurrentGroup(data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching current group:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    return nextStart
-  }
+    fetchCurrentGroup()
+  }, [])
 
   useEffect(() => {
-    const nextStart = getNextGroupStart()
-    const registrationEnd = new Date(nextStart.getTime() + (17 * 24 * 60 * 60 * 1000))
+    if (!currentGroup) return
+
+    const registrationDeadline = new Date(currentGroup.registration_deadline + 'T23:59:59')
     
     const timer = setInterval(() => {
       const now = new Date().getTime()
-      const distanceToStart = nextStart.getTime() - now
-      const distanceToRegistrationEnd = registrationEnd.getTime() - now
+      const distanceToDeadline = registrationDeadline.getTime() - now
       
-      // If group hasn't started yet, count down to start
-      if (distanceToStart > 0) {
+      // Count down to registration deadline
+      if (distanceToDeadline > 0) {
         setCountdown({
-          days: Math.floor(distanceToStart / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distanceToStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distanceToStart % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distanceToStart % (1000 * 60)) / 1000)
+          days: Math.floor(distanceToDeadline / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distanceToDeadline % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distanceToDeadline % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distanceToDeadline % (1000 * 60)) / 1000)
         })
-      } 
-      // If group has started but registration is still open, count down to registration end
-      else if (distanceToRegistrationEnd > 0) {
-        setCountdown({
-          days: Math.floor(distanceToRegistrationEnd / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distanceToRegistrationEnd % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distanceToRegistrationEnd % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distanceToRegistrationEnd % (1000 * 60)) / 1000)
-        })
-      }
-      // If registration has closed, show zeros
-      else {
+      } else {
+        // Registration has closed
         setCountdown({
           days: 0,
           hours: 0,
@@ -70,10 +60,7 @@ const Home = () => {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [])
-
-  const nextStart = getNextGroupStart()
-  const registrationEnd = new Date(nextStart.getTime() + (17 * 24 * 60 * 60 * 1000))
+  }, [currentGroup])
 
   return (
     <div className="min-h-screen">
@@ -143,17 +130,28 @@ const Home = () => {
              className="max-w-4xl mx-auto"
            >
              <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-purple-700/30">
-               <h2 className="text-xl font-bold text-white text-center mb-4">
-                 {new Date().getTime() < getNextGroupStart().getTime() ? 'Next Group Starts' : 'Registration Closes'}
-               </h2>
-               <p className="text-base text-white text-center mb-6">
-                 {nextStart.toLocaleDateString('en-US', { 
-                   weekday: 'long', 
-                   year: 'numeric', 
-                   month: 'long', 
-                   day: 'numeric' 
-                 })}
-               </p>
+               {loading ? (
+                 <p className="text-white text-center">Loading group information...</p>
+               ) : currentGroup ? (
+                 <>
+                   <h2 className="text-xl font-bold text-white text-center mb-2">
+                     {currentGroup.name}
+                   </h2>
+                   <h3 className="text-lg font-semibold text-amber-500 text-center mb-4">
+                     Registration Closes In
+                   </h3>
+                   <p className="text-base text-white text-center mb-6">
+                     {new Date(currentGroup.registration_deadline).toLocaleDateString('en-US', { 
+                       weekday: 'long', 
+                       year: 'numeric', 
+                       month: 'long', 
+                       day: 'numeric' 
+                     })}
+                   </p>
+                 </>
+               ) : (
+                 <p className="text-white text-center">No active group found</p>
+               )}
                
                {/* Countdown Timer */}
                <div className="grid grid-cols-4 gap-2 md:gap-4 mb-3">
@@ -188,9 +186,11 @@ const Home = () => {
                  </div>
                </div>
                
-               <p className="text-xs text-white text-center mb-4">
-                 Registration closes 17 days after start date • {registrationEnd.toLocaleDateString()}
-               </p>
+               {currentGroup && (
+                 <p className="text-xs text-white text-center mb-4">
+                   Group started {new Date(currentGroup.start_date).toLocaleDateString()} • {currentGroup.member_count} / {currentGroup.max_members} members
+                 </p>
+               )}
              </div>
            </motion.div>
 
