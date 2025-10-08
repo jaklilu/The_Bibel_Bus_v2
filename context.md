@@ -923,7 +923,108 @@ router.post('/join-current-group', userAuth, async (req: Request, res: Response)
 - **Ready for Production**: All functionality tested and working correctly
 - **Mobile Tested**: Responsive design verified across device sizes
 
+### **22. Welcome Message Automation Bug Fixes** ✨ **CRITICAL AUTOMATION FIX**
+
+#### **Problem Identified** 🐛
+- **Duplicate Welcome Messages**: Automation was sending 18 welcome messages instead of 1
+- **Wrong Message Source**: Welcome messages showing as "from member" instead of "from Admin"
+- **Poor Duplicate Prevention**: Weak duplicate checking allowing multiple messages per user
+- **Daily Processing Issues**: Cron job could run multiple times per day causing duplicates
+
+#### **Root Cause Analysis** 🔍
+- **Service Selection Error**: Using `UserInteractionService.createUserMessage()` instead of `MessageService.createMessage()`
+- **Database Table Mismatch**: Creating user messages in `user_messages` table instead of admin messages in `group_messages` table
+- **Exact Title Matching**: Duplicate check only looked for exact title matches, not pattern variations
+- **No Daily Processing Limit**: Cron job could execute multiple times per day if server restarted
+
+#### **Solutions Implemented** ✅
+
+##### **Message Source Fix** (`backend/src/services/cronService.ts`)
+- **Changed Service**: From `UserInteractionService.createUserMessage()` to `MessageService.createMessage()`
+- **Admin Attribution**: Added admin user lookup and attribution
+- **Correct Database Table**: Messages now created in `group_messages` (admin) instead of `user_messages` (member)
+- **Group-Wide Messages**: Changed from per-user messages to group-wide welcome messages
+
+##### **Enhanced Duplicate Prevention**
+```typescript
+// Before: Exact title match only
+WHERE title = 'Welcome to Your Bible Journey!'
+
+// After: Pattern matching for any welcome message
+WHERE title LIKE '%Welcome%' OR title LIKE '%welcome%'
+```
+
+##### **Daily Processing Control**
+```typescript
+// Check if we've already processed welcome messages today
+const todayProcessed = await getRows(`
+  SELECT id FROM group_messages 
+  WHERE created_at LIKE ? AND title LIKE '%Welcome%'
+  LIMIT 1
+`, [`${today}%`])
+
+if (todayProcessed && todayProcessed.length > 0) {
+  console.log('Welcome messages already processed today, skipping...')
+  return
+}
+```
+
+##### **Improved Logic Flow**
+- **Group-Level Processing**: One welcome message per group instead of per user
+- **New User Detection**: Only create welcome messages if group has new users
+- **Comprehensive Logging**: Added detailed console logs for debugging
+
+#### **Technical Implementation** 🔧
+
+##### **Admin Message Creation**
+```typescript
+// Get admin user ID for creating the welcome message
+const adminUser = await getRows('SELECT id FROM users WHERE role = ? LIMIT 1', ['admin'])
+const adminId = adminUser && adminUser.length > 0 ? adminUser[0].id : 1
+
+await MessageService.createMessage({
+  group_id: g.id,
+  title: 'Welcome to Your Bible Journey!',
+  content: content,
+  message_type: 'encouragement',
+  priority: 'normal',
+  created_by: adminId
+})
+```
+
+##### **Enhanced Duplicate Detection**
+```typescript
+// Check if a welcome message already exists for this group
+const exists = await getRows(
+  `SELECT id FROM group_messages 
+   WHERE group_id = ? 
+   AND (title LIKE '%Welcome%' OR title LIKE '%welcome%')
+   LIMIT 1`,
+  [g.id]
+)
+```
+
+#### **Results Achieved** ✅
+- ✅ **No More Duplicates**: Fixed 18-message issue with robust duplicate prevention
+- ✅ **Proper Admin Attribution**: Welcome messages now show "from Admin" instead of "from member"
+- ✅ **Group-Wide Messages**: One welcome message per group instead of per user
+- ✅ **Daily Processing Control**: Maximum one processing run per day
+- ✅ **Better Error Tracking**: Comprehensive logging for debugging
+
+#### **User Experience Impact** 📈
+- **Before**: 18 duplicate welcome messages showing as "from member"
+- **After**: Single welcome message per group showing as "from Admin"
+- **Professional Appearance**: Proper admin attribution maintains authority
+- **Clean Message Board**: No message spam or confusion
+
+#### **Deployment Status** 🚀
+- **Backend Built**: TypeScript compilation successful
+- **Git Committed**: Changes committed with comprehensive commit messages
+- **Render Deployed**: Backend automation fixes deployed to production
+- **Netlify Rebuild**: Frontend rebuild triggered to ensure latest deployment
+- **Ready for Production**: All automation issues resolved for app launch
+
 ---
 Last Updated: September 27, 2025
-Session Status: Three-button landing page implementation completed - solved legacy member group joining issue with intuitive user flow buttons
+Session Status: Welcome message automation bugs fixed - resolved duplicate messages and incorrect attribution, now shows proper admin messages with robust duplicate prevention
 Next Session Goals: Monitor message board functionality, continue user experience optimization, and implement any additional features as needed

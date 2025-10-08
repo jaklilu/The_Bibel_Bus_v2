@@ -83,7 +83,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Update user
 router.put('/:id', [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-  body('email').optional().isEmail().normalizeEmail().withMessage('Must be a valid email'),
+  body('email').optional().isEmail().withMessage('Must be a valid email'),
   body('phone').optional().isMobilePhone('any').withMessage('Must be a valid phone number'),
   body('status').optional().isIn(['active', 'inactive']).withMessage('Status must be either active or inactive')
 ], async (req: Request, res: Response) => {

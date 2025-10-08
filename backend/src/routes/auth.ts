@@ -203,7 +203,7 @@ router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
 // Register new user
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-  body('email').isEmail().normalizeEmail().withMessage('Must be a valid email'),
+  body('email').isEmail().withMessage('Must be a valid email'),
   body('phone').optional().isMobilePhone('any').withMessage('Must be a valid phone number')
 ], async (req: Request, res: Response) => {
   try {
@@ -282,7 +282,7 @@ router.post('/register', [
 
 // Login user
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Must be a valid email'),
+  body('email').isEmail().withMessage('Must be a valid email'),
   body('name').notEmpty().withMessage('Name is required')
 ], async (req: Request, res: Response) => {
   try {
