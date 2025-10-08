@@ -68,6 +68,7 @@ export class CronService {
       await this.updateGroupStatuses()
       await this.ensureNextGroupExists()
       await postWelcomeMessagesForNewlyActiveGroups()
+      await sendInvitationReminders()
       
       console.log('✅ All cron jobs completed successfully')
     } catch (error) {
@@ -149,5 +150,96 @@ export async function postWelcomeMessagesForNewlyActiveGroups(): Promise<void> {
     }
   } catch (e) {
     console.error('Error posting welcome messages:', e)
+  }
+}
+
+// Helper: Send invitation reminders on days 3, 7, 11, 15 after group start
+export async function sendInvitationReminders(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Find active groups within their first 17 days
+    const groups = await getRows(`
+      SELECT id, name, start_date, registration_deadline 
+      FROM bible_groups 
+      WHERE status = 'active' 
+      AND start_date <= ?
+      AND registration_deadline >= ?
+    `, [today, today])
+
+    for (const group of groups) {
+      // Calculate days since group started
+      const startDate = new Date(group.start_date)
+      const todayDate = new Date(today)
+      const daysSinceStart = Math.floor((todayDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      // Only send on days 3, 7, 11, 15
+      if (![3, 7, 11, 15].includes(daysSinceStart)) {
+        continue
+      }
+
+      console.log(`Sending invitation reminders for group ${group.id} (${group.name}) on day ${daysSinceStart}`)
+
+      // Check if we've already sent a reminder today for this group
+      const reminderExists = await getRows(`
+        SELECT id FROM group_messages 
+        WHERE group_id = ? 
+        AND created_at LIKE ?
+        AND title LIKE '%Don''t Miss Out%'
+        LIMIT 1
+      `, [group.id, `${today}%`])
+
+      if (reminderExists && reminderExists.length > 0) {
+        console.log(`Invitation reminder already sent today for group ${group.id}`)
+        continue
+      }
+
+      // Create message board post
+      const content = `We noticed some members haven't accepted their invitation yet.\n\nTo start your 365-day Bible reading journey:\n1. Visit your dashboard\n2. Under "Accept Your Invitation", click on "Join Reading Group"\n3. Also click "Join Your WhatsApp Group" for further communication\n\nThe registration window closes on ${new Date(group.registration_deadline).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. Don't miss out on reading with your group!\n\nSee you on the Bus!`
+
+      // Get admin user ID
+      const adminUser = await getRows('SELECT id FROM users WHERE role = ? LIMIT 1', ['admin'])
+      const adminId = adminUser && adminUser.length > 0 ? adminUser[0].id : 1
+
+      // Post to message board
+      await MessageService.createMessage({
+        group_id: group.id,
+        title: 'Don\'t Miss Out on Your Bible Journey!',
+        content: content,
+        message_type: 'reminder',
+        priority: 'high',
+        created_by: adminId
+      })
+
+      // Send emails to all group members
+      const members = await getRows(`
+        SELECT u.id, u.name, u.email
+        FROM group_members gm
+        JOIN users u ON gm.user_id = u.id
+        WHERE gm.group_id = ? AND gm.status = 'active'
+      `, [group.id])
+
+      console.log(`Sending invitation reminder emails to ${members.length} members`)
+
+      const { sendInvitationReminderEmail } = await import('../utils/emailService')
+      
+      for (const member of members) {
+        try {
+          await sendInvitationReminderEmail(
+            member.email,
+            member.name,
+            group.name,
+            group.registration_deadline
+          )
+        } catch (emailError) {
+          console.error(`Failed to send reminder email to ${member.email}:`, emailError)
+          // Continue with other emails even if one fails
+        }
+      }
+
+      console.log(`Invitation reminders sent for group ${group.id} on day ${daysSinceStart}`)
+    }
+  } catch (e) {
+    console.error('Error sending invitation reminders:', e)
   }
 }

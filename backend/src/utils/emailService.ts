@@ -220,3 +220,79 @@ export const sendWelcomeEmail = async (email: string, userName: string) => {
     return false
   }
 }
+
+// Send invitation reminder email
+export const sendInvitationReminderEmail = async (email: string, userName: string, groupName: string, registrationDeadline: string) => {
+  try {
+    const transporter = createTransporter()
+    
+    const mailOptions = {
+      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      to: email,
+      subject: 'Don\'t Miss Out on Your Bible Journey! - The Bible Bus',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #fbbf24; margin: 10px 0 0 0; font-size: 18px; font-weight: bold;">Don't Miss Out!</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}!</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              We noticed you registered for <strong>${groupName}</strong> but haven't accepted your invitation yet.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              To start your 365-day Bible reading journey:
+            </p>
+            
+            <ol style="color: #6b7280; line-height: 1.8; font-size: 16px; padding-left: 20px;">
+              <li>Visit your dashboard</li>
+              <li>Under "Accept Your Invitation", click on <strong>"Join Reading Group"</strong></li>
+              <li>Also click <strong>"Join Your WhatsApp Group"</strong> for further communication</li>
+            </ol>
+            
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #92400e; margin: 0; font-size: 14px;">
+                ⏰ <strong>Registration closes on ${new Date(registrationDeadline).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Go to Dashboard
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px; margin-top: 30px;">
+              See you on the Bus!<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">The Bible Bus - Journey to the Heart of God</p>
+          </div>
+        </div>
+      `
+    }
+    
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Invitation reminder email sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending invitation reminder email:', error)
+    return false
+  }
+}
