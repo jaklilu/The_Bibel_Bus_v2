@@ -2,61 +2,44 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BookOpen, User, Calendar, MessageSquare } from 'lucide-react'
 
-interface Reflection {
-  id: number
-  day_number: number
-  reflection_text: string
-  created_at: string
-  author_name: string
-  author_avatar?: string | null
-  group_name: string
+interface CSVRow {
+  name: string
+  date: string
+  verse: string
+  reflection: string
 }
 
 const Reflections = () => {
-    // ✅ Use CSVRow[] instead of Reflection[] to match what’s coming from Google Sheets
-    const [reflections, setReflections] = useState<CSVRow[]>([])
-    const [loading, setLoading] = useState<boolean>(true)
-  
-    useEffect(() => {
-      const fetchReflections = async () => {
-        try {
-          const SHEET_URL =
-            'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv'
-  
-          const res = await fetch(SHEET_URL)
-          const text = await res.text()
-  
-          // Split CSV text into rows (skip the first header row)
-          const rows = text.split('\n').slice(1)
-  
-          // Define a lightweight CSV type inline
-          interface CSVRow {
-            name: string
-            date: string
-            verse: string
-            reflection: string
-          }
-  
-          // Parse CSV manually
-          const parsedReflections: CSVRow[] = rows.map((line: string) => {
-            const [name, date, verse, reflection] = line.split(',')
-            return { name, date, verse, reflection }
-          })
-  
-          // ✅ Reverse safely and store
-          setReflections([...parsedReflections].reverse())
-        } catch (error) {
-          console.error('Error fetching reflections CSV:', error)
-        } finally {
-          setLoading(false)
-        }
+  const [reflections, setReflections] = useState<CSVRow[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    const fetchReflections = async () => {
+      try {
+        const SHEET_URL =
+          'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv'
+
+        const res = await fetch(SHEET_URL)
+        const text = await res.text()
+
+        // Split CSV text into rows (skip the first header row)
+        const rows = text.split('\n').slice(1)
+
+        const parsedReflections: CSVRow[] = rows.map((line: string) => {
+          const [name, date, verse, reflection] = line.split(',')
+          return { name, date, verse, reflection }
+        })
+
+        setReflections([...parsedReflections].reverse())
+      } catch (error) {
+        console.error('Error fetching reflections CSV:', error)
+      } finally {
+        setLoading(false)
       }
-  
-      fetchReflections()
-    }, [])
-  }
-  
-  
+    }
+
+    fetchReflections()
+  }, [])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -95,50 +78,20 @@ const Reflections = () => {
           </motion.div>
         ) : (
           <div className="space-y-6">
-            {reflections.map((reflection, index) => (
+            {reflections.map((r, index) => (
               <motion.div
-                key={reflection.id}
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
               >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4 pb-4 border-b border-purple-700/30">
-                  <div className="flex items-center space-x-3">
-                    {reflection.author_avatar ? (
-                      <img 
-                        src={reflection.author_avatar} 
-                        alt={reflection.author_name}
-                        className="h-10 w-10 rounded-full border-2 border-amber-400"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-purple-500 flex items-center justify-center">
-                        <User className="h-6 w-6 text-white" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-white font-semibold">{reflection.author_name}</p>
-                      <p className="text-purple-300 text-sm">{reflection.group_name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 text-purple-300 text-sm">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(reflection.created_at)}</span>
-                  </div>
+                <div className="flex justify-between mb-2">
+                  <p className="text-white font-semibold">{r.name}</p>
+                  <p className="text-purple-300 text-sm">{formatDate(r.date)}</p>
                 </div>
-
-                {/* Day number badge */}
-                <div className="mb-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-semibold">
-                    Day {reflection.day_number}
-                  </span>
-                </div>
-
-                {/* Reflection text */}
-                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
-                  {reflection.reflection_text}
-                </div>
+                {r.verse && <p className="text-amber-300 italic mb-2">{r.verse}</p>}
+                <p className="text-purple-100 leading-relaxed whitespace-pre-wrap">{r.reflection}</p>
               </motion.div>
             ))}
           </div>
