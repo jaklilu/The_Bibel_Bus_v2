@@ -28,7 +28,7 @@ const Reflections = () => {
         // Clean Google gviz response
         const json = JSON.parse(text.substr(47).slice(0, -2))
   
-        const reflections = json.table.rows.map(row => ({
+        const reflections = json.table.rows.map((row: any)=> ({
           name: row.c[0]?.v || '',
           date: row.c[1]?.v || '',
           verse: row.c[2]?.v || '',
