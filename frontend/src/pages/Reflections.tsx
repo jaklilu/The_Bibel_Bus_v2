@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, User, Calendar, MessageSquare } from 'lucide-react'
+import { BookOpen, MessageSquare } from 'lucide-react'
 
 interface CSVRow {
   name: string
