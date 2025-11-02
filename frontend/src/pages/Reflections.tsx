@@ -13,45 +13,49 @@ interface Reflection {
 }
 
 const Reflections = () => {
-  const [reflections, setReflections] = useState<Reflection[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-
-  useEffect(() => {
-    const fetchReflections = async () => {
-      try {
-        const SHEET_URL =
-          'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv'
-        
-        const res = await fetch(SHEET_URL)
-        const text = await res.text()
-        
-        // Split CSV text into rows (skip the first header row)
-        const rows = text.split('\n').slice(1)
+    // ✅ Use CSVRow[] instead of Reflection[] to match what’s coming from Google Sheets
+    const [reflections, setReflections] = useState<CSVRow[]>([])
+    const [loading, setLoading] = useState<boolean>(true)
   
-        // Define a lightweight CSV type inline
-        interface CSVRow {
-        name: string
-        date: string
-        verse: string
-        reflection: string
-       }
+    useEffect(() => {
+      const fetchReflections = async () => {
+        try {
+          const SHEET_URL =
+            'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv'
   
-      // Parse CSV manually (type-safe)
-      const parsedReflections: CSVRow[] = rows.map((line: string) => {
-        const [name, date, verse, reflection] = line.split(',')
-        return { name, date, verse, reflection }
-      })
-      
-      setReflections([...parsedReflections].reverse() as CSVRow[])
-      } catch (error) {
-        console.error('Error fetching reflections CSV:', error)
-      } finally {
-        setLoading(false)
+          const res = await fetch(SHEET_URL)
+          const text = await res.text()
+  
+          // Split CSV text into rows (skip the first header row)
+          const rows = text.split('\n').slice(1)
+  
+          // Define a lightweight CSV type inline
+          interface CSVRow {
+            name: string
+            date: string
+            verse: string
+            reflection: string
+          }
+  
+          // Parse CSV manually
+          const parsedReflections: CSVRow[] = rows.map((line: string) => {
+            const [name, date, verse, reflection] = line.split(',')
+            return { name, date, verse, reflection }
+          })
+  
+          // ✅ Reverse safely and store
+          setReflections([...parsedReflections].reverse())
+        } catch (error) {
+          console.error('Error fetching reflections CSV:', error)
+        } finally {
+          setLoading(false)
+        }
       }
-    }
   
-    fetchReflections()
-  }, [])
+      fetchReflections()
+    }, [])
+  }
+  
   
 
   const formatDate = (dateString: string) => {
