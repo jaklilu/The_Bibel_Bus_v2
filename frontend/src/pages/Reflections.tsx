@@ -33,13 +33,13 @@ const Reflections = () => {
         name: string
         date: string
         verse: string
-        reflection_text: string
+        reflection: string
        }
   
       // Parse CSV manually (type-safe)
       const parsedReflections: CSVRow[] = rows.map((line: string) => {
-        const [name, date, verse, reflection_text] = line.split(',')
-        return { name, date, verse, reflection_text }
+        const [name, date, verse, reflection] = line.split(',')
+        return { name, date, verse, reflection }
       })
       
       setReflections([...parsedReflections].reverse() as CSVRow[])
