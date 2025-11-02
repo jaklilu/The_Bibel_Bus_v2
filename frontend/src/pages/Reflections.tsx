@@ -11,7 +11,7 @@ interface ReflectionEntry {
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString; // fallback if invalid date
+  if (isNaN(date.getTime())) return dateString; // fallback
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -26,27 +26,38 @@ const Reflections: React.FC = () => {
   useEffect(() => {
     const fetchReflections = async () => {
       try {
-        // replace with your live n8n webhook URL
-        const response = await fetch(import.meta.env.VITE_N8N_WEBHOOK_URL);
-        const data = await response.json();
+        const SHEET_URL =
+          "https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv";
 
-        // expect data from Google Sheets as array of { Name, Date, Verse, Reflection }
-        const parsed = data.map((row: any) => ({
-          name: row.Name || "",
-          date: row.Date || "",
-          verse: row.Verse || "",
-          reflection: row.Reflection || "",
-        }));
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
 
-        // sort newest first
+        // Split CSV into lines and remove header
+        const rows = text.split("\n").slice(1);
+
+        // Parse rows manually (safe CSV)
+        const parsed: ReflectionEntry[] = rows
+          .map((line) => {
+            const cols = line.split(",");
+            const [name, date, verse, ...reflectionParts] = cols;
+            const reflection = reflectionParts.join(",").trim();
+            return {
+              name: name?.trim() || "",
+              date: date?.trim() || "",
+              verse: verse?.trim() || "",
+              reflection: reflection || "",
+            };
+          })
+          .filter((r) => r.name && r.reflection); // skip empty rows
+
+        // Sort by date (newest first)
         parsed.sort(
-          (a: ReflectionEntry, b: ReflectionEntry) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
 
         setReflections(parsed);
       } catch (error) {
-        console.error("Error fetching reflections:", error);
+        console.error("Error fetching reflections CSV:", error);
       } finally {
         setLoading(false);
       }
@@ -65,7 +76,9 @@ const Reflections: React.FC = () => {
         >
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-amber-400 mr-3" />
-            <h1 className="text-4xl font-heading text-white">Daily Reflections</h1>
+            <h1 className="text-4xl font-heading text-white">
+              Daily Reflections
+            </h1>
           </div>
           <p className="text-purple-200 text-lg">
             Shared thoughts and insights from our Bible reading journey
@@ -101,7 +114,9 @@ const Reflections: React.FC = () => {
               >
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-white font-semibold">{r.name}</p>
-                  <span className="text-purple-300 text-sm">{formatDate(r.date)}</span>
+                  <span className="text-purple-300 text-sm">
+                    {formatDate(r.date)}
+                  </span>
                 </div>
 
                 {r.verse && (
