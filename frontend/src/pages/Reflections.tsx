@@ -86,32 +86,31 @@ const Reflections = () => {
         ) : (
           <div className="space-y-6">
             {reflections.map((r, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-white font-semibold">{r.name}</p>
-                  <span className="text-purple-300 text-sm">{formatDate(r.date)}</span>
-                </div>
+                <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
+                >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                    <p className="text-white font-semibold">{r.name}</p>
+                    <span className="text-purple-300 text-sm">{formatDate(r.date)}</span>
+                    </div>
 
-                {/* Verse (small/italic) */}
-                {r.verse && (
-                    <p className="text-amber-300 italic mb-2">
-                        {r.verse.trim()}
-                    </p>
-                )}
+                    {/* Verse (italic + highlighted) */}
+                    {r.verse && (
+                    <p className="text-amber-300 italic mb-2">{r.verse.trim()}</p>
+                    )}
 
-                {/* Reflection */}
-                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
-                  {r.reflection}
-                </div>
-              </motion.div>
+                    {/* Reflection */}
+                    <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
+                    {r.reflection}
+                    </div>
+                </motion.div>
             ))}
+
           </div>
         )}
       </div>
