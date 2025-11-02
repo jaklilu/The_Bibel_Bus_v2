@@ -313,6 +313,21 @@ const initializeTables = () => {
     }
   })
 
+  // Daily Reflections table (from YouVersion → n8n → Google Sheets)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS daily_reflections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      group_id INTEGER NOT NULL,
+      day_number INTEGER NOT NULL,
+      reflection_text TEXT NOT NULL,
+      status TEXT DEFAULT 'approved',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (group_id) REFERENCES bible_groups (id)
+    )
+  `)
+
   // Add completed_at to group_members if it doesn't exist
   db.run(`
     ALTER TABLE group_members ADD COLUMN completed_at DATETIME DEFAULT NULL

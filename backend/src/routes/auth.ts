@@ -81,6 +81,32 @@ router.get('/public/trophies', async (req: Request, res: Response) => {
   }
 })
 
+// Public: Get all approved daily reflections
+router.get('/public/reflections', async (req: Request, res: Response) => {
+  try {
+    const rows = await getRows(`
+      SELECT 
+        dr.id,
+        dr.day_number,
+        dr.reflection_text,
+        dr.created_at,
+        u.name as author_name,
+        u.avatar_url as author_avatar,
+        bg.name as group_name
+      FROM daily_reflections dr
+      JOIN users u ON dr.user_id = u.id
+      JOIN bible_groups bg ON dr.group_id = bg.id
+      WHERE dr.status = 'approved'
+      ORDER BY dr.created_at DESC
+      LIMIT 100
+    `)
+    res.json({ success: true, data: { reflections: rows } })
+  } catch (error) {
+    console.error('Error fetching public reflections:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to load reflections' } })
+  }
+})
+
 // Request trophy approval for journey completion
 router.post('/request-trophy-approval', userAuth, async (req: Request, res: Response) => {
   try {

@@ -1025,6 +1025,194 @@ const exists = await getRows(
 - **Ready for Production**: All automation issues resolved for app launch
 
 ---
-Last Updated: September 27, 2025
-Session Status: Welcome message automation bugs fixed - resolved duplicate messages and incorrect attribution, now shows proper admin messages with robust duplicate prevention
-Next Session Goals: Monitor message board functionality, continue user experience optimization, and implement any additional features as needed
+
+## 23. Landing Page Countdown Mismatch & Dual Countdown Logic
+
+### **Problem Identified** 🔍
+- **Misleading Countdown**: Landing page showed "Next Group Starts January 1, 2026" while registration was still open for October 2025 group
+- **User Confusion**: New registrations were being added to current group but page displayed future group info
+- **Static Data**: Landing page used hardcoded countdown instead of dynamic current group data
+
+### **Root Cause Analysis** 🧐
+- **No Dynamic Data**: Frontend not fetching actual current active group information
+- **Hardcoded Logic**: Countdown timer used static next quarter dates instead of current group dates
+- **Missing API**: No public endpoint to provide current group data to landing page
+
+### **Solutions Implemented** ✅
+
+#### **1. Dynamic Current Group API**
+- **New Endpoint**: `GET /api/auth/public/current-group`
+- **Public Access**: No authentication required for landing page data
+- **Complete Data**: Returns group name, dates, member counts, and status
+
+#### **2. Dual Countdown Logic**
+- **Pre-Start Countdown**: Shows "Group Starts In" before group start date
+- **Post-Start Countdown**: Shows "Registration Closes In" after group starts
+- **Dynamic Switching**: Automatically switches between countdown types based on current date
+
+#### **3. Frontend Integration**
+- **API Integration**: Home.tsx fetches current group data on component mount
+- **Real-time Updates**: Countdown updates every second with accurate data
+- **Member Display**: Shows current member count vs max members
+
+### **Technical Implementation** 🔧
+
+#### **Backend API (`backend/src/routes/auth.ts`)**
+```typescript
+router.get('/public/current-group', async (req: Request, res: Response) => {
+  const currentGroup = await GroupService.getCurrentActiveGroup()
+  const memberCount = await getRow(`
+    SELECT COUNT(*) as count FROM group_members 
+    WHERE group_id = ? AND status = 'active'
+  `, [currentGroup.id])
+  
+  res.json({
+    success: true,
+    data: {
+      id: currentGroup.id,
+      name: currentGroup.name,
+      start_date: currentGroup.start_date,
+      registration_deadline: currentGroup.registration_deadline,
+      max_members: currentGroup.max_members,
+      member_count: memberCount?.count || 0
+    }
+  })
+})
+```
+
+#### **Frontend Logic (`frontend/src/pages/Home.tsx`)**
+```typescript
+useEffect(() => {
+  const groupStartDate = new Date(currentGroup.start_date + 'T00:00:00')
+  const registrationDeadline = new Date(currentGroup.registration_deadline + 'T23:59:59')
+  
+  // If group hasn't started yet, count down to start date
+  if (distanceToStart > 0) {
+    setCountdownText("Group Starts In")
+  }
+  // If group has started but registration is still open, count down to deadline
+  else if (distanceToDeadline > 0) {
+    setCountdownText("Registration Closes In")
+  }
+}, [currentGroup])
+```
+
+### **Results Achieved** 🎯
+
+#### **User Experience Improvements**
+- ✅ **Accurate Information**: Landing page now shows correct current group details
+- ✅ **Clear Timeline**: Users understand exactly when group starts and when registration closes
+- ✅ **Real Member Count**: Displays actual participation numbers
+- ✅ **No Confusion**: Registration flow matches displayed information
+
+#### **Technical Improvements**
+- ✅ **Dynamic Data**: Landing page always shows current active group
+- ✅ **API Integration**: Clean separation between frontend display and backend data
+- ✅ **Responsive Updates**: Countdown updates in real-time
+- ✅ **Public Access**: No authentication required for basic group information
+
+### **Business Impact**
+- ✅ **Reduced Support**: Fewer user questions about registration timing
+- ✅ **Better Conversion**: Clear information encourages registration
+- ✅ **Accurate Metrics**: Member counts reflect actual participation
+- ✅ **Professional Appearance**: Consistent, accurate information builds trust
+
+---
+
+## 24. Invitation Reminder Automation & Message Formatting Fixes
+
+### **Problem Identified** 🔍
+- **Invitation Acceptance Issue**: 34+ members registered but only 13 actually accepted invitation and started reading
+- **Message Formatting Issue**: Admin messages displayed as single long lines without paragraph breaks or formatting
+- **Deployment Coordination**: Backend-only changes weren't triggering frontend deployments properly
+
+### **Root Cause Analysis** 🧐
+- **No Reminder System**: No automated system to remind registered members to accept invitations
+- **CSS Missing**: Message content displayed without `whitespace-pre-wrap` CSS class
+- **Deployment Logic**: Netlify requires frontend changes to trigger builds, backend-only commits fail
+
+### **Solutions Implemented** ✅
+
+#### **1. Automated Invitation Reminder System**
+- **Trigger Days**: Sends reminders on days 3, 7, 11, and 15 after group start
+- **Dual Delivery**: Both message board posts and individual emails
+- **Smart Targeting**: All active group members receive reminders
+- **Content**: Clear instructions for joining reading group and WhatsApp group
+- **Duplicate Prevention**: One reminder per day per group maximum
+
+#### **2. Message Formatting Preservation**
+- **CSS Fix**: Added `whitespace-pre-wrap` class to message content display
+- **Components Updated**: Both MessageBoard.tsx and AdminMessageManager.tsx
+- **Result**: Line breaks, paragraphs, and formatting now preserved
+
+#### **3. Deployment Coordination Fix**
+- **Frontend Trigger**: Added small frontend changes to ensure both platforms deploy
+- **Platform Sync**: Both Netlify (frontend) and Render (backend) now deploy together
+
+### **Technical Implementation** 🔧
+
+#### **Backend Changes (`backend/src/services/cronService.ts`)**
+```typescript
+export async function sendInvitationReminders(): Promise<void> {
+  // Find active groups within first 17 days
+  // Calculate days since start (3, 7, 11, 15)
+  // Post message board reminder
+  // Send individual emails to all members
+  // Prevent duplicate sends per day
+}
+```
+
+#### **Email Service (`backend/src/utils/emailService.ts`)**
+```typescript
+export const sendInvitationReminderEmail = async (
+  email: string, 
+  userName: string, 
+  groupName: string, 
+  registrationDeadline: string
+) => {
+  // Professional HTML email template
+  // Dashboard link with instructions
+  // Registration deadline warning
+}
+```
+
+#### **Frontend Changes**
+```typescript
+// MessageBoard.tsx & AdminMessageManager.tsx
+<p className="text-purple-200 leading-relaxed mb-4 whitespace-pre-wrap">
+  {message.content}
+</p>
+```
+
+### **Results Achieved** 🎯
+
+#### **User Experience Improvements**
+- ✅ **Clear Instructions**: Members receive specific steps to accept invitations
+- ✅ **Professional Messaging**: Well-formatted messages with proper paragraph breaks
+- ✅ **Timely Reminders**: Automated system prevents members from missing registration deadline
+- ✅ **Dual Communication**: Both in-app messages and email notifications
+
+#### **Technical Improvements**
+- ✅ **Automated System**: No manual intervention needed for reminders
+- ✅ **Formatting Preserved**: All message content displays with proper formatting
+- ✅ **Deployment Sync**: Both frontend and backend deploy together
+- ✅ **Duplicate Prevention**: Robust logic prevents spam or duplicate reminders
+
+#### **Business Impact**
+- ✅ **Higher Engagement**: More members likely to accept invitations with reminders
+- ✅ **Better Communication**: Professional, well-formatted messages improve user experience
+- ✅ **Reduced Manual Work**: Automated system handles reminder distribution
+- ✅ **Improved Retention**: Clear instructions and timely reminders increase participation
+
+### **Deployment Status** 🚀
+- **Backend Built**: TypeScript compilation successful
+- **Frontend Updated**: Message formatting and deployment trigger committed
+- **Git Committed**: Comprehensive commit messages with detailed descriptions
+- **Both Platforms Deployed**: Netlify (frontend) and Render (backend) synchronized
+- **Ready for Production**: All automation and formatting issues resolved
+
+---
+
+**Last Updated**: October 8, 2025  
+**Session Status**: Landing page countdown mismatch fixed with dual countdown logic, invitation reminder automation implemented, and message formatting fixed - landing page now shows accurate current group information with dynamic countdown switching between start date and registration deadline, automated system sends reminders on days 3, 7, 11, 15 to encourage invitation acceptance, message content now preserves formatting with proper line breaks and paragraphs, deployment coordination between Netlify and Render improved  
+**Next Session Goals**: Monitor reminder system effectiveness, continue user experience optimization, and implement any additional features as needed

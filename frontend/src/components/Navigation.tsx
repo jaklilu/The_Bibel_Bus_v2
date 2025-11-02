@@ -14,6 +14,7 @@ const Navigation = () => {
     { to: '/', label: 'Home' },
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/messages', label: 'Messages' },
+    { to: '/reflections', label: 'Reflections' },
     { to: '/awards', label: 'Awards' },
     { to: '/donate', label: 'Donate' },
     { to: '/login', label: 'Login' },

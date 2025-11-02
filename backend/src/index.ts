@@ -63,6 +63,42 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 
+// N8N webhook for daily reflections (must be BEFORE express.json())
+app.post('/api/auth/reflections-webhook', express.raw({type: 'application/json'}), async (req, res) => {
+  try {
+    const body = req.body
+    const reflectionData = JSON.parse(body.toString())
+    
+    console.log('Received reflection webhook:', reflectionData)
+    
+    const { getRow, runQuery } = await import('./database/database')
+    const { user_id, group_id, day_number, reflection_text } = reflectionData
+    
+    // Validate required fields
+    if (!user_id || !group_id || !day_number || !reflection_text) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Missing required fields' }
+      })
+    }
+    
+    // Insert reflection
+    await runQuery(
+      'INSERT INTO daily_reflections (user_id, group_id, day_number, reflection_text, status) VALUES (?, ?, ?, ?, ?)',
+      [user_id, group_id, day_number, reflection_text, 'approved']
+    )
+    
+    console.log('Reflection saved successfully')
+    res.json({ success: true, received: true })
+  } catch (error) {
+    console.error('Reflection webhook error:', error)
+    res.status(400).json({
+      success: false,
+      error: { message: 'Webhook error' }
+    })
+  }
+})
+
 // Stripe webhook (must be BEFORE express.json() to preserve raw body)
 app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), async (req, res) => {
   try {
