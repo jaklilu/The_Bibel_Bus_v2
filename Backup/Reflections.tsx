@@ -19,31 +19,17 @@ const Reflections = () => {
   useEffect(() => {
     const fetchReflections = async () => {
       try {
-        const SHEET_URL =
-          'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/gviz/tq?tqx=out:json'
-        
-        const res = await fetch(SHEET_URL)
-        const text = await res.text()
-  
-        // Clean Google gviz response
-        const json = JSON.parse(text.substr(47).slice(0, -2))
-  
-        const reflections = json.table.rows.map(row => ({
-          name: row.c[0]?.v || '',
-          date: row.c[1]?.v || '',
-          verse: row.c[2]?.v || '',
-          reflection_text: row.c[3]?.v || ''
-        }))
-  
-        // reverse for newest first (optional)
-        setReflections(reflections.reverse())
+        const res = await fetch('/api/auth/public/reflections')
+        const data = await res.json()
+        if (data?.success) {
+          setReflections(data.data.reflections)
+        }
       } catch (error) {
-        console.error('Error fetching reflections from sheet:', error)
+        console.error('Error fetching reflections:', error)
       } finally {
         setLoading(false)
       }
     }
-  
     fetchReflections()
   }, [])
 
