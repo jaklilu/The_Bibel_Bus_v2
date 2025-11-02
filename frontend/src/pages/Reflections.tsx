@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, MessageSquare } from 'lucide-react'
+import { BookOpen } from 'lucide-react' // keep icons minimal to avoid TS unused errors
 
-interface CSVRow {
+type CSVRow = {
   name: string
   date: string
   verse: string
@@ -11,7 +11,7 @@ interface CSVRow {
 
 const Reflections = () => {
   const [reflections, setReflections] = useState<CSVRow[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchReflections = async () => {
@@ -22,20 +22,26 @@ const Reflections = () => {
         const res = await fetch(SHEET_URL)
         const text = await res.text()
 
-        // Split CSV into lines (skip header)
+        // rows (skip header)
         const rows = text.split('\n').slice(1)
 
-       // Parse each row safely, handling commas inside quotes
-       const parsedReflections: CSVRow[] = rows.map((line: string) => {
-         const columns = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || []
-         const [name, date, verse, reflection] = columns.map(col => col.replace(/^"|"$/g, '').trim())
-         return { name, date, verse, reflection }
-       })
+        // robust CSV split (keeps commas inside quotes)
+        const parsed: CSVRow[] = rows
+          .map((line) => {
+            if (!line.trim()) return null
+            const cols =
+              line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)?.map(c =>
+                c.replace(/^"|"$/g, '').trim()
+              ) ?? []
+            const [name = '', date = '', verse = '', reflection = ''] = cols
+            if (!name && !date && !verse && !reflection) return null
+            return { name, date, verse, reflection }
+          })
+          .filter((r): r is CSVRow => !!r)
 
-
-        setReflections([...parsedReflections].reverse())
-      } catch (error) {
-        console.error('Error fetching reflections CSV:', error)
+        setReflections(parsed.reverse())
+      } catch (e) {
+        console.error('Error fetching reflections CSV:', e)
       } finally {
         setLoading(false)
       }
@@ -44,24 +50,28 @@ const Reflections = () => {
     fetchReflections()
   }, [])
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+  const formatDate = (raw: string) =>
+    new Date(raw).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="text-center mb-6"
         >
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-amber-400 mr-3" />
             <h1 className="text-4xl font-heading text-white">Daily Reflections</h1>
           </div>
-          <p className="text-purple-200 text-lg">Shared thoughts and insights from our Bible reading journey</p>
+          <p className="text-purple-200 text-lg">
+            Shared thoughts and insights from our Bible reading journey
+          </p>
         </motion.div>
 
         {loading ? (
@@ -70,31 +80,34 @@ const Reflections = () => {
             <p>Loading reflections...</p>
           </div>
         ) : reflections.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center"
-          >
-            <MessageSquare className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-            <p className="text-purple-200 text-lg">No reflections shared yet</p>
-            <p className="text-purple-300 text-sm mt-2">Check back soon for insights from our reading community</p>
-          </motion.div>
+          <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center text-purple-200">
+            No reflections shared yet
+          </div>
         ) : (
           <div className="space-y-6">
-            {reflections.map((r, index) => (
+            {reflections.map((r, i) => (
               <motion.div
-                key={index}
+                key={i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: i * 0.05 }}
                 className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
               >
-                <div className="flex justify-between mb-2">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
                   <p className="text-white font-semibold">{r.name}</p>
-                  <p className="text-purple-300 text-sm">{formatDate(r.date)}</p>
+                  <span className="text-purple-300 text-sm">{formatDate(r.date)}</span>
                 </div>
-                {r.verse && <p className="text-amber-300 italic mb-2">{r.verse}</p>}
-                <p className="text-purple-100 leading-relaxed whitespace-pre-wrap">{r.reflection}</p>
+
+                {/* Verse (small/italic) */}
+                {r.verse && (
+                  <p className="text-amber-300 italic mb-3">{r.verse}</p>
+                )}
+
+                {/* Reflection */}
+                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
+                  {r.reflection}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -105,4 +118,3 @@ const Reflections = () => {
 }
 
 export default Reflections
-
