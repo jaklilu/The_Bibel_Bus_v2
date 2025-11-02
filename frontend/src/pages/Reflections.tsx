@@ -20,25 +20,31 @@ const Reflections = () => {
     const fetchReflections = async () => {
       try {
         const SHEET_URL =
-          'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/gviz/tq?tqx=out:json'
+          'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv'
         
         const res = await fetch(SHEET_URL)
         const text = await res.text()
+        
+        // Split CSV text into rows (skip the first header row)
+        const rows = text.split('\n').slice(1)
   
-        // Clean Google gviz response
-        const json = JSON.parse(text.substr(47).slice(0, -2))
+        // Define a lightweight CSV type inline
+        interface CSVRow {
+        name: string
+        date: string
+        verse: string
+        reflection_text: string
+       }
   
-        const reflections = json.table.rows.map((row: any)=> ({
-          name: row.c[0]?.v || '',
-          date: row.c[1]?.v || '',
-          verse: row.c[2]?.v || '',
-          reflection_text: row.c[3]?.v || ''
-        }))
-  
-        // reverse for newest first (optional)
-        setReflections(reflections.reverse())
+      // Parse CSV manually (type-safe)
+      const parsedReflections: CSVRow[] = rows.map((line: string) => {
+        const [name, date, verse, reflection_text] = line.split(',')
+        return { name, date, verse, reflection_text }
+      })
+      
+      setReflections([...parsedReflections].reverse() as CSVRow[])
       } catch (error) {
-        console.error('Error fetching reflections from sheet:', error)
+        console.error('Error fetching reflections CSV:', error)
       } finally {
         setLoading(false)
       }
@@ -46,6 +52,7 @@ const Reflections = () => {
   
     fetchReflections()
   }, [])
+  
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
