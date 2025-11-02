@@ -31,7 +31,7 @@ const Reflections = () => {
             if (!line.trim()) return null
             const cols =
               line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)?.map(c =>
-                c.replaceAll('"', '').trim()
+                c.replace(/"/g, '').trim()
               ) ?? []
             const [name = '', date = '', verse = '', reflection = ''] = cols
             if (!name && !date && !verse && !reflection) return null
