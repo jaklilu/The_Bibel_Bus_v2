@@ -22,13 +22,16 @@ const Reflections = () => {
         const res = await fetch(SHEET_URL)
         const text = await res.text()
 
-        // Split CSV text into rows (skip the first header row)
+        // Split CSV into lines (skip header)
         const rows = text.split('\n').slice(1)
 
-        const parsedReflections: CSVRow[] = rows.map((line: string) => {
-          const [name, date, verse, reflection] = line.split(',')
-          return { name, date, verse, reflection }
-        })
+       // Parse each row safely, handling commas inside quotes
+       const parsedReflections: CSVRow[] = rows.map((line: string) => {
+         const columns = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || []
+         const [name, date, verse, reflection] = columns.map(col => col.replace(/^"|"$/g, '').trim())
+         return { name, date, verse, reflection }
+       })
+
 
         setReflections([...parsedReflections].reverse())
       } catch (error) {
