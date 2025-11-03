@@ -47,7 +47,6 @@ const Reflections: React.FC = () => {
             const cols = line.split(",");
             const [name, date, verse, ...reflectionParts] = cols;
 
-            // More lenient verse cleaning
             const cleanedVerse = verse
               ?.replace(/"/g, "")
               .trim()
@@ -137,13 +136,17 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {/* ✅ Verse display */}
+                {/* ✅ Verse on its own line */}
                 {r.verse && r.verse.trim().length > 0 && (
-                  <p className="text-amber-300 italic mb-2">📖 {r.verse}</p>
+                  <div className="mb-3">
+                    <p className="text-amber-300 italic mb-1">
+                      📖 {r.verse}
+                    </p>
+                  </div>
                 )}
 
                 {/* Reflection Text */}
-                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
+                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap border-t border-purple-700/30 pt-3">
                   {r.reflection}
                 </div>
               </motion.div>
