@@ -39,40 +39,42 @@ const Reflections: React.FC = () => {
 
         const res = await fetch(SHEET_URL);
         const text = await res.text();
-
         const rows = text.split("\n").slice(1);
 
         const parsed: ReflectionEntry[] = rows
           .map((line) => {
             const cols = line.split(",");
             const [name, date, verse, ...reflectionParts] = cols;
+            let rawReflection = [verse, ...reflectionParts].join(",").trim();
 
-            const cleanedVerse = verse
-              ?.replace(/"/g, "")
-              .trim()
-              .replace(/^2025$/, "")
-              .replace(/^(\d{4})"$/, "")
-              .replace(/^(\d{4})$/, "")
-              .replace(/^,/, "")
-              .trim();
+            // ✳️ Try to separate verse from reflection automatically
+            let verseText = "";
+            let reflection = rawReflection;
 
-            const reflection = reflectionParts.join(",").trim().replace(/^"/, "");
+            const verseMatch = rawReflection.match(
+              /^([\w\s]+?\s\d+:\d+.*?)(?=Day|,Day|”Day|")/
+            );
+            if (verseMatch) {
+              verseText = verseMatch[1].trim().replace(/^"|,$/g, "");
+              reflection = rawReflection
+                .replace(verseMatch[0], "")
+                .replace(/^[" ,]+/, "")
+                .trim();
+            }
 
             return {
               name: name?.trim() || "",
               date: date?.trim() || "",
-              verse: cleanedVerse || "",
-              reflection: reflection || "",
+              verse: verseText,
+              reflection,
             };
           })
           .filter((r) => r.name && r.reflection);
 
-        // Sort latest → oldest
         parsed.sort(
           (a, b) =>
             parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
         );
-
         setReflections(parsed);
       } catch (error) {
         console.error("Error fetching reflections CSV:", error);
@@ -94,7 +96,9 @@ const Reflections: React.FC = () => {
         >
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-amber-400 mr-3" />
-            <h1 className="text-4xl font-heading text-white">Daily Reflections</h1>
+            <h1 className="text-4xl font-heading text-white">
+              Daily Reflections
+            </h1>
           </div>
           <p className="text-purple-200 text-lg">
             Shared thoughts and insights from our Bible reading journey
@@ -120,15 +124,14 @@ const Reflections: React.FC = () => {
           </motion.div>
         ) : (
           <div className="space-y-6">
-            {reflections.map((r, index) => (
+            {reflections.map((r, i) => (
               <motion.div
-                key={index}
+                key={i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: i * 0.05 }}
                 className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
               >
-                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-white font-semibold">{r.name}</p>
                   <span className="text-purple-300 text-sm">
@@ -136,16 +139,14 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {/* ✅ Verse on its own line */}
-                {r.verse && r.verse.trim().length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-amber-300 italic mb-1">
-                      📖 {r.verse}
-                    </p>
-                  </div>
+                {/* Verse line separated visually */}
+                {r.verse && (
+                  <p className="text-amber-300 italic mb-3 whitespace-pre-wrap leading-relaxed">
+                    📖 {r.verse}
+                  </p>
                 )}
 
-                {/* Reflection Text */}
+                {/* Reflection text block */}
                 <div className="text-purple-100 leading-relaxed whitespace-pre-wrap border-t border-purple-700/30 pt-3">
                   {r.reflection}
                 </div>
