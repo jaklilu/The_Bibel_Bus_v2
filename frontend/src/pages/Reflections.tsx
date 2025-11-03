@@ -47,15 +47,18 @@ const Reflections: React.FC = () => {
             const [name, date, ...rest] = cols;
             let combined = rest.join(",").trim();
 
-            // 🧹 Remove any "2025" artifacts
+            // Remove any "2025" artifacts
             combined = combined.replace(/"?2025"?/g, "").trim();
 
-            // 🕊 Extract verse before "Day"
+            // Extract verse before "Day"
             let verse = "";
             let reflection = combined;
             const dayIndex = combined.indexOf("Day");
             if (dayIndex > 0) {
-              verse = combined.substring(0, dayIndex).trim().replace(/^["',]+|["',]+$/g, "");
+              verse = combined
+                .substring(0, dayIndex)
+                .trim()
+                .replace(/^["',]+|["',]+$/g, "");
               reflection = combined.substring(dayIndex).trim();
             }
 
@@ -68,6 +71,7 @@ const Reflections: React.FC = () => {
           })
           .filter((r) => r.name && r.reflection);
 
+        // Sort by newest date first
         parsed.sort(
           (a, b) =>
             parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
@@ -139,12 +143,14 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Verse line (optional) */}
+                {/* Verse line (inline) */}
                 {r.verse && (
                   <div className="mb-4">
-                    <p className="text-amber-400 font-semibold mb-1">Verse:</p>
-                    <p className="text-purple-100 italic whitespace-pre-wrap">
-                      {r.verse}
+                    <p className="text-amber-400 font-semibold mb-1">
+                      Verse:{" "}
+                      <span className="text-purple-100 italic font-normal">
+                        {r.verse}
+                      </span>
                     </p>
                   </div>
                 )}
