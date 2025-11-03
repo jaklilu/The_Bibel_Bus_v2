@@ -9,10 +9,20 @@ interface ReflectionEntry {
   reflection: string;
 }
 
+const parseDateSafe = (raw: string): Date => {
+  // Normalize spaces and remove quotes
+  const cleaned = raw?.trim().replace(/"/g, "") || "";
+  // Force explicit parsing: Jan 1, 2025 -> 2025-01-01
+  const parts = cleaned.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
+  if (!parts) return new Date("1900-01-01");
+  const [, month, day, year] = parts;
+  const fixedYear = year || "2025"; // fallback year if missing
+  return new Date(`${month} ${day}, ${fixedYear}`);
+};
+
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString; // fallback
-  return date.toLocaleDateString("en-US", {
+  const d = parseDateSafe(dateString);
+  return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -32,10 +42,7 @@ const Reflections: React.FC = () => {
         const res = await fetch(SHEET_URL);
         const text = await res.text();
 
-        // Split CSV into lines and remove header
         const rows = text.split("\n").slice(1);
-
-        // Parse rows manually (safe CSV)
         const parsed: ReflectionEntry[] = rows
           .map((line) => {
             const cols = line.split(",");
@@ -48,11 +55,12 @@ const Reflections: React.FC = () => {
               reflection: reflection || "",
             };
           })
-          .filter((r) => r.name && r.reflection); // skip empty rows
+          .filter((r) => r.name && r.reflection);
 
-        // Sort by date (newest first)
+        // ✅ Safe and consistent sorting (latest first)
         parsed.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) =>
+            parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
         );
 
         setReflections(parsed);
@@ -76,9 +84,7 @@ const Reflections: React.FC = () => {
         >
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-amber-400 mr-3" />
-            <h1 className="text-4xl font-heading text-white">
-              Daily Reflections
-            </h1>
+            <h1 className="text-4xl font-heading text-white">Daily Reflections</h1>
           </div>
           <p className="text-purple-200 text-lg">
             Shared thoughts and insights from our Bible reading journey
