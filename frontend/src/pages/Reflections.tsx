@@ -10,13 +10,11 @@ interface ReflectionEntry {
 }
 
 const parseDateSafe = (raw: string): Date => {
-  // Normalize spaces and remove quotes
   const cleaned = raw?.trim().replace(/"/g, "") || "";
-  // Force explicit parsing: Jan 1, 2025 -> 2025-01-01
   const parts = cleaned.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
   if (!parts) return new Date("1900-01-01");
   const [, month, day, year] = parts;
-  const fixedYear = year || "2025"; // fallback year if missing
+  const fixedYear = year || "2025";
   return new Date(`${month} ${day}, ${fixedYear}`);
 };
 
@@ -43,21 +41,30 @@ const Reflections: React.FC = () => {
         const text = await res.text();
 
         const rows = text.split("\n").slice(1);
+
         const parsed: ReflectionEntry[] = rows
           .map((line) => {
             const cols = line.split(",");
             const [name, date, verse, ...reflectionParts] = cols;
-            const reflection = reflectionParts.join(",").trim();
+
+            // Clean each field safely
+            const cleanedVerse = verse
+              ?.replace(/"/g, "")
+              .trim()
+              .replace(/^2025$/, "") // remove standalone “2025”
+              .replace(/^(\d{4})"$/, ""); // remove any year artifacts
+
+            const reflection = reflectionParts.join(",").trim().replace(/^"/, "");
+
             return {
               name: name?.trim() || "",
               date: date?.trim() || "",
-              verse: verse?.trim() || "",
+              verse: cleanedVerse || "",
               reflection: reflection || "",
             };
           })
           .filter((r) => r.name && r.reflection);
 
-        // ✅ Safe and consistent sorting (latest first)
         parsed.sort(
           (a, b) =>
             parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
@@ -125,7 +132,8 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {r.verse && (
+                {/* ✅ Show verse only when valid */}
+                {r.verse && r.verse.length > 2 && (
                   <p className="text-amber-300 italic mb-2">{r.verse}</p>
                 )}
 
