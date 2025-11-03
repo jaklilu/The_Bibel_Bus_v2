@@ -45,32 +45,39 @@ const Reflections: React.FC = () => {
           .map((line) => {
             const cols = line.split(",");
             const [name, date, verse, ...reflectionParts] = cols;
-            let rawReflection = [verse, ...reflectionParts].join(",").trim();
+            const combined = [verse, ...reflectionParts].join(",").trim();
 
-            // ✳️ Try to separate verse from reflection automatically
-            let verseText = "";
-            let reflection = rawReflection;
+            // 🧩 Clean "2025" and separate verse if present
+            const cleanedVerse = (verse || "")
+              .replace(/(^2025"?|,"?2025"?)/g, "")
+              .trim();
 
-            const verseMatch = rawReflection.match(
+            // Detect verse patterns
+            const verseMatch = combined.match(
               /^([\w\s]+?\s\d+:\d+.*?)(?=Day|,Day|”Day|")/
             );
-            if (verseMatch) {
-              verseText = verseMatch[1].trim().replace(/^"|,$/g, "");
-              reflection = rawReflection
-                .replace(verseMatch[0], "")
-                .replace(/^[" ,]+/, "")
-                .trim();
-            }
+            const verseText = verseMatch
+              ? verseMatch[1].replace(/^"|,$/g, "").trim()
+              : cleanedVerse;
+
+            // Reflection = everything after verse
+            const reflectionText = verseMatch
+              ? combined
+                  .replace(verseMatch[0], "")
+                  .replace(/^[" ,]+/, "")
+                  .trim()
+              : combined;
 
             return {
               name: name?.trim() || "",
               date: date?.trim() || "",
               verse: verseText,
-              reflection,
+              reflection: reflectionText,
             };
           })
           .filter((r) => r.name && r.reflection);
 
+        // Sort by newest first
         parsed.sort(
           (a, b) =>
             parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
@@ -89,6 +96,7 @@ const Reflections: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 via-purple-600 to-purple-700">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Page header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,6 +113,7 @@ const Reflections: React.FC = () => {
           </p>
         </motion.div>
 
+        {/* Loading state */}
         {loading ? (
           <div className="text-center text-white py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
@@ -132,6 +141,7 @@ const Reflections: React.FC = () => {
                 transition={{ delay: i * 0.05 }}
                 className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
               >
+                {/* Header: name + date */}
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-white font-semibold">{r.name}</p>
                   <span className="text-purple-300 text-sm">
@@ -139,14 +149,17 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Verse line separated visually */}
-                {r.verse && (
-                  <p className="text-amber-300 italic mb-3 whitespace-pre-wrap leading-relaxed">
-                    📖 {r.verse}
-                  </p>
+                {/* Verse section — only if verse exists */}
+                {r.verse && r.verse.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-amber-400 font-semibold mb-1">Verse</p>
+                    <p className="text-purple-100 italic whitespace-pre-wrap">
+                      {r.verse}
+                    </p>
+                  </div>
                 )}
 
-                {/* Reflection text block */}
+                {/* Reflection text */}
                 <div className="text-purple-100 leading-relaxed whitespace-pre-wrap border-t border-purple-700/30 pt-3">
                   {r.reflection}
                 </div>
