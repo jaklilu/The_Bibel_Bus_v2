@@ -47,12 +47,15 @@ const Reflections: React.FC = () => {
             const cols = line.split(",");
             const [name, date, verse, ...reflectionParts] = cols;
 
-            // Clean each field safely
+            // More lenient verse cleaning
             const cleanedVerse = verse
               ?.replace(/"/g, "")
               .trim()
-              .replace(/^2025$/, "") // remove standalone “2025”
-              .replace(/^(\d{4})"$/, ""); // remove any year artifacts
+              .replace(/^2025$/, "")
+              .replace(/^(\d{4})"$/, "")
+              .replace(/^(\d{4})$/, "")
+              .replace(/^,/, "")
+              .trim();
 
             const reflection = reflectionParts.join(",").trim().replace(/^"/, "");
 
@@ -65,6 +68,7 @@ const Reflections: React.FC = () => {
           })
           .filter((r) => r.name && r.reflection);
 
+        // Sort latest → oldest
         parsed.sort(
           (a, b) =>
             parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()
@@ -125,6 +129,7 @@ const Reflections: React.FC = () => {
                 transition={{ delay: index * 0.05 }}
                 className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
               >
+                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-white font-semibold">{r.name}</p>
                   <span className="text-purple-300 text-sm">
@@ -132,11 +137,12 @@ const Reflections: React.FC = () => {
                   </span>
                 </div>
 
-                {/* ✅ Show verse only when valid */}
-                {r.verse && r.verse.length > 2 && (
-                  <p className="text-amber-300 italic mb-2">{r.verse}</p>
+                {/* ✅ Verse display */}
+                {r.verse && r.verse.trim().length > 0 && (
+                  <p className="text-amber-300 italic mb-2">📖 {r.verse}</p>
                 )}
 
+                {/* Reflection Text */}
                 <div className="text-purple-100 leading-relaxed whitespace-pre-wrap">
                   {r.reflection}
                 </div>
