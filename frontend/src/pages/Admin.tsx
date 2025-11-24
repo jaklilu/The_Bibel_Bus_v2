@@ -72,6 +72,8 @@ const Admin = () => {
   const [userSearch, setUserSearch] = useState('')
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [addingMembers, setAddingMembers] = useState(false)
+  const [sendingInvites, setSendingInvites] = useState<number | null>(null)
+  const [inviteResult, setInviteResult] = useState<{groupId: number, success: boolean, message: string, sent: number, failed: number, total: number} | null>(null)
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -261,6 +263,50 @@ const Admin = () => {
       setEditStatus(group.status || 'upcoming')
       setEditStart(group.start_date || '')
       setEditMax(group.max_members || 50)
+    }
+  }
+
+  const sendWhatsAppInvites = async (groupId: number) => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) {
+      setError('Please log in again')
+      return
+    }
+
+    setSendingInvites(groupId)
+    setInviteResult(null)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/admin/send-whatsapp-invites/${groupId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setInviteResult({
+          groupId: groupId,
+          success: true,
+          message: data.message,
+          sent: data.data.sent,
+          failed: data.data.failed,
+          total: data.data.total
+        })
+        // Clear result after 5 seconds
+        setTimeout(() => setInviteResult(null), 5000)
+      } else {
+        setError(data.error?.message || 'Failed to send invites')
+      }
+    } catch (err) {
+      console.error('Error sending WhatsApp invites:', err)
+      setError('Failed to send invites. Please try again.')
+    } finally {
+      setSendingInvites(null)
     }
   }
 
@@ -771,19 +817,37 @@ const Admin = () => {
                           </button>
                         </div>
 
-                        <div className="flex space-x-2">
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => viewGroupMembers(group.id)}
+                              className="flex-1 bg-amber-500 text-purple-900 py-2 px-3 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                            >
+                              View Members
+                            </button>
+                            <button 
+                              onClick={() => manageGroup(group.id)}
+                              className="flex-1 bg-purple-600 text-white py-2 px-3 rounded-lg hover:bg-purple-800 transition-colors text-sm font-medium"
+                            >
+                              Manage
+                            </button>
+                          </div>
                           <button 
-                            onClick={() => viewGroupMembers(group.id)}
-                            className="flex-1 bg-amber-500 text-purple-900 py-2 px-3 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                            onClick={() => sendWhatsAppInvites(group.id)}
+                            disabled={sendingInvites === group.id}
+                            className="w-full bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
                           >
-                            View Members
+                            {sendingInvites === group.id ? (
+                              <>⏳ Sending...</>
+                            ) : (
+                              <>📱 Send WhatsApp Invites</>
+                            )}
                           </button>
-                          <button 
-                            onClick={() => manageGroup(group.id)}
-                            className="flex-1 bg-purple-600 text-white py-2 px-3 rounded-lg hover:bg-purple-800 transition-colors text-sm font-medium"
-                          >
-                            Manage
-                          </button>
+                          {inviteResult && inviteResult.groupId === group.id && (
+                            <div className={`p-2 rounded text-xs ${inviteResult.success ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+                              {inviteResult.message} ({inviteResult.sent} sent, {inviteResult.failed} failed)
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     ));

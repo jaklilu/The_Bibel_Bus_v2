@@ -14,7 +14,15 @@ function makeRequest(url, options = {}) {
     const isHttps = urlObj.protocol === 'https:'
     const client = isHttps ? https : http
     
-    const req = client.request(url, options, (res) => {
+    const requestOptions = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      method: options.method || 'GET',
+      headers: options.headers || {}
+    }
+    
+    const req = client.request(requestOptions, (res) => {
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => {
