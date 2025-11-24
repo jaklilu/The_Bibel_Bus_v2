@@ -13,9 +13,40 @@ if (!groupId || isNaN(groupId)) {
   process.exit(1)
 }
 
-const dbPath = process.env.DB_PATH 
-  ? (path.isAbsolute(process.env.DB_PATH) ? process.env.DB_PATH : path.join(process.cwd(), process.env.DB_PATH))
-  : path.join(process.cwd(), 'data', 'biblebus.db')
+// Use the exact same logic as the app
+// The app resolves DB_PATH relative to process.cwd(), which is backend/ when server runs
+// So ./data/biblebus.db becomes backend/data/biblebus.db
+const fs = require('fs')
+let dbPath
+
+if (process.env.DB_PATH && process.env.DB_PATH.trim()) {
+  const configured = process.env.DB_PATH.trim()
+  dbPath = path.isAbsolute(configured)
+    ? configured
+    : path.join(process.cwd(), configured)
+} else {
+  // Default: backend/data/biblebus.db (when running from backend/)
+  dbPath = path.join(process.cwd(), 'data', 'biblebus.db')
+}
+
+console.log('Using database at:', dbPath)
+console.log('Database exists:', fs.existsSync(dbPath))
+
+// If database doesn't exist, try alternative locations
+if (!fs.existsSync(dbPath)) {
+  const altPaths = [
+    path.join(process.cwd(), '..', 'data', 'biblebus.db'), // root data/
+    path.join(__dirname, '..', 'data', 'biblebus.db'),      // from script location
+  ]
+  
+  for (const altPath of altPaths) {
+    if (fs.existsSync(altPath)) {
+      console.log(`Database not found at ${dbPath}, using alternative: ${altPath}`)
+      dbPath = altPath
+      break
+    }
+  }
+}
 
 const db = new sqlite3.Database(dbPath)
 
