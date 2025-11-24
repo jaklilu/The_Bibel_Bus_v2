@@ -222,9 +222,40 @@ export const sendWelcomeEmail = async (email: string, userName: string) => {
 }
 
 // Send invitation reminder email
-export const sendInvitationReminderEmail = async (email: string, userName: string, groupName: string, registrationDeadline: string) => {
+export const sendInvitationReminderEmail = async (
+  email: string, 
+  userName: string, 
+  groupName: string, 
+  registrationDeadline: string,
+  whatsappInviteUrl: string | null = null
+) => {
   try {
     const transporter = createTransporter()
+    
+    const whatsappSection = whatsappInviteUrl ? `
+      <div style="background: #dcfce7; border-left: 4px solid #25D366; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="color: #166534; margin: 0 0 10px 0; font-weight: bold; font-size: 16px;">
+          📱 Join Your WhatsApp Group (REQUIRED)
+        </p>
+        <p style="color: #166534; margin: 0 0 15px 0; font-size: 14px;">
+          This is our primary communication channel. Click below to join now:
+        </p>
+        <div style="text-align: center;">
+          <a href="${whatsappInviteUrl}" 
+             style="background: linear-gradient(135deg, #25D366, #128C7E); 
+                    color: white; 
+                    padding: 15px 30px; 
+                    text-decoration: none; 
+                    border-radius: 8px; 
+                    font-weight: bold; 
+                    font-size: 16px;
+                    display: inline-block;
+                    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);">
+            Join WhatsApp Group Now
+          </a>
+        </div>
+      </div>
+    ` : ''
     
     const mailOptions = {
       from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
@@ -244,6 +275,8 @@ export const sendInvitationReminderEmail = async (email: string, userName: strin
               We noticed you registered for <strong>${groupName}</strong> but haven't accepted your invitation yet.
             </p>
             
+            ${whatsappSection}
+            
             <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
               To start your 365-day Bible reading journey:
             </p>
@@ -251,7 +284,7 @@ export const sendInvitationReminderEmail = async (email: string, userName: strin
             <ol style="color: #6b7280; line-height: 1.8; font-size: 16px; padding-left: 20px;">
               <li>Visit your dashboard</li>
               <li>Under "Accept Your Invitation", click on <strong>"Join Reading Group"</strong></li>
-              <li>Also click <strong>"Join Your WhatsApp Group"</strong> for further communication</li>
+              ${whatsappInviteUrl ? '<li><strong>Join Your WhatsApp Group</strong> using the button above</li>' : '<li>Also click <strong>"Join Your WhatsApp Group"</strong> for further communication</li>'}
             </ol>
             
             <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
@@ -293,6 +326,132 @@ export const sendInvitationReminderEmail = async (email: string, userName: strin
     return true
   } catch (error) {
     console.error('Error sending invitation reminder email:', error)
+    return false
+  }
+}
+
+// Send welcome email with WhatsApp link after registration
+export const sendWelcomeEmailWithWhatsApp = async (
+  email: string, 
+  userName: string, 
+  groupName: string,
+  groupStartDate: string,
+  registrationDeadline: string,
+  whatsappInviteUrl: string | null
+) => {
+  try {
+    const transporter = createTransporter()
+    
+    const whatsappButton = whatsappInviteUrl ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${whatsappInviteUrl}" 
+           style="background: linear-gradient(135deg, #25D366, #128C7E); 
+                  color: white; 
+                  padding: 18px 40px; 
+                  text-decoration: none; 
+                  border-radius: 10px; 
+                  font-weight: bold; 
+                  font-size: 18px;
+                  display: inline-block;
+                  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+                  margin: 10px 0;">
+          📱 Join Your WhatsApp Group Now
+        </a>
+      </div>
+      <p style="color: #6b7280; line-height: 1.6; font-size: 14px; text-align: center; margin-top: 15px;">
+        <strong>Important:</strong> Click the button above to join your group's WhatsApp chat. 
+        This is where we communicate daily updates, encouragement, and important announcements.
+      </p>
+    ` : `
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="color: #92400e; margin: 0; font-size: 14px;">
+          ⚠️ WhatsApp group link will be available soon. Check your dashboard for updates.
+        </p>
+      </div>
+    `
+    
+    const mailOptions = {
+      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      to: email,
+      subject: `Welcome to ${groupName}! 🚌 - Join Your WhatsApp Group`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #fbbf24; margin: 10px 0 0 0; font-size: 18px; font-weight: bold;">Welcome Aboard!</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}! 🎉</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Welcome to <strong>${groupName}</strong>! We're thrilled to have you join us on this incredible 365-day journey through the Bible.
+            </p>
+            
+            <div style="background: #ede9fe; border-left: 4px solid #7c3aed; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #5b21b6; margin: 0; font-weight: bold; font-size: 14px;">
+                📅 Group Start Date: ${new Date(groupStartDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+              <p style="color: #5b21b6; margin: 5px 0 0 0; font-size: 14px;">
+                ⏰ Registration Deadline: ${new Date(registrationDeadline).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px; font-weight: bold;">
+              ⚡ Action Required: Join Your WhatsApp Group
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              To stay connected with your group and receive daily updates, you <strong>must</strong> join your WhatsApp group. 
+              This is our primary communication channel for:
+            </p>
+            
+            <ul style="color: #6b7280; line-height: 1.8; font-size: 16px; padding-left: 20px;">
+              <li>Daily reading reminders</li>
+              <li>Encouragement and support</li>
+              <li>Important announcements</li>
+              <li>Group discussions and questions</li>
+            </ul>
+            
+            ${whatsappButton}
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Visit Your Dashboard
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px; margin-top: 30px;">
+              If you have any questions or need help, don't hesitate to reach out. We're here to support you every step of the way!
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Blessings,<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">The Bible Bus - Journey to the Heart of God</p>
+          </div>
+        </div>
+      `
+    }
+    
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Welcome email with WhatsApp sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending welcome email with WhatsApp:', error)
     return false
   }
 }

@@ -337,6 +337,15 @@ const initializeTables = () => {
     }
   })
 
+  // Add whatsapp_joined tracking to group_members if not exists
+  db.run(`
+    ALTER TABLE group_members ADD COLUMN whatsapp_joined BOOLEAN DEFAULT 0
+  `, (err) => {
+    if (err && !String(err.message).includes('duplicate column name')) {
+      console.error('Error adding whatsapp_joined column to group_members:', err)
+    }
+  })
+
   console.log('✅ Database tables initialized')
 }
 

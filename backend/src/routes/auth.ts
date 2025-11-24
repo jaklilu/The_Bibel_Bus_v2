@@ -308,6 +308,25 @@ router.post('/register', [
       ? await GroupService.getGroupById(groupAssignment.groupId)
       : null
     
+    // Send welcome email with WhatsApp link if group assigned
+    if (group && group.whatsapp_invite_url) {
+      try {
+        const { sendWelcomeEmailWithWhatsApp } = await import('../utils/emailService')
+        await sendWelcomeEmailWithWhatsApp(
+          email,
+          name,
+          group.name,
+          group.start_date,
+          group.registration_deadline,
+          group.whatsapp_invite_url
+        )
+        console.log(`Welcome email sent to ${email} for group ${group.name}`)
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError)
+        // Don't fail registration if email fails
+      }
+    }
+    
     res.status(201).json({
       success: true,
       message: groupAssignment.success ? 'User registered successfully and assigned to group' : 'User registered successfully. We will place you into a group soon.',
@@ -1335,5 +1354,28 @@ router.post('/donations', [
   }
 })
 
+
+// Track WhatsApp link click
+router.post('/track-whatsapp-click', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const { group_id } = req.body
+    
+    if (!group_id) {
+      return res.status(400).json({ success: false, error: { message: 'Group ID required' } })
+    }
+    
+    // Update whatsapp_joined flag
+    await runQuery(
+      'UPDATE group_members SET whatsapp_joined = 1 WHERE user_id = ? AND group_id = ?',
+      [userId, group_id]
+    )
+    
+    res.json({ success: true, message: 'WhatsApp click tracked' })
+  } catch (error) {
+    console.error('Error tracking WhatsApp click:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to track click' } })
+  }
+})
 
 export default router

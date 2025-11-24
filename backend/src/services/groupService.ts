@@ -8,6 +8,8 @@ export interface BibleGroup {
   registration_deadline: string
   max_members: number
   status: 'upcoming' | 'active' | 'completed' | 'closed'
+  whatsapp_invite_url?: string | null
+  youversion_plan_url?: string | null
   created_at: string
 }
 

@@ -977,4 +977,78 @@ router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) 
   }
 })
 
+// Send WhatsApp invitation emails to existing group members
+router.post('/send-whatsapp-invites/:groupId', async (req: Request, res: Response) => {
+  try {
+    const { groupId } = req.params
+    const groupIdNum = parseInt(groupId, 10)
+    
+    if (isNaN(groupIdNum)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid group ID' } })
+    }
+    
+    // Get group details
+    const group = await GroupService.getGroupById(groupIdNum)
+    if (!group) {
+      return res.status(404).json({ success: false, error: { message: 'Group not found' } })
+    }
+    
+    // Get all active members of this group
+    const members = await getRows(`
+      SELECT u.id, u.name, u.email, u.phone
+      FROM group_members gm
+      JOIN users u ON gm.user_id = u.id
+      WHERE gm.group_id = ? AND gm.status = 'active' AND u.status = 'active'
+    `, [groupIdNum])
+    
+    if (members.length === 0) {
+      return res.json({ 
+        success: true, 
+        message: 'No active members found in this group',
+        data: { sent: 0, total: 0 }
+      })
+    }
+    
+    const { sendWelcomeEmailWithWhatsApp } = await import('../utils/emailService')
+    let sentCount = 0
+    let failedCount = 0
+    
+    // Send email to each member
+    for (const member of members) {
+      try {
+        await sendWelcomeEmailWithWhatsApp(
+          member.email,
+          member.name,
+          group.name,
+          group.start_date,
+          group.registration_deadline,
+          group.whatsapp_invite_url || null
+        )
+        sentCount++
+        console.log(`WhatsApp invite email sent to ${member.email} (${member.name})`)
+      } catch (error) {
+        failedCount++
+        console.error(`Failed to send email to ${member.email}:`, error)
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `WhatsApp invitation emails sent to ${sentCount} members`,
+      data: {
+        sent: sentCount,
+        failed: failedCount,
+        total: members.length,
+        group: {
+          id: group.id,
+          name: group.name
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Error sending WhatsApp invites:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to send invites' } })
+  }
+})
+
 export default router
