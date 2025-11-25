@@ -318,7 +318,9 @@ router.post('/register', [
           group.name,
           group.start_date,
           group.registration_deadline,
-          group.whatsapp_invite_url
+          group.whatsapp_invite_url,
+          result.id,  // userId
+          group.id    // groupId
         )
         console.log(`Welcome email sent to ${email} for group ${group.name}`)
       } catch (emailError) {
@@ -1355,7 +1357,55 @@ router.post('/donations', [
 })
 
 
-// Track WhatsApp link click
+// Track WhatsApp link click (redirect endpoint - no auth required)
+router.get('/track-whatsapp/:groupId/:token', async (req: Request, res: Response) => {
+  try {
+    const { groupId, token } = req.params
+    const groupIdNum = parseInt(groupId, 10)
+    
+    if (isNaN(groupIdNum)) {
+      return res.status(400).send('Invalid group ID')
+    }
+    
+    // Decode token to get user_id (simple base64 encoding of user_id)
+    let userId: number
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8')
+      userId = parseInt(decoded, 10)
+      if (isNaN(userId)) {
+        throw new Error('Invalid token')
+      }
+    } catch (error) {
+      return res.status(400).send('Invalid tracking token')
+    }
+    
+    // Get group WhatsApp URL
+    const group = await GroupService.getGroupById(groupIdNum)
+    if (!group || !group.whatsapp_invite_url) {
+      return res.status(404).send('WhatsApp group link not found')
+    }
+    
+    // Track the click (update whatsapp_joined flag)
+    try {
+      await runQuery(
+        'UPDATE group_members SET whatsapp_joined = 1 WHERE user_id = ? AND group_id = ?',
+        [userId, groupIdNum]
+      )
+      console.log(`WhatsApp click tracked: User ${userId} clicked link for group ${groupIdNum}`)
+    } catch (trackError) {
+      console.error('Error tracking click (continuing anyway):', trackError)
+      // Don't fail the redirect if tracking fails
+    }
+    
+    // Redirect to WhatsApp
+    res.redirect(302, group.whatsapp_invite_url)
+  } catch (error) {
+    console.error('Error in WhatsApp redirect:', error)
+    res.status(500).send('Error processing redirect')
+  }
+})
+
+// Track WhatsApp link click (API endpoint - requires auth)
 router.post('/track-whatsapp-click', userAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id

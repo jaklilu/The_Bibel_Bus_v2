@@ -356,7 +356,8 @@ export class GroupService {
         gm.*,
         u.name,
         u.email,
-        u.city
+        u.city,
+        COALESCE(gm.whatsapp_joined, 0) as whatsapp_joined
       FROM group_members gm
       JOIN users u ON gm.user_id = u.id
       WHERE gm.group_id = ? AND gm.status = 'active'

@@ -1211,8 +1211,13 @@ const Admin = () => {
                   </button>
                 </div>
                 
-                <div className="mb-4 text-sm text-purple-200">
-                  Total Members: {groupMembers.length} / {selectedGroup?.max_members || 50}
+                <div className="mb-4 flex justify-between items-center">
+                  <div className="text-sm text-purple-200">
+                    Total Members: {groupMembers.length} / {selectedGroup?.max_members || 50}
+                  </div>
+                  <div className="text-sm text-purple-200">
+                    📱 WhatsApp: {groupMembers.filter((m: any) => m.whatsapp_joined).length} / {groupMembers.length} joined
+                  </div>
                 </div>
                 
                 <div className="mb-4">
@@ -1266,6 +1271,13 @@ const Admin = () => {
                               }`}>
                                 {member.status}
                               </span>
+                              <div className="mt-1">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  member.whatsapp_joined ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
+                                }`}>
+                                  {member.whatsapp_joined ? '📱 WhatsApp Joined' : '📱 Not Joined'}
+                                </span>
+                              </div>
                               <p className="text-purple-400 text-xs mt-1">
                                 Joined: {formatDate(member.join_date)}
                               </p>

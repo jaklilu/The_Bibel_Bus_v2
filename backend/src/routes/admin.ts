@@ -1022,7 +1022,9 @@ router.post('/send-whatsapp-invites/:groupId', async (req: Request, res: Respons
           group.name,
           group.start_date,
           group.registration_deadline,
-          group.whatsapp_invite_url || null
+          group.whatsapp_invite_url || null,
+          member.id,  // userId
+          groupIdNum  // groupId
         )
         sentCount++
         console.log(`WhatsApp invite email sent to ${member.email} (${member.name})`)

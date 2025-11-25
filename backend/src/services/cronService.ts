@@ -230,7 +230,9 @@ export async function sendInvitationReminders(): Promise<void> {
             member.name,
             group.name,
             group.registration_deadline,
-            group.whatsapp_invite_url || null
+            group.whatsapp_invite_url || null,
+            member.id,  // userId
+            group.id    // groupId
           )
         } catch (emailError) {
           console.error(`Failed to send reminder email to ${member.email}:`, emailError)

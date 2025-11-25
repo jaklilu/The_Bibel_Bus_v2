@@ -227,10 +227,19 @@ export const sendInvitationReminderEmail = async (
   userName: string, 
   groupName: string, 
   registrationDeadline: string,
-  whatsappInviteUrl: string | null = null
+  whatsappInviteUrl: string | null = null,
+  userId?: number,
+  groupId?: number
 ) => {
   try {
     const transporter = createTransporter()
+    
+    // Create tracking URL if we have user and group IDs
+    // Use backend URL for tracking endpoint (it will redirect to WhatsApp)
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:5002'
+    const trackingUrl = (whatsappInviteUrl && userId && groupId) 
+      ? `${backendUrl}/api/auth/track-whatsapp/${groupId}/${Buffer.from(userId.toString()).toString('base64')}`
+      : whatsappInviteUrl
     
     const whatsappSection = whatsappInviteUrl ? `
       <div style="background: #dcfce7; border-left: 4px solid #25D366; padding: 15px; margin: 20px 0; border-radius: 4px;">
@@ -241,7 +250,7 @@ export const sendInvitationReminderEmail = async (
           This is our primary communication channel. Click below to join now:
         </p>
         <div style="text-align: center;">
-          <a href="${whatsappInviteUrl}" 
+          <a href="${trackingUrl}" 
              style="background: linear-gradient(135deg, #25D366, #128C7E); 
                     color: white; 
                     padding: 15px 30px; 
@@ -337,14 +346,23 @@ export const sendWelcomeEmailWithWhatsApp = async (
   groupName: string,
   groupStartDate: string,
   registrationDeadline: string,
-  whatsappInviteUrl: string | null
+  whatsappInviteUrl: string | null,
+  userId?: number,
+  groupId?: number
 ) => {
   try {
     const transporter = createTransporter()
     
+    // Create tracking URL if we have user and group IDs
+    // Use backend URL for tracking endpoint (it will redirect to WhatsApp)
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:5002'
+    const trackingUrl = (whatsappInviteUrl && userId && groupId) 
+      ? `${backendUrl}/api/auth/track-whatsapp/${groupId}/${Buffer.from(userId.toString()).toString('base64')}`
+      : whatsappInviteUrl
+    
     const whatsappButton = whatsappInviteUrl ? `
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${whatsappInviteUrl}" 
+        <a href="${trackingUrl}" 
            style="background: linear-gradient(135deg, #25D366, #128C7E); 
                   color: white; 
                   padding: 18px 40px; 
