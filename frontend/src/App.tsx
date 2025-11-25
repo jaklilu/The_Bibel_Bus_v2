@@ -10,6 +10,7 @@ import Donate from './pages/Donate'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
+import ForgotAccount from './pages/ForgotAccount'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
 import Messages from './pages/Messages'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/messages" element={<Messages />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/forgot-account" element={<ForgotAccount />} />
           <Route path="/awards" element={<Awards />} />
           <Route path="/trophies" element={<Awards />} />
           <Route path="/reflections" element={<Reflections />} />

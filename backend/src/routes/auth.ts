@@ -1356,6 +1356,128 @@ router.post('/donations', [
   }
 })
 
+// Account recovery - forgot name or email
+router.post('/forgot-account', [
+  body('email').optional().isEmail().withMessage('Must be a valid email'),
+  body('name').optional().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('recoveryType').isIn(['name', 'email']).withMessage('Recovery type must be "name" or "email"')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          details: errors.array()
+        }
+      })
+    }
+
+    const { email, name, recoveryType } = req.body
+
+    if (recoveryType === 'name') {
+      // User forgot their name - lookup by email
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Email is required to recover your name' }
+        })
+      }
+
+      const user = await getRow(
+        'SELECT id, name, email FROM users WHERE LOWER(email) = LOWER(?) AND status = ?',
+        [email, 'active']
+      )
+
+      if (!user) {
+        // For security, don't reveal if user exists
+        return res.json({
+          success: true,
+          message: 'If an account with this email exists, account information has been sent to your email'
+        })
+      }
+
+      // Send account recovery email
+      const { sendAccountRecoveryEmail } = await import('../utils/emailService')
+      const emailSent = await sendAccountRecoveryEmail(user.email, user.name, 'name')
+
+      if (emailSent) {
+        console.log(`Account recovery email sent to: ${user.email}`)
+        res.json({
+          success: true,
+          message: 'Account information has been sent to your email address'
+        })
+      } else {
+        res.status(500).json({
+          success: false,
+          error: { message: 'Failed to send account recovery email. Please try again.' }
+        })
+      }
+    } else {
+      // User forgot their email - lookup by name
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Name is required to recover your email' }
+        })
+      }
+
+      // Find users with matching name (case-insensitive, partial match)
+      const users = await getRows(
+        'SELECT id, name, email FROM users WHERE LOWER(name) LIKE LOWER(?) AND status = ? LIMIT 5',
+        [`%${name}%`, 'active']
+      )
+
+      if (users.length === 0) {
+        // For security, don't reveal if user exists
+        return res.json({
+          success: true,
+          message: 'If an account with this name exists, account information has been sent'
+        })
+      }
+
+      // If multiple matches, we'll send to all of them (user can identify which is theirs)
+      // If single match, send directly
+      const { sendAccountRecoveryEmail } = await import('../utils/emailService')
+      let sentCount = 0
+      let failedCount = 0
+
+      for (const user of users) {
+        try {
+          const emailSent = await sendAccountRecoveryEmail(user.email, user.name, 'email')
+          if (emailSent) {
+            sentCount++
+            console.log(`Account recovery email sent to: ${user.email}`)
+          } else {
+            failedCount++
+          }
+        } catch (error) {
+          failedCount++
+          console.error(`Failed to send to ${user.email}:`, error)
+        }
+      }
+
+      if (sentCount > 0) {
+        res.json({
+          success: true,
+          message: `Account information has been sent to ${sentCount} matching account${sentCount > 1 ? 's' : ''}`
+        })
+      } else {
+        res.status(500).json({
+          success: false,
+          error: { message: 'Failed to send account recovery emails. Please try again.' }
+        })
+      }
+    }
+  } catch (error) {
+    console.error('Account recovery error:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Internal server error' }
+    })
+  }
+})
 
 // Track WhatsApp link click (redirect endpoint - no auth required)
 router.get('/track-whatsapp/:groupId/:token', async (req: Request, res: Response) => {

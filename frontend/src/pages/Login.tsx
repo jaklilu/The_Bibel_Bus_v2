@@ -274,6 +274,12 @@ const Login = () => {
                     Register here
                   </Link>
                 </p>
+                <Link 
+                  to="/forgot-account" 
+                  className="text-purple-300 hover:text-purple-200 text-sm underline mt-2 inline-block"
+                >
+                  Forgot your email or name?
+                </Link>
               </div>
 
             </form>

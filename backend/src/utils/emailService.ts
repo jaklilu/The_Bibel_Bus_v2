@@ -84,6 +84,114 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
   }
 }
 
+// Send account recovery email (forgot name)
+export const sendAccountRecoveryEmail = async (
+  email: string,
+  userName: string,
+  recoveryType: 'name' | 'email'
+) => {
+  try {
+    const transporter = createTransporter()
+    
+    const subject = recoveryType === 'name' 
+      ? 'Your Account Name - The Bible Bus'
+      : 'Your Account Email - The Bible Bus'
+    
+    const content = recoveryType === 'name'
+      ? `
+        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+          You requested to recover your account name. Here is your registered information:
+        </p>
+        
+        <div style="background: #ede9fe; border-left: 4px solid #7c3aed; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="color: #5b21b6; margin: 0; font-weight: bold; font-size: 16px;">
+            Your Name: <span style="color: #7c3aed;">${userName}</span>
+          </p>
+          <p style="color: #5b21b6; margin: 5px 0 0 0; font-size: 14px;">
+            Email: ${email}
+          </p>
+        </div>
+        
+        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+          You can now use this information to log in to your account.
+        </p>
+      `
+      : `
+        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+          You requested to recover your account email. Here is your registered information:
+        </p>
+        
+        <div style="background: #ede9fe; border-left: 4px solid #7c3aed; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="color: #5b21b6; margin: 0; font-weight: bold; font-size: 16px;">
+            Your Email: <span style="color: #7c3aed;">${email}</span>
+          </p>
+          <p style="color: #5b21b6; margin: 5px 0 0 0; font-size: 14px;">
+            Name: ${userName}
+          </p>
+        </div>
+        
+        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+          You can now use this information to log in to your account.
+        </p>
+      `
+    
+    const mailOptions = {
+      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      to: email,
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Account Recovery</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello!</h2>
+            
+            ${content}
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Go to Login
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px; margin-top: 30px;">
+              If you didn't request this information, you can safely ignore this email.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Blessings,<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">The Bible Bus - Journey to the Heart of God</p>
+          </div>
+        </div>
+      `
+    }
+    
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Account recovery email sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending account recovery email:', error)
+    return false
+  }
+}
+
 // Send donation confirmation email
 export const sendDonationConfirmationEmail = async (email: string, donorName: string, amount: number, donationType: string) => {
   console.log('=== EMAIL SERVICE DEBUG ===')
