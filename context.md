@@ -1517,6 +1517,115 @@ ORDER BY gm.join_date ASC
 
 ---
 
+## 27. Account Recovery Feature ✨ **NEW USER SUPPORT FEATURE**
+
+### **Problem Identified** 🎯
+- **Forgotten Credentials**: Members sometimes forget their email or name needed to log in
+- **No Recovery Option**: System only requires email + name (no password), but no way to recover if either is forgotten
+- **User Support Burden**: Admin had to manually help users recover their account information
+- **User Experience**: Frustrating for users who couldn't access their accounts
+
+### **Solutions Implemented** ✅
+
+#### **1. Login Page Integration** (`frontend/src/pages/Login.tsx`)
+- **Recovery Link**: Added "Forgot your email or name?" link below "Register here"
+- **Easy Access**: Prominently placed for users who need help
+- **Consistent Styling**: Matches existing login page design
+
+#### **2. Account Recovery Page** (`frontend/src/pages/ForgotAccount.tsx`)
+- **Two-Step Flow**: 
+  - Step 1: Choose recovery type ("I forgot my name" or "I forgot my email")
+  - Step 2: Enter known information and submit
+- **User-Friendly UI**: Clear instructions and visual feedback
+- **Success/Error Handling**: Shows clear messages for success and errors
+- **Navigation**: Easy back navigation to login or to choose different option
+
+#### **3. Backend Endpoint** (`backend/src/routes/auth.ts`)
+- **Endpoint**: `POST /api/auth/forgot-account`
+- **Two Recovery Types**:
+  - **Forgot Name**: User enters email, receives name via email
+  - **Forgot Email**: User enters name, receives email(s) via email
+- **Smart Validation**: Only validates the relevant field based on recovery type
+- **Multiple Matches**: Handles cases where name matches multiple accounts (sends to all)
+- **Security**: Doesn't reveal if accounts exist (same message for valid/invalid)
+
+#### **4. Email Service** (`backend/src/utils/emailService.ts`)
+- **New Function**: `sendAccountRecoveryEmail()` - sends account information
+- **Two Templates**: Different email content for name vs email recovery
+- **Professional Design**: Matches existing email template style
+- **Includes Login Link**: Direct link back to login page
+
+### **Technical Implementation** 🔧
+
+#### **Data Flow**
+```
+User clicks "Forgot your email or name?" → 
+Chooses recovery type → 
+Enters known information → 
+Backend validates and looks up account → 
+Sends email with missing information → 
+User receives email and can log in
+```
+
+#### **Validation Logic**
+- Only validates `recoveryType` in express-validator
+- Manual validation inside handler based on recovery type
+- Frontend only sends relevant field (email or name)
+- Prevents validation errors from unused fields
+
+#### **Security Features**
+- **Privacy Protection**: Doesn't reveal if accounts exist
+- **Email-Only Delivery**: Information only sent to registered email addresses
+- **Multiple Match Handling**: If name matches multiple accounts, sends to all (user can identify theirs)
+
+### **Results Achieved** 🎯
+
+#### **User Experience Improvements**
+- ✅ **Self-Service Recovery**: Users can recover their own account information
+- ✅ **Easy Access**: Recovery link prominently placed on login page
+- ✅ **Clear Instructions**: Step-by-step process is intuitive
+- ✅ **Quick Resolution**: Users receive information via email immediately
+
+#### **Technical Improvements**
+- ✅ **Smart Validation**: Only validates relevant fields based on recovery type
+- ✅ **Error Handling**: Clear error messages for validation failures
+- ✅ **Multiple Match Support**: Handles edge cases where names match multiple accounts
+- ✅ **Security Conscious**: Doesn't leak information about account existence
+
+#### **Business Impact**
+- ✅ **Reduced Support Burden**: Admin no longer needs to manually help with account recovery
+- ✅ **Better User Experience**: Users can self-serve account recovery
+- ✅ **Faster Resolution**: Instant email delivery vs manual admin lookup
+- ✅ **Professional Image**: Automated recovery system shows polished user experience
+
+### **Deployment Status** 🚀
+- **Backend Built**: TypeScript compilation successful with new recovery endpoint
+- **Frontend Built**: ForgotAccount page created and integrated
+- **Route Added**: `/forgot-account` route added to App.tsx
+- **Email Templates**: Account recovery emails ready
+- **Git Committed**: All changes committed with comprehensive messages
+- **Production Ready**: Feature tested and working correctly
+
+### **Usage Instructions**
+
+#### **For Users Who Forgot Their Name**
+1. Click "Forgot your email or name?" on login page
+2. Select "I forgot my name"
+3. Enter email address
+4. Click "Send Recovery Information"
+5. Check email for account name
+6. Use name and email to log in
+
+#### **For Users Who Forgot Their Email**
+1. Click "Forgot your email or name?" on login page
+2. Select "I forgot my email"
+3. Enter full name
+4. Click "Send Recovery Information"
+5. Check email(s) for account email address
+6. Use name and email to log in
+
+---
+
 **Last Updated**: January 2026  
-**Session Status**: WhatsApp invitation and tracking system fully implemented and tested - added whatsapp_joined tracking field to database, created automated welcome emails with prominent WhatsApp buttons, enhanced reminder emails with WhatsApp links, added admin endpoint and UI button to send invites to existing members, implemented click tracking system with redirect endpoint, added admin view showing join status for each member with summary counts, all email links now use tracking URLs to monitor engagement, added test WhatsApp invite feature for safe testing before bulk sending, fixed production URL issue so emails use correct backend endpoint, system tested and ready for production use  
+**Session Status**: Account recovery feature fully implemented and tested - added Forgot your email or name? link on login page, created ForgotAccount page with two-step recovery flow (forgot name/forgot email), added backend endpoint POST /api/auth/forgot-account with smart validation, created sendAccountRecoveryEmail function in emailService, handles multiple name matches, security-conscious responses, feature tested and working correctly, ready for production use  
 **Next Session Goals**: Configure n8n workflow to push reflections to webhook endpoint, test full integration flow, continue user experience optimization
