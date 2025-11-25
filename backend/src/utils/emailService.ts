@@ -236,7 +236,11 @@ export const sendInvitationReminderEmail = async (
     
     // Create tracking URL if we have user and group IDs
     // Use backend URL for tracking endpoint (it will redirect to WhatsApp)
-    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:5002'
+    // Default to production URL if in production, otherwise localhost
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://the-bibel-bus-v2.onrender.com' 
+        : 'http://localhost:5002')
     const trackingUrl = (whatsappInviteUrl && userId && groupId) 
       ? `${backendUrl}/api/auth/track-whatsapp/${groupId}/${Buffer.from(userId.toString()).toString('base64')}`
       : whatsappInviteUrl
@@ -355,7 +359,11 @@ export const sendWelcomeEmailWithWhatsApp = async (
     
     // Create tracking URL if we have user and group IDs
     // Use backend URL for tracking endpoint (it will redirect to WhatsApp)
-    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:5002'
+    // Default to production URL if in production, otherwise localhost
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://the-bibel-bus-v2.onrender.com' 
+        : 'http://localhost:5002')
     const trackingUrl = (whatsappInviteUrl && userId && groupId) 
       ? `${backendUrl}/api/auth/track-whatsapp/${groupId}/${Buffer.from(userId.toString()).toString('base64')}`
       : whatsappInviteUrl

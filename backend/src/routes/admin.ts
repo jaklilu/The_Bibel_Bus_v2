@@ -1053,4 +1053,94 @@ router.post('/send-whatsapp-invites/:groupId', async (req: Request, res: Respons
   }
 })
 
+// Send test WhatsApp invitation email to first member only
+router.post('/test-whatsapp-invite/:groupId', async (req: Request, res: Response) => {
+  try {
+    const { groupId } = req.params
+    const groupIdNum = parseInt(groupId, 10)
+    
+    if (isNaN(groupIdNum)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid group ID' } })
+    }
+    
+    // Get group details
+    const group = await GroupService.getGroupById(groupIdNum)
+    if (!group) {
+      return res.status(404).json({ success: false, error: { message: 'Group not found' } })
+    }
+    
+    // Get first active member only
+    const member = await getRow(`
+      SELECT u.id, u.name, u.email, u.phone
+      FROM group_members gm
+      JOIN users u ON gm.user_id = u.id
+      WHERE gm.group_id = ? AND gm.status = 'active' AND u.status = 'active'
+      ORDER BY gm.join_date ASC
+      LIMIT 1
+    `, [groupIdNum])
+    
+    if (!member) {
+      return res.json({ 
+        success: false,
+        error: { message: 'No active members found in this group' }
+      })
+    }
+    
+    const { sendWelcomeEmailWithWhatsApp } = await import('../utils/emailService')
+    
+    try {
+      await sendWelcomeEmailWithWhatsApp(
+        member.email,
+        member.name,
+        group.name,
+        group.start_date,
+        group.registration_deadline,
+        group.whatsapp_invite_url || null,
+        member.id,  // userId
+        groupIdNum  // groupId
+      )
+      
+      // Generate tracking URL for display
+      const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 
+        (process.env.NODE_ENV === 'production' 
+          ? 'https://the-bibel-bus-v2.onrender.com' 
+          : 'http://localhost:5002')
+      const trackingUrl = group.whatsapp_invite_url 
+        ? `${backendUrl}/api/auth/track-whatsapp/${groupIdNum}/${Buffer.from(member.id.toString()).toString('base64')}`
+        : null
+      
+      console.log(`Test WhatsApp invite email sent to ${member.email} (${member.name})`)
+      
+      res.json({
+        success: true,
+        message: `Test email sent to ${member.name} (${member.email})`,
+        data: {
+          member: {
+            id: member.id,
+            name: member.name,
+            email: member.email
+          },
+          group: {
+            id: group.id,
+            name: group.name
+          },
+          trackingUrl: trackingUrl
+        }
+      })
+    } catch (emailError) {
+      console.error(`Failed to send test email to ${member.email}:`, emailError)
+      res.status(500).json({
+        success: false,
+        error: { message: `Failed to send test email: ${emailError instanceof Error ? emailError.message : 'Unknown error'}` }
+      })
+    }
+  } catch (error) {
+    console.error('Error sending test WhatsApp invite:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to send test WhatsApp invite' }
+    })
+  }
+})
+
 export default router
