@@ -1487,8 +1487,36 @@ ORDER BY gm.join_date ASC
 3. **Follow Up**: Consider sending reminder emails to members who haven't joined after a few days
 4. **Analytics**: Track join rates over time to measure effectiveness
 
+### **Recent Enhancements** ✨
+
+#### **Test WhatsApp Invite Feature** (January 2026)
+- **Problem**: Needed to test email template and tracking URLs before sending to all 19 members
+- **Solution**: Added "🧪 Test WhatsApp Invite" button in admin panel
+- **Implementation**:
+  - New endpoint: `POST /api/admin/test-whatsapp-invite/:groupId`
+  - Sends email to first active member only (safe testing)
+  - Displays test result with member email and tracking URL
+  - Blue button positioned below "Send WhatsApp Invites" button
+  - Shows loading state and success/error feedback
+- **Benefits**:
+  - Test email template before bulk sending
+  - Verify tracking URLs are correct
+  - Low-risk testing (only one recipient)
+  - Quick access from admin panel
+
+#### **Production URL Fix** (January 2026)
+- **Problem**: Emails were using `localhost:5002` instead of production backend URL
+- **Solution**: Updated email service to detect production environment
+- **Implementation**:
+  - Auto-detects `NODE_ENV=production` and uses Render URL
+  - Falls back to `BACKEND_URL` or `API_URL` environment variables
+  - Defaults to localhost only in development
+  - Updated `env.example` with `BACKEND_URL` documentation
+- **Production URL**: `https://the-bibel-bus-v2.onrender.com`
+- **Result**: All tracking URLs now use correct production endpoint
+
 ---
 
 **Last Updated**: January 2026  
-**Session Status**: WhatsApp invitation and tracking system fully implemented - added whatsapp_joined tracking field to database, created automated welcome emails with prominent WhatsApp buttons, enhanced reminder emails with WhatsApp links, added admin endpoint and UI button to send invites to existing members, implemented click tracking system with redirect endpoint, added admin view showing join status for each member with summary counts, all email links now use tracking URLs to monitor engagement, system ready for production use  
+**Session Status**: WhatsApp invitation and tracking system fully implemented and tested - added whatsapp_joined tracking field to database, created automated welcome emails with prominent WhatsApp buttons, enhanced reminder emails with WhatsApp links, added admin endpoint and UI button to send invites to existing members, implemented click tracking system with redirect endpoint, added admin view showing join status for each member with summary counts, all email links now use tracking URLs to monitor engagement, added test WhatsApp invite feature for safe testing before bulk sending, fixed production URL issue so emails use correct backend endpoint, system tested and ready for production use  
 **Next Session Goals**: Configure n8n workflow to push reflections to webhook endpoint, test full integration flow, continue user experience optimization
