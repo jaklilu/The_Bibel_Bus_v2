@@ -21,13 +21,18 @@ const ForgotAccount = () => {
     setSuccess(false)
 
     try {
+      // Only send the relevant field based on recovery type
+      const requestBody: any = { recoveryType }
+      if (recoveryType === 'name') {
+        requestBody.email = formData.email.trim()
+      } else {
+        requestBody.name = formData.name.trim()
+      }
+
       const response = await fetch('/api/auth/forgot-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          recoveryType
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()

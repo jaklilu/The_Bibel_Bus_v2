@@ -1358,8 +1358,6 @@ router.post('/donations', [
 
 // Account recovery - forgot name or email
 router.post('/forgot-account', [
-  body('email').optional().isEmail().withMessage('Must be a valid email'),
-  body('name').optional().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('recoveryType').isIn(['name', 'email']).withMessage('Recovery type must be "name" or "email"')
 ], async (req: Request, res: Response) => {
   try {
@@ -1375,6 +1373,31 @@ router.post('/forgot-account', [
     }
 
     const { email, name, recoveryType } = req.body
+
+    // Validate based on recovery type
+    if (recoveryType === 'name') {
+      if (!email || !email.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Email is required to recover your name' }
+        })
+      }
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Must be a valid email address' }
+        })
+      }
+    } else {
+      if (!name || !name.trim() || name.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Name must be at least 2 characters' }
+        })
+      }
+    }
 
     if (recoveryType === 'name') {
       // User forgot their name - lookup by email
