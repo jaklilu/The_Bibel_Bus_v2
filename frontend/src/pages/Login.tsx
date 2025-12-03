@@ -92,7 +92,23 @@ const Login = () => {
         } else {
           localStorage.setItem('userToken', data.data.token)
           localStorage.setItem('userData', JSON.stringify(data.data.user))
-          navigate('/dashboard')
+          
+          // Store group status for routing
+          if (data.data.groupStatus) {
+            localStorage.setItem('groupStatus', JSON.stringify(data.data.groupStatus))
+          }
+          
+          // Route based on group status
+          if (data.data.groupStatus?.inCurrentGroup) {
+            // User is in current group, go to dashboard
+            navigate('/dashboard')
+          } else if (data.data.groupStatus?.userGroups && data.data.groupStatus.userGroups.length > 0) {
+            // User is in a group (but not current), go to dashboard
+            navigate('/dashboard')
+          } else {
+            // User not in any group, show welcome back page
+            navigate('/welcome-back')
+          }
         }
       } else {
         setError(data.error?.message || 'Login failed. Please try again.')

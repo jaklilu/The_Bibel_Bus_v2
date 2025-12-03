@@ -217,7 +217,7 @@ const Home = () => {
              </div>
            </motion.div>
 
-           {/* Action Buttons - Three User Flows */}
+           {/* Action Buttons - Simplified Two-Button System */}
            <motion.div 
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
@@ -240,29 +240,19 @@ const Home = () => {
                    to="/register"
                    className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 shadow-lg text-lg w-full"
                  >
-                   <span>Register Now</span>
+                   <span>Register</span>
                    <span className="text-sm font-normal opacity-80">New to The Bible Bus?</span>
                    <ArrowRight className="h-5 w-5 mt-1" />
                  </Link>
                </motion.div>
 
-               {/* Existing Users - Join Current Group */}
-               <Link
-                 to="/join-current-group"
-                 className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 shadow-lg text-lg w-full"
-               >
-                 <span>Join Current Group</span>
-                 <span className="text-sm font-normal opacity-80">Already have login credentials?</span>
-                 <ArrowRight className="h-5 w-5 mt-1" />
-               </Link>
-
-               {/* Existing Users - Login to Dashboard */}
+               {/* Existing Users - Login */}
                <Link
                  to="/login"
                  className="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 text-lg w-full"
                >
-                 <span>Login to Dashboard</span>
-                 <span className="text-sm font-normal opacity-80">Access your current group</span>
+                 <span>Login</span>
+                 <span className="text-sm font-normal opacity-80">Returning member?</span>
                  <ArrowRight className="h-5 w-5 mt-1" />
                </Link>
              

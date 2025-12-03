@@ -5,12 +5,13 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Register from './pages/Register'
 import Login from './pages/Login'
-import JoinCurrentGroup from './pages/JoinCurrentGroup'
 import Donate from './pages/Donate'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
 import ForgotAccount from './pages/ForgotAccount'
+import WhatsAppGate from './pages/WhatsAppGate'
+import WelcomeBack from './pages/WelcomeBack'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
 import Messages from './pages/Messages'
@@ -29,7 +30,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/join-current-group" element={<JoinCurrentGroup />} />
+          <Route path="/whatsapp-gate" element={<WhatsAppGate />} />
+          <Route path="/welcome-back" element={<WelcomeBack />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/messages" element={<Messages />} />

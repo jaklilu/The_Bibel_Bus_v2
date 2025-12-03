@@ -42,10 +42,23 @@ const Register = () => {
       if (data.success) {
         setSuccess(true)
         setGroupInfo(data.data?.group)
-        // Redirect to dashboard after successful registration
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 5000)
+        
+        // If WhatsApp info is available, redirect to WhatsApp gate
+        if (data.data?.whatsappInfo && data.data.whatsappInfo.whatsappUrl) {
+          setTimeout(() => {
+            navigate('/whatsapp-gate', {
+              state: {
+                whatsappInfo: data.data.whatsappInfo,
+                groupInfo: data.data.group
+              }
+            })
+          }, 2000)
+        } else {
+          // No WhatsApp info, go directly to dashboard
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 5000)
+        }
       } else {
         setError(data.error?.message || 'Registration failed. Please try again.')
       }

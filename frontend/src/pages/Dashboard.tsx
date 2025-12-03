@@ -267,6 +267,23 @@ const Dashboard = () => {
       return
     }
 
+    // Check group status from localStorage (set by login)
+    const storedGroupStatus = localStorage.getItem('groupStatus')
+    if (storedGroupStatus) {
+      try {
+        const groupStatus = JSON.parse(storedGroupStatus)
+        // If user has no groups, redirect to welcome back page
+        if (!groupStatus.userGroups || groupStatus.userGroups.length === 0) {
+          if (!groupStatus.inCurrentGroup) {
+            navigate('/welcome-back')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing group status:', error)
+      }
+    }
+
     // Get user data from localStorage first
     const storedUserData = localStorage.getItem('userData')
     if (storedUserData) {
@@ -546,9 +563,22 @@ const Dashboard = () => {
           <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-1">
             <div className="flex items-center mb-4">
               <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">{groupName}</h3>
+              <div className="flex-1">
+                <h3 className="text-lg font-heading text-amber-500">
+                  {groupName || (inGroup ? 'Your Group' : 'No Group Assigned')}
+                </h3>
+                {!inGroup && (
+                  <p className="text-sm text-purple-300 mt-1">
+                    <Link to="/welcome-back" className="text-amber-400 hover:text-amber-300 underline">Join a group</Link> to start your journey.
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="text-purple-100 mb-4 text-center">Introduce yourself to your WhatsApp group</p>
+            {inGroup ? (
+              <p className="text-purple-100 mb-4 text-center">Introduce yourself to your WhatsApp group</p>
+            ) : (
+              <p className="text-purple-100 mb-4 text-center">Join a group to access WhatsApp and start reading</p>
+            )}
             <a
               href="#"
               id="join-whatsapp-link"
