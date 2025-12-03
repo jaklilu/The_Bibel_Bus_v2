@@ -346,6 +346,15 @@ const initializeTables = () => {
     }
   })
 
+  // Add left_date column to group_members for history tracking if not exists
+  db.run(`
+    ALTER TABLE group_members ADD COLUMN left_date TEXT
+  `, (err) => {
+    if (err && !String(err.message).includes('duplicate column name')) {
+      console.error('Error adding left_date column to group_members:', err)
+    }
+  })
+
   console.log('✅ Database tables initialized')
 }
 

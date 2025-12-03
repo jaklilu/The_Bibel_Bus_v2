@@ -347,7 +347,13 @@ router.post('/register', [
           id: group?.id,
           name: group?.name,
           start_date: group?.start_date,
-          registration_deadline: group?.registration_deadline
+          registration_deadline: group?.registration_deadline,
+          whatsapp_invite_url: group?.whatsapp_invite_url || null
+        } : null,
+        whatsappInfo: group && group.whatsapp_invite_url ? {
+          groupId: group.id,
+          userId: result.id,
+          whatsappUrl: group.whatsapp_invite_url
         } : null,
         message: groupAssignment.message
       }
@@ -425,6 +431,44 @@ router.post('/login', [
       { expiresIn: '24h' }
     )
 
+    // Get user's group memberships and status
+    const userGroups = await getRows(`
+      SELECT 
+        bg.id,
+        bg.name,
+        bg.start_date,
+        bg.end_date,
+        bg.registration_deadline,
+        bg.status as group_status,
+        bg.max_members,
+        gm.join_date,
+        gm.whatsapp_joined
+      FROM group_members gm
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      WHERE gm.user_id = ? AND gm.status = 'active'
+      ORDER BY bg.start_date DESC
+    `, [user.id])
+
+    // Get current active group (registration open)
+    const currentActiveGroup = await GroupService.getCurrentActiveGroup()
+    
+    // Get next upcoming group
+    const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
+
+    // Determine group status
+    const inCurrentGroup = userGroups.some((g: any) => 
+      currentActiveGroup && g.id === currentActiveGroup.id
+    )
+    
+    const today = new Date().toISOString().split('T')[0]
+    const canJoinCurrent = currentActiveGroup && 
+      currentActiveGroup.registration_deadline >= today &&
+      !userGroups.some((g: any) => g.id === currentActiveGroup.id)
+    
+    const canJoinNext = nextUpcomingGroup && 
+      nextUpcomingGroup.registration_deadline >= today &&
+      !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -437,7 +481,35 @@ router.post('/login', [
           role: user.role,
           trophies_count: user.trophies_count || 0
         },
-        token
+        token,
+        groupStatus: {
+          inCurrentGroup,
+          userGroups: userGroups.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            start_date: g.start_date,
+            end_date: g.end_date,
+            group_status: g.group_status,
+            join_date: g.join_date,
+            whatsapp_joined: g.whatsapp_joined || false
+          })),
+          currentGroup: currentActiveGroup ? {
+            id: currentActiveGroup.id,
+            name: currentActiveGroup.name,
+            start_date: currentActiveGroup.start_date,
+            registration_deadline: currentActiveGroup.registration_deadline,
+            max_members: currentActiveGroup.max_members
+          } : null,
+          nextGroup: nextUpcomingGroup ? {
+            id: nextUpcomingGroup.id,
+            name: nextUpcomingGroup.name,
+            start_date: nextUpcomingGroup.start_date,
+            registration_deadline: nextUpcomingGroup.registration_deadline,
+            max_members: nextUpcomingGroup.max_members
+          } : null,
+          canJoinCurrent,
+          canJoinNext
+        }
       }
     })
   } catch (error) {
@@ -772,16 +844,17 @@ router.post('/reset-password-confirm', [
 })
 
 // ===== USER GROUP MESSAGES =====
-// Get user's current group basic info with links
+// Get user's current group basic info with links (returns most recent group)
 router.get('/my-group', userAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id
+    // Get most recent active group (allows multiple groups, but returns the newest one)
     const group = await getRow(`
       SELECT bg.id, bg.name, bg.start_date, bg.status, bg.whatsapp_invite_url, bg.youversion_plan_url
       FROM group_members gm
       JOIN bible_groups bg ON gm.group_id = bg.id
       WHERE gm.user_id = ? AND gm.status = 'active'
-      ORDER BY gm.join_date DESC
+      ORDER BY bg.start_date DESC, gm.join_date DESC
       LIMIT 1
     `, [userId])
     res.json({ success: true, data: group || null })
@@ -1193,6 +1266,7 @@ router.post('/groups/:id/join', userAuth, async (req: Request, res: Response) =>
       return res.json({ success: true, message: 'Already joined', data: { group_id: groupId } })
     }
 
+    // Allow multiple group memberships - just add the new one
     const todayIso = new Date().toISOString().split('T')[0]
     await runQuery(
       'INSERT INTO group_members (group_id, user_id, join_date, status) VALUES (?, ?, ?, "active")',
@@ -1220,7 +1294,12 @@ router.post('/groups/:id/cancel', userAuth, async (req: Request, res: Response) 
       return res.status(400).json({ success: false, error: { message: 'Cannot cancel for non-upcoming group' } })
     }
 
-    await runQuery('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId])
+    // Update status to 'left' instead of deleting (preserve history)
+    const today = new Date().toISOString().split('T')[0]
+    await runQuery(
+      'UPDATE group_members SET status = "left", left_date = ? WHERE group_id = ? AND user_id = ? AND status = "active"',
+      [today, groupId, userId]
+    )
     res.json({ success: true, message: 'Cancelled for next group', data: { group_id: groupId } })
   } catch (error) {
     console.error('Error cancelling next group:', error)
@@ -1260,10 +1339,7 @@ router.post('/join-current-group', userAuth, async (req: Request, res: Response)
       return res.json({ success: true, message: 'Already in current group', data: { group_id: groupId, groupName: currentGroup.name } })
     }
 
-    // Remove user from any other groups first (they can only be in one group at a time)
-    await runQuery('DELETE FROM group_members WHERE user_id = ?', [userId])
-
-    // Add user to current group
+    // Allow multiple group memberships - just add the new one (no deletion of existing memberships)
     const todayIso = new Date().toISOString().split('T')[0]
     await runQuery(
       'INSERT INTO group_members (group_id, user_id, join_date, status) VALUES (?, ?, ?, "active")',
@@ -1498,6 +1574,47 @@ router.post('/forgot-account', [
     res.status(500).json({
       success: false,
       error: { message: 'Internal server error' }
+    })
+  }
+})
+
+// Check WhatsApp join status for a user
+router.get('/check-whatsapp-status/:userId/:groupId', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId)
+    const groupId = parseInt(req.params.groupId)
+    
+    if (Number.isNaN(userId) || Number.isNaN(groupId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid user or group ID' }
+      })
+    }
+
+    const membership = await getRow(`
+      SELECT whatsapp_joined 
+      FROM group_members 
+      WHERE user_id = ? AND group_id = ? AND status = 'active'
+    `, [userId, groupId])
+
+    if (!membership) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Membership not found' }
+      })
+    }
+
+    res.json({
+      success: true,
+      data: {
+        whatsapp_joined: membership.whatsapp_joined === 1 || membership.whatsapp_joined === true
+      }
+    })
+  } catch (error) {
+    console.error('Error checking WhatsApp status:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to check WhatsApp status' }
     })
   }
 })
