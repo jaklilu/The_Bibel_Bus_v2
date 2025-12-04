@@ -931,15 +931,17 @@ const Admin = () => {
             )}
 
                      {activeTab === 'users' && (
-             <div>
-               <h2 className="text-xl font-semibold text-white mb-6">Users</h2>
-               <div className="flex justify-end mb-4">
-                 <button
-                   onClick={() => { setEditingUser(null); setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' }); setShowCreateUserModal(true) }}
-                   className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors"
-                 >
-                   Add User
-                 </button>
+             <div data-users-section>
+               <div className="sticky top-0 z-10 bg-purple-800/95 backdrop-blur-sm -mx-6 px-6 py-4 mb-6 border-b border-purple-700/30">
+                 <div className="flex items-center justify-between">
+                   <h2 className="text-xl font-semibold text-white">Users</h2>
+                   <button
+                     onClick={() => { setEditingUser(null); setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' }); setShowCreateUserModal(true) }}
+                     className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-semibold"
+                   >
+                     + Add User
+                   </button>
+                 </div>
                </div>
                <div className="overflow-x-auto">
                  <table className="min-w-full divide-y divide-purple-600/30">
@@ -1992,6 +1994,11 @@ const Admin = () => {
                           setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' })
                           setEditingUser(null)
                           await fetchAdminData()
+                          // Scroll to top of users section after adding
+                          const usersSection = document.querySelector('[data-users-section]')
+                          if (usersSection) {
+                            usersSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }
                         } else {
                           const detail = Array.isArray(data?.error?.details) ? data.error.details.map((d:any)=>d.msg).join('; ') : ''
                           const msg = (data && (data.error?.message || data.message)) || (res.status === 409 ? 'Email already exists' : 'Failed to save user')
