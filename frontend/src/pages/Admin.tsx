@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Shield, 
   Users, 
@@ -1894,15 +1895,17 @@ const Admin = () => {
             </div>
           )}
 
-          {/* Create/Edit User Modal */}
-          {/* Create/Edit User Modal */}
-          {showCreateUserModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-xl max-h-[85vh] overflow-y-auto border border-purple-600/30"
-              >
+          {/* Create/Edit User Modal - Rendered via Portal to document.body */}
+          {typeof document !== 'undefined' && createPortal(
+            <AnimatePresence>
+              {showCreateUserModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-xl max-h-[85vh] overflow-y-auto border border-purple-600/30"
+                  >
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-white">{editingUser ? 'Edit User' : 'Add User'}</h2>
                   <button onClick={() => setShowCreateUserModal(false)} className="text-purple-300 hover:text-white transition-colors">✕</button>
@@ -2017,6 +2020,9 @@ const Admin = () => {
                 </div>
               </motion.div>
             </div>
+              )}
+            </AnimatePresence>,
+            document.body
           )}
         </div>
       </div>
