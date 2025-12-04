@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MessageCircle, 
   Heart, 
@@ -274,117 +275,139 @@ const MessageBoard = () => {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
-    >
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex items-start sm:items-center space-x-3">
-            <div className="relative">
-              <MessageCircle className="h-8 w-8 text-yellow-400" />
-              {getUnreadCount() > 0 && (
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs text-purple-900 font-extrabold">{getUnreadCount()}</span>
+    <>
+      {/* Create Message Modal - Rendered via Portal to document.body to bypass parent positioning */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showCreateMessage && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, margin: 0 }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md border border-purple-600/30 max-h-[90vh] overflow-y-auto shadow-2xl"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-white">Create New Message</h3>
+                  <button
+                    onClick={() => setShowCreateMessage(false)}
+                    className="text-purple-300 hover:text-white transition-colors text-2xl leading-none"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-purple-200 text-sm font-medium mb-2">Content</label>
+                    <textarea
+                      value={newMessage.content}
+                      onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
+                      rows={4}
+                      className="w-full px-3 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:border-yellow-400"
+                      placeholder="Share your message with the group..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowCreateMessage(false)}
+                    className="flex-1 px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateMessage}
+                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                  >
+                    Post Message
+                  </button>
+                </div>
+              </motion.div>
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-2xl font-bold text-white">Message Board</h2>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
+      >
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex items-start sm:items-center space-x-3">
+              <div className="relative">
+                <MessageCircle className="h-8 w-8 text-yellow-400" />
                 {getUnreadCount() > 0 && (
-                  <span className="px-2 py-1 bg-red-500 text-purple-900 text-xs font-extrabold rounded-full animate-pulse">
-                    {getUnreadCount()} NEW
-                  </span>
+                  <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-purple-900 font-extrabold">{getUnreadCount()}</span>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Primary actions */}
-          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3">
-            {getUnreadCount() > 0 && (
-              <button
-                onClick={markAsRead}
-                className="w-full sm:w-auto px-4 py-2 min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-              >
-                Mark All as Read
-              </button>
-            )}
-            <button
-              onClick={() => setShowCreateMessage(true)}
-              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 min-h-[44px] bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Post Message</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Compact Filter - Dropdown */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedType}
-              onChange={(e) => {
-                const v = e.target.value
-                setSelectedType(v)
-                if (v !== 'all') {
-                  markTypeAsRead(v)
-                }
-              }}
-              className="flex-1 px-3 py-2 min-h-[44px] bg-purple-700/50 border border-purple-600/30 rounded-lg text-white"
-            >
-              {messageTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label} {type.count > 0 ? `(${type.count})` : `(${type.total})`}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-      </div>
-
-      {/* Create Message Modal */}
-      {showCreateMessage && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md border border-purple-600/30 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-white mb-4">Create New Message</h3>
-            
-            <div className="space-y-4">
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Content</label>
-                <textarea
-                  value={newMessage.content}
-                  onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:border-yellow-400"
-                  placeholder="Share your message with the group..."
-                />
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-2xl font-bold text-white">Message Board</h2>
+                  {getUnreadCount() > 0 && (
+                    <span className="px-2 py-1 bg-red-500 text-purple-900 text-xs font-extrabold rounded-full animate-pulse">
+                      {getUnreadCount()} NEW
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            
-            <div className="flex space-x-3 mt-6">
+
+            {/* Primary actions */}
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3">
+              {getUnreadCount() > 0 && (
+                <button
+                  onClick={markAsRead}
+                  className="w-full sm:w-auto px-4 py-2 min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                >
+                  Mark All as Read
+                </button>
+              )}
               <button
-                onClick={() => setShowCreateMessage(false)}
-                className="flex-1 px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                onClick={() => setShowCreateMessage(true)}
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 min-h-[44px] bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateMessage}
-                className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-              >
-                Post Message
+                <Plus className="h-4 w-4" />
+                <span>Post Message</span>
               </button>
             </div>
           </div>
+          
+          {/* Compact Filter - Dropdown */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedType}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setSelectedType(v)
+                  if (v !== 'all') {
+                    markTypeAsRead(v)
+                  }
+                }}
+                className="flex-1 px-3 py-2 min-h-[44px] bg-purple-700/50 border border-purple-600/30 rounded-lg text-white"
+              >
+                {messageTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label} {type.count > 0 ? `(${type.count})` : `(${type.total})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
         </div>
-      )}
 
       {/* Messages */}
       {filteredMessages.length === 0 ? (
@@ -465,7 +488,8 @@ const MessageBoard = () => {
           Refresh Messages
         </button>
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   )
 }
 
