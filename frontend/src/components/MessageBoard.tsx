@@ -351,8 +351,8 @@ const MessageBoard = () => {
 
       {/* Create Message Modal */}
       {showCreateMessage && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-purple-800 rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md border border-purple-600/30 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Create New Message</h3>
             
             <div className="space-y-4">

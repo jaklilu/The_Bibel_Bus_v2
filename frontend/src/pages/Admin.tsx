@@ -1412,7 +1412,7 @@ const Admin = () => {
 
           {/* Create Group Modal */}
           {showCreateGroupModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1493,8 +1493,9 @@ const Admin = () => {
           )}
 
           {/* Group Management Modal */}
+          {/* Manage Group Modal */}
           {showManageModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 pt-10 z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1694,7 +1695,7 @@ const Admin = () => {
 
           {/* Select Users Modal */}
           {showSelectUsersModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 pt-10 z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1780,7 +1781,7 @@ const Admin = () => {
           )}
           {/* Post Message Modal */}
           {showPostMessageModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1892,8 +1893,9 @@ const Admin = () => {
           )}
 
           {/* Create/Edit User Modal */}
+          {/* Create/Edit User Modal */}
           {showCreateUserModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

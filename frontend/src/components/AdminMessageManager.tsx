@@ -274,96 +274,121 @@ const AdminMessageManager = () => {
         </div>
       </div>
 
-      {/* Create/Edit Form */}
+      {/* Create/Edit Form Modal */}
       <AnimatePresence>
         {showCreateForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-6 p-6 bg-purple-700/30 rounded-lg border border-purple-600/20"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {editingMessage ? 'Edit Message' : 'Create New Message'}
-            </h3>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <select
-                  required
-                  value={formData.group_id}
-                  onChange={(e) => setFormData({...formData, group_id: e.target.value})}
-                  className="px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200"
-                >
-                  <option value="">Select Group</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
-                  ))}
-                </select>
-
-                <select
-                  required
-                  value={formData.message_type}
-                  onChange={(e) => setFormData({...formData, message_type: e.target.value as any})}
-                  className="px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200"
-                >
-                  <option value="encouragement">Encouragement</option>
-                  <option value="reminder">Reminder</option>
-                  <option value="announcement">Announcement</option>
-                  <option value="milestone">Milestone</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  required
-                  type="text"
-                  placeholder="Message Title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300"
-                />
-
-                <select
-                  required
-                  value={formData.priority}
-                  onChange={(e) => setFormData({...formData, priority: e.target.value as any})}
-                  className="px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200"
-                >
-                  <option value="low">Low Priority</option>
-                  <option value="normal">Normal Priority</option>
-                  <option value="high">High Priority</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-
-              <textarea
-                required
-                placeholder="Message Content"
-                value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                rows={4}
-                className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 resize-none"
-              />
-
-              <div className="flex space-x-3">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-purple-600/30"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-white">
+                  {editingMessage ? 'Edit Message' : 'Create New Message'}
+                </h3>
                 <button
-                  type="submit"
-                  className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-semibold rounded-lg transition-colors"
-                >
-                  {editingMessage ? 'Update Message' : 'Create Message'}
-                </button>
-                
-                <button
-                  type="button"
                   onClick={cancelEdit}
-                  className="px-6 py-2 bg-purple-700/50 hover:bg-purple-700/70 text-purple-200 border border-purple-600/30 rounded-lg transition-colors"
+                  className="text-purple-300 hover:text-white transition-colors text-2xl leading-none"
                 >
-                  Cancel
+                  ✕
                 </button>
               </div>
-            </form>
-          </motion.div>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Group *</label>
+                    <select
+                      required
+                      value={formData.group_id}
+                      onChange={(e) => setFormData({...formData, group_id: e.target.value})}
+                      className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="">Select Group</option>
+                      {groups.map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Message Type *</label>
+                    <select
+                      required
+                      value={formData.message_type}
+                      onChange={(e) => setFormData({...formData, message_type: e.target.value as any})}
+                      className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="encouragement">Encouragement</option>
+                      <option value="reminder">Reminder</option>
+                      <option value="announcement">Announcement</option>
+                      <option value="milestone">Milestone</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Message Title *</label>
+                    <input
+                      required
+                      type="text"
+                      placeholder="Enter message title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Priority *</label>
+                    <select
+                      required
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value as any})}
+                      className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-purple-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="low">Low Priority</option>
+                      <option value="normal">Normal Priority</option>
+                      <option value="high">High Priority</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Message Content *</label>
+                  <textarea
+                    required
+                    placeholder="Enter message content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({...formData, content: e.target.value})}
+                    rows={6}
+                    className="w-full px-4 py-2 bg-purple-700/50 border border-purple-600/30 rounded-lg text-white placeholder-purple-300 resize-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-semibold rounded-lg transition-colors"
+                  >
+                    {editingMessage ? 'Update Message' : 'Create Message'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="flex-1 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white border border-purple-500/30 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
