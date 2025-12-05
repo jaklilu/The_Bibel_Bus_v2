@@ -49,7 +49,8 @@ router.get('/public/current-group', async (req: Request, res: Response) => {
         registration_deadline: currentGroup.registration_deadline,
         max_members: currentGroup.max_members,
         member_count: memberCount?.count || 0,
-        status: currentGroup.status
+        status: currentGroup.status,
+        whatsapp_invite_url: currentGroup.whatsapp_invite_url || null
       }
     })
   } catch (error) {
@@ -308,19 +309,16 @@ router.post('/register', [
       ? await GroupService.getGroupById(groupAssignment.groupId)
       : null
     
-    // Send welcome email with WhatsApp link if group assigned
-    if (group && group.whatsapp_invite_url) {
+    // Send welcome email if group assigned
+    if (group) {
       try {
-        const { sendWelcomeEmailWithWhatsApp } = await import('../utils/emailService')
-        await sendWelcomeEmailWithWhatsApp(
+        const { sendWelcomeEmail } = await import('../utils/emailService')
+        await sendWelcomeEmail(
           email,
           name,
           group.name,
           group.start_date,
-          group.registration_deadline,
-          group.whatsapp_invite_url,
-          result.id,  // userId
-          group.id    // groupId
+          group.registration_deadline
         )
         console.log(`Welcome email sent to ${email} for group ${group.name}`)
       } catch (emailError) {
@@ -349,11 +347,6 @@ router.post('/register', [
           start_date: group?.start_date,
           registration_deadline: group?.registration_deadline,
           whatsapp_invite_url: group?.whatsapp_invite_url || null
-        } : null,
-        whatsappInfo: group && group.whatsapp_invite_url ? {
-          groupId: group.id,
-          userId: result.id,
-          whatsappUrl: group.whatsapp_invite_url
         } : null,
         message: groupAssignment.message
       }
@@ -1575,118 +1568,6 @@ router.post('/forgot-account', [
       success: false,
       error: { message: 'Internal server error' }
     })
-  }
-})
-
-// Check WhatsApp join status for a user
-router.get('/check-whatsapp-status/:userId/:groupId', async (req: Request, res: Response) => {
-  try {
-    const userId = parseInt(req.params.userId)
-    const groupId = parseInt(req.params.groupId)
-    
-    if (Number.isNaN(userId) || Number.isNaN(groupId)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid user or group ID' }
-      })
-    }
-
-    const membership = await getRow(`
-      SELECT whatsapp_joined 
-      FROM group_members 
-      WHERE user_id = ? AND group_id = ? AND status = 'active'
-    `, [userId, groupId])
-
-    if (!membership) {
-      return res.status(404).json({
-        success: false,
-        error: { message: 'Membership not found' }
-      })
-    }
-
-    res.json({
-      success: true,
-      data: {
-        whatsapp_joined: membership.whatsapp_joined === 1 || membership.whatsapp_joined === true
-      }
-    })
-  } catch (error) {
-    console.error('Error checking WhatsApp status:', error)
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to check WhatsApp status' }
-    })
-  }
-})
-
-// Track WhatsApp link click (redirect endpoint - no auth required)
-router.get('/track-whatsapp/:groupId/:token', async (req: Request, res: Response) => {
-  try {
-    const { groupId, token } = req.params
-    const groupIdNum = parseInt(groupId, 10)
-    
-    if (isNaN(groupIdNum)) {
-      return res.status(400).send('Invalid group ID')
-    }
-    
-    // Decode token to get user_id (simple base64 encoding of user_id)
-    let userId: number
-    try {
-      const decoded = Buffer.from(token, 'base64').toString('utf-8')
-      userId = parseInt(decoded, 10)
-      if (isNaN(userId)) {
-        throw new Error('Invalid token')
-      }
-    } catch (error) {
-      return res.status(400).send('Invalid tracking token')
-    }
-    
-    // Get group WhatsApp URL
-    const group = await GroupService.getGroupById(groupIdNum)
-    if (!group || !group.whatsapp_invite_url) {
-      return res.status(404).send('WhatsApp group link not found')
-    }
-    
-    // Track the click (update whatsapp_joined flag)
-    try {
-      await runQuery(
-        'UPDATE group_members SET whatsapp_joined = 1 WHERE user_id = ? AND group_id = ?',
-        [userId, groupIdNum]
-      )
-      console.log(`WhatsApp click tracked: User ${userId} clicked link for group ${groupIdNum}`)
-    } catch (trackError) {
-      console.error('Error tracking click (continuing anyway):', trackError)
-      // Don't fail the redirect if tracking fails
-    }
-    
-    // Redirect to WhatsApp
-    res.redirect(302, group.whatsapp_invite_url)
-  } catch (error) {
-    console.error('Error in WhatsApp redirect:', error)
-    res.status(500).send('Error processing redirect')
-  }
-})
-
-// Track WhatsApp link click (API endpoint - requires auth)
-router.post('/track-whatsapp-click', userAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id
-    const { group_id } = req.body
-    
-    if (!group_id) {
-      return res.status(400).json({ success: false, error: { message: 'Group ID required' } })
-    }
-    
-    // Update whatsapp_joined flag
-    await runQuery(
-      'UPDATE group_members SET whatsapp_joined = 1 WHERE user_id = ? AND group_id = ?',
-      [userId, group_id]
-    )
-    
-    res.json({ success: true, message: 'WhatsApp click tracked' })
-  } catch (error) {
-    console.error('Error tracking WhatsApp click:', error)
-    res.status(500).json({ success: false, error: { message: 'Failed to track click' } })
   }
 })
 

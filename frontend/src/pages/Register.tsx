@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle } from 'lucide-react'
+import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
   const navigate = useNavigate()
+  const [whatsappJoined, setWhatsappJoined] = useState<boolean | null>(null) // null = not answered, true = yes, false = no
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
+  const [loadingGroup, setLoadingGroup] = useState(true)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -17,6 +20,24 @@ const Register = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [groupInfo, setGroupInfo] = useState<any>(null)
+
+  // Fetch current group's WhatsApp URL
+  useEffect(() => {
+    const fetchCurrentGroup = async () => {
+      try {
+        const response = await fetch('/api/auth/public/current-group')
+        const data = await response.json()
+        if (data.success && data.data) {
+          setWhatsappUrl(data.data.whatsapp_invite_url || null)
+        }
+      } catch (err) {
+        console.error('Error fetching current group:', err)
+      } finally {
+        setLoadingGroup(false)
+      }
+    }
+    fetchCurrentGroup()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,22 +64,10 @@ const Register = () => {
         setSuccess(true)
         setGroupInfo(data.data?.group)
         
-        // If WhatsApp info is available, redirect to WhatsApp gate
-        if (data.data?.whatsappInfo && data.data.whatsappInfo.whatsappUrl) {
-          setTimeout(() => {
-            navigate('/whatsapp-gate', {
-              state: {
-                whatsappInfo: data.data.whatsappInfo,
-                groupInfo: data.data.group
-              }
-            })
-          }, 2000)
-        } else {
-          // No WhatsApp info, go directly to dashboard
-          setTimeout(() => {
-            navigate('/dashboard')
-          }, 5000)
-        }
+        // Redirect to dashboard after successful registration
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 2000)
       } else {
         setError(data.error?.message || 'Registration failed. Please try again.')
       }
@@ -77,6 +86,111 @@ const Register = () => {
   }
 
 
+  // Handle WhatsApp check answer
+  const handleWhatsAppAnswer = (answeredYes: boolean) => {
+    if (answeredYes) {
+      setWhatsappJoined(true)
+    } else {
+      // If they answered "No", redirect to WhatsApp
+      if (whatsappUrl) {
+        window.open(whatsappUrl, '_blank')
+        // Show message that they can come back after joining
+        setError('Please join the WhatsApp group first. Once you\'ve joined, come back and click "Yes" to continue registration.')
+      } else {
+        setError('WhatsApp group link is not available. Please contact the administrator.')
+      }
+    }
+  }
+
+  // Show WhatsApp check question first
+  if (whatsappJoined === null) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
+              Welcome to The Bible Bus! 🚌
+            </h1>
+            <p className="text-lg text-purple-200">
+              Let's get you started
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
+          >
+            <div className="text-center mb-8">
+              <div className="bg-green-500/20 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center mb-4">
+                <MessageCircle className="h-12 w-12 text-green-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                Have you joined the WhatsApp group?
+              </h2>
+              <p className="text-purple-200 mb-2">
+                To register, you need to be in the WhatsApp group first.
+              </p>
+              <p className="text-purple-300 text-sm">
+                If you haven't joined yet, click "No" to open the WhatsApp group link.
+              </p>
+            </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-amber-500/20 border border-amber-500/30 rounded-lg p-4 mb-6 flex items-center space-x-2"
+              >
+                <AlertCircle className="h-5 w-5 text-amber-400" />
+                <span className="text-amber-200 text-sm">{error}</span>
+              </motion.div>
+            )}
+
+            {loadingGroup ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+                <p className="text-purple-200">Loading...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button
+                  onClick={() => handleWhatsAppAnswer(true)}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3 text-lg shadow-lg"
+                >
+                  <CheckCircle className="h-6 w-6" />
+                  <span>Yes, I'm in the group</span>
+                </button>
+
+                <button
+                  onClick={() => handleWhatsAppAnswer(false)}
+                  className="w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span>No, I need to join</span>
+                </button>
+              </div>
+            )}
+
+            {!whatsappUrl && !loadingGroup && (
+              <div className="mt-6 bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+                <p className="text-red-200 text-sm text-center">
+                  WhatsApp group link is not available. Please contact the administrator.
+                </p>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -87,7 +201,8 @@ const Register = () => {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">Register for Next Group</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">Complete Your Registration</h1>
+          <p className="text-purple-200">Fill out the form below to join The Bible Bus</p>
         </motion.div>
 
 
@@ -140,7 +255,7 @@ const Register = () => {
               
               <div className="text-center">
                 <span className="text-green-300 text-sm">
-                  Redirecting to dashboard in 5 seconds...
+                  Redirecting to dashboard...
                 </span>
               </div>
             </motion.div>

@@ -10,7 +10,6 @@ import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import ResetPassword from './pages/ResetPassword'
 import ForgotAccount from './pages/ForgotAccount'
-import WhatsAppGate from './pages/WhatsAppGate'
 import WelcomeBack from './pages/WelcomeBack'
 import Trophies from './pages/Trophies'
 const Awards = Trophies
@@ -30,7 +29,6 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/whatsapp-gate" element={<WhatsAppGate />} />
           <Route path="/welcome-back" element={<WelcomeBack />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/dashboard" element={<Dashboard />} />
