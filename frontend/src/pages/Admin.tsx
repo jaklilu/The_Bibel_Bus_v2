@@ -215,13 +215,17 @@ const Admin = () => {
       const donations = await donationsRes.json()
 
       console.log('Donations response:', donations) // Debug log
+      console.log('Progress by group response:', progressByGroup) // Debug log
+      if (!progressByGroup.success) {
+        console.error('Progress by group failed:', progressByGroup)
+      }
 
       setAdminData({
         groups: groups.data || [],
         users: users.data || [],
         progress: progress.data || [],
         milestoneProgress: milestoneProgress.data || [],
-        progressByGroup: progressByGroup.data || [],
+        progressByGroup: progressByGroup.success ? (progressByGroup.data || []) : [],
         messages: messages.data || [],
         donations: donations.success ? donations.data.donations : []
       })
@@ -946,11 +950,11 @@ const Admin = () => {
             <div>
               <h2 className="text-xl font-semibold text-white mb-6">Member Progress by Group</h2>
               
-              {adminData.progressByGroup.length === 0 ? (
+              {!adminData.progressByGroup || adminData.progressByGroup.length === 0 ? (
                 <div className="text-center py-12">
                   <BarChart3 className="h-16 w-16 text-purple-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No Progress Data</h3>
-                  <p className="text-purple-300">No group progress data available yet.</p>
+                  <p className="text-purple-300">No group progress data available yet. Make sure you have active groups with members.</p>
                 </div>
               ) : (
                 <div className="space-y-6">

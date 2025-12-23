@@ -597,6 +597,7 @@ router.get('/progress-by-group', async (req: Request, res: Response) => {
       FROM bible_groups bg
       JOIN group_members gm ON bg.id = gm.group_id
       WHERE bg.status IN ('active', 'closed')
+        AND gm.status = 'active'
       ORDER BY bg.start_date DESC
     `)
 
