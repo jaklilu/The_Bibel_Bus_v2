@@ -362,6 +362,192 @@ router.post('/register', [
   }
 })
 
+// Check if email exists (for pre-populating returning users)
+router.get('/check-email/:email', async (req: Request, res: Response) => {
+  try {
+    const email = req.params.email.toLowerCase().trim()
+    
+    const user = await getRow(
+      'SELECT id, name, email, city, mailing_address, referral, phone, status FROM users WHERE LOWER(email) = ?',
+      [email]
+    )
+    
+    if (!user) {
+      return res.json({
+        success: true,
+        exists: false,
+        data: null
+      })
+    }
+    
+    if (user.status !== 'active') {
+      return res.json({
+        success: true,
+        exists: false,
+        data: null
+      })
+    }
+    
+    return res.json({
+      success: true,
+      exists: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        city: user.city,
+        mailing_address: user.mailing_address,
+        referral: user.referral,
+        phone: user.phone
+      }
+    })
+  } catch (error) {
+    console.error('Check email error:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to check email' }
+    })
+  }
+})
+
+// Login with email only (for returning users)
+router.post('/login-email-only', [
+  body('email').isEmail().withMessage('Must be a valid email')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          details: errors.array()
+        }
+      })
+    }
+
+    const { email } = req.body
+
+    // Find user by email (case-insensitive)
+    const user = await getRow(
+      'SELECT id, name, email, phone, password_hash, status, role, trophies_count FROM users WHERE LOWER(email) = LOWER(?)',
+      [email]
+    )
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'No account found with this email'
+        }
+      })
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Account is not active'
+        }
+      })
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    )
+
+    // Get user's group memberships and status (same as regular login)
+    const userGroups = await getRows(`
+      SELECT 
+        bg.id,
+        bg.name,
+        bg.start_date,
+        bg.end_date,
+        bg.registration_deadline,
+        bg.status as group_status,
+        bg.max_members,
+        gm.join_date,
+        gm.whatsapp_joined
+      FROM group_members gm
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      WHERE gm.user_id = ? AND gm.status = 'active'
+      ORDER BY bg.start_date DESC
+    `, [user.id])
+
+    const currentActiveGroup = await GroupService.getCurrentActiveGroup()
+    const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
+
+    const inCurrentGroup = userGroups.some((g: any) => 
+      currentActiveGroup && g.id === currentActiveGroup.id
+    )
+    
+    const today = new Date().toISOString().split('T')[0]
+    const canJoinCurrent = currentActiveGroup && 
+      currentActiveGroup.registration_deadline >= today &&
+      !userGroups.some((g: any) => g.id === currentActiveGroup.id)
+    
+    const canJoinNext = nextUpcomingGroup && 
+      nextUpcomingGroup.registration_deadline >= today &&
+      !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          trophies_count: user.trophies_count || 0
+        },
+        token,
+        groupStatus: {
+          inCurrentGroup,
+          userGroups: userGroups.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            start_date: g.start_date,
+            end_date: g.end_date,
+            group_status: g.group_status,
+            join_date: g.join_date,
+            whatsapp_joined: g.whatsapp_joined || false
+          })),
+          currentGroup: currentActiveGroup ? {
+            id: currentActiveGroup.id,
+            name: currentActiveGroup.name,
+            start_date: currentActiveGroup.start_date,
+            registration_deadline: currentActiveGroup.registration_deadline,
+            max_members: currentActiveGroup.max_members
+          } : null,
+          nextGroup: nextUpcomingGroup ? {
+            id: nextUpcomingGroup.id,
+            name: nextUpcomingGroup.name,
+            start_date: nextUpcomingGroup.start_date,
+            registration_deadline: nextUpcomingGroup.registration_deadline,
+            max_members: nextUpcomingGroup.max_members
+          } : null,
+          canJoinCurrent,
+          canJoinNext
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Email-only login error:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Login user
 router.post('/login', [
   body('email').isEmail().withMessage('Must be a valid email'),
