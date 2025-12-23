@@ -74,10 +74,20 @@ const AdminMessageManager = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch('/api/admin/group-messages')
+      const token = localStorage.getItem('adminToken')
+      if (!token) {
+        console.error('No admin token found')
+        setLoading(false)
+        return
+      }
+      const response = await fetch('/api/admin/group-messages', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (response.ok) {
         const data = await response.json()
         setMessages(data.data || [])
+      } else {
+        console.error('Failed to fetch messages:', response.status)
       }
     } catch (error) {
       console.error('Error fetching messages:', error)
@@ -88,10 +98,19 @@ const AdminMessageManager = () => {
 
   const fetchUserMessages = async () => {
     try {
-      const response = await fetch('/api/admin/user-messages')
+      const token = localStorage.getItem('adminToken')
+      if (!token) {
+        console.error('No admin token found')
+        return
+      }
+      const response = await fetch('/api/admin/user-messages', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (response.ok) {
         const data = await response.json()
         setUserMessages(data.data || [])
+      } else {
+        console.error('Failed to fetch user messages:', response.status)
       }
     } catch (error) {
       console.error('Error fetching user messages:', error)
@@ -100,7 +119,11 @@ const AdminMessageManager = () => {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/admin/groups')
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+      const response = await fetch('/api/admin/groups', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (response.ok) {
         const data = await response.json()
         setGroups(data.data || [])
@@ -120,9 +143,14 @@ const AdminMessageManager = () => {
       
       const method = editingMessage ? 'PUT' : 'POST'
       
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       })
 
@@ -150,8 +178,11 @@ const AdminMessageManager = () => {
     if (!confirm('Are you sure you want to delete this message?')) return
     
     try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
       const response = await fetch(`/api/admin/group-messages/${messageId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       })
 
       if (response.ok) {
@@ -353,8 +384,11 @@ const AdminMessageManager = () => {
                       onClick={async () => {
                         if (!confirm('Are you sure you want to delete this message?')) return
                         try {
+                          const token = localStorage.getItem('adminToken')
+                          if (!token) return
                           const response = await fetch(`/api/admin/user-messages/${userMsg.id}`, {
-                            method: 'DELETE'
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
                           })
                           if (response.ok) {
                             fetchUserMessages()
