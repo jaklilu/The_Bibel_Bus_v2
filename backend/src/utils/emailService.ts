@@ -432,3 +432,87 @@ export const sendWelcomeEmail = async (
     return false
   }
 }
+
+// Send progress reminder email
+export const sendProgressReminderEmail = async (
+  email: string,
+  userName: string,
+  groupName: string
+) => {
+  try {
+    const transporter = createTransporter()
+    
+    const mailOptions = {
+      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      to: email,
+      subject: 'Update Your Bible Reading Progress 📖 - The Bible Bus',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #fbbf24; margin: 10px 0 0 0; font-size: 18px; font-weight: bold;">Progress Reminder</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}!</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              We noticed you haven't updated your milestone progress for <strong>${groupName}</strong> yet.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Tracking your progress helps you stay on track with your 365-day Bible reading journey and allows us to celebrate your milestones together!
+            </p>
+            
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #92400e; margin: 0; font-weight: bold; font-size: 14px;">
+                📖 How to Update Your Progress:
+              </p>
+              <ol style="color: #92400e; margin: 10px 0 0 0; padding-left: 20px; line-height: 1.8;">
+                <li>Log in to your dashboard</li>
+                <li>Scroll to the "Milestone Progress" section</li>
+                <li>Enter your cumulative missing days from YouVersion</li>
+                <li>Your progress will be automatically calculated!</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Update My Progress
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px; margin-top: 30px;">
+              Remember: You should update your progress at each milestone (about 6 times throughout the year) to track your journey accurately.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Blessings,<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">The Bible Bus - Journey to the Heart of God</p>
+          </div>
+        </div>
+      `
+    }
+    
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Progress reminder email sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending progress reminder email:', error)
+    return false
+  }
+}

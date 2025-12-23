@@ -687,6 +687,88 @@ router.get('/progress-by-group', async (req: Request, res: Response) => {
   }
 })
 
+// Send progress reminders to users with no milestone progress (October 2025 and newer groups only)
+router.post('/send-progress-reminders', async (req: Request, res: Response) => {
+  try {
+    // Find all users in active/closed groups who have no milestone progress
+    // Only include "Bible Bus October 2025 Travelers" and groups created after October 2025
+    const usersWithoutProgress = await getRows(`
+      SELECT DISTINCT
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        bg.id as group_id,
+        bg.name as group_name,
+        bg.start_date
+      FROM users u
+      JOIN group_members gm ON u.id = gm.user_id
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND bg.id = mp.group_id
+      WHERE bg.status IN ('active', 'closed')
+        AND gm.status = 'active'
+        AND u.status = 'active'
+        AND mp.id IS NULL
+        AND (
+          bg.name = 'Bible Bus October 2025 Travelers'
+          OR bg.start_date >= '2025-10-01'
+        )
+      ORDER BY bg.start_date DESC, u.name ASC
+    `)
+
+    if (usersWithoutProgress.length === 0) {
+      return res.json({
+        success: true,
+        message: 'All members in October 2025+ groups have progress recorded',
+        data: { sent: 0, total: 0, groups: [] }
+      })
+    }
+
+    const { sendProgressReminderEmail } = await import('../utils/emailService')
+    let sentCount = 0
+    let failedCount = 0
+
+    for (const user of usersWithoutProgress) {
+      try {
+        const emailSent = await sendProgressReminderEmail(
+          user.user_email,
+          user.user_name,
+          user.group_name
+        )
+        if (emailSent) {
+          sentCount++
+          console.log(`Progress reminder sent to: ${user.user_email} (${user.group_name})`)
+        } else {
+          failedCount++
+        }
+      } catch (error) {
+        failedCount++
+        console.error(`Failed to send to ${user.user_email}:`, error)
+      }
+    }
+
+    const groups = [...new Set(usersWithoutProgress.map((u: any) => u.group_name))]
+
+    res.json({
+      success: true,
+      message: `Progress reminders sent to ${sentCount} member${sentCount !== 1 ? 's' : ''} in October 2025+ groups`,
+      data: {
+        sent: sentCount,
+        failed: failedCount,
+        total: usersWithoutProgress.length,
+        groups: groups
+      }
+    })
+  } catch (error) {
+    console.error('Error sending progress reminders:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Create admin message/announcement
 router.post('/messages', [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),

@@ -11,7 +11,9 @@ import {
   Plus,
   LogOut,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Loader
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
 
@@ -78,6 +80,7 @@ const Admin = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [addingMembers, setAddingMembers] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
+  const [sendingReminders, setSendingReminders] = useState(false)
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -324,6 +327,38 @@ const Admin = () => {
       setPostMessageError('Failed to post message. Please try again.')
     } finally {
       setPostingMessage(false)
+    }
+  }
+
+  const handleSendProgressReminders = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    if (!confirm('Send progress reminder emails to members in "Bible Bus October 2025 Travelers" and newer groups who have no progress recorded?')) {
+      return
+    }
+
+    setSendingReminders(true)
+    try {
+      const response = await fetch('/api/admin/send-progress-reminders', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        const groupsList = data.data.groups?.join(', ') || 'N/A'
+        alert(`✅ ${data.message}\n\nSent: ${data.data.sent}\nFailed: ${data.data.failed}\nTotal: ${data.data.total}\n\nGroups: ${groupsList}`)
+        fetchAdminData() // Refresh to see updated progress
+      } else {
+        alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
+      }
+    } catch (err) {
+      console.error('Error sending reminders:', err)
+      alert('Failed to send reminders. Please try again.')
+    } finally {
+      setSendingReminders(false)
     }
   }
 
@@ -951,7 +986,26 @@ const Admin = () => {
 
                      {activeTab === 'progress' && (
             <div>
-              <h2 className="text-xl font-semibold text-white mb-6">Member Progress by Group</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-white">Member Progress by Group</h2>
+                <button
+                  onClick={handleSendProgressReminders}
+                  disabled={sendingReminders}
+                  className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {sendingReminders ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      <span>Send Progress Reminders</span>
+                    </>
+                  )}
+                </button>
+              </div>
               
               {!adminData.progressByGroup || adminData.progressByGroup.length === 0 ? (
                 <div className="text-center py-12">
