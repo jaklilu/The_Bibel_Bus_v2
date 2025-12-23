@@ -9,7 +9,9 @@ import {
   DollarSign, 
   BarChart3,
   Plus,
-  LogOut
+  LogOut,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
 
@@ -75,6 +77,7 @@ const Admin = () => {
   const [userSearch, setUserSearch] = useState('')
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [addingMembers, setAddingMembers] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -958,33 +961,56 @@ const Admin = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {adminData.progressByGroup.map((group: any) => (
+                  {adminData.progressByGroup.map((group: any) => {
+                    const isExpanded = expandedGroups.has(group.group_id)
+                    return (
                     <div key={group.group_id} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl border border-purple-700/30 overflow-hidden">
-                      {/* Group Header */}
-                      <div className="bg-purple-700/50 px-6 py-4 border-b border-purple-600/30">
+                      {/* Group Header - Clickable */}
+                      <button
+                        onClick={() => {
+                          setExpandedGroups(prev => {
+                            const newSet = new Set(prev)
+                            if (newSet.has(group.group_id)) {
+                              newSet.delete(group.group_id)
+                            } else {
+                              newSet.add(group.group_id)
+                            }
+                            return newSet
+                          })
+                        }}
+                        className="w-full bg-purple-700/50 px-6 py-4 border-b border-purple-600/30 hover:bg-purple-700/70 transition-colors text-left"
+                      >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">{group.group_name}</h3>
-                            <div className="flex items-center space-x-4 mt-1">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                group.group_status === 'active' ? 'bg-green-600 text-white' :
-                                group.group_status === 'closed' ? 'bg-amber-600 text-purple-900' :
-                                'bg-gray-600 text-white'
-                              }`}>
-                                {group.group_status}
-                              </span>
-                              <span className="text-sm text-purple-300">
-                                Started: {new Date(group.start_date).toLocaleDateString()}
-                              </span>
-                              <span className="text-sm text-purple-300">
-                                {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
-                              </span>
+                          <div className="flex items-center space-x-3">
+                            {isExpanded ? (
+                              <ChevronDown className="h-5 w-5 text-purple-300" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5 text-purple-300" />
+                            )}
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">{group.group_name}</h3>
+                              <div className="flex items-center space-x-4 mt-1">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  group.group_status === 'active' ? 'bg-green-600 text-white' :
+                                  group.group_status === 'closed' ? 'bg-amber-600 text-purple-900' :
+                                  'bg-gray-600 text-white'
+                                }`}>
+                                  {group.group_status}
+                                </span>
+                                <span className="text-sm text-purple-300">
+                                  Started: {new Date(group.start_date).toLocaleDateString()}
+                                </span>
+                                <span className="text-sm text-purple-300">
+                                  {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </button>
 
-                      {/* Members List */}
+                      {/* Members List - Collapsible */}
+                      {isExpanded && (
                       <div className="p-6">
                         {group.members.length === 0 ? (
                           <p className="text-purple-300 text-center py-4">No members in this group</p>
@@ -1054,8 +1080,10 @@ const Admin = () => {
                           </div>
                         )}
                       </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
