@@ -137,6 +137,8 @@ const Navigation = () => {
           <div className="ml-auto hidden md:flex items-center space-x-8">
             {navItems.map(item => {
               const isMessages = item.to === '/messages'
+              // Skip Donate from nav items since we have a heart icon button
+              if (item.to === '/donate') return null
               return (
                 <Link
                   key={item.to}
@@ -158,6 +160,44 @@ const Navigation = () => {
                 </Link>
               )
             })}
+            
+            {/* Desktop Donate Heart Icon Button */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Link
+                to="/donate"
+                className="group relative flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-600 via-purple-700 to-amber-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+              >
+                <Heart className="w-5 h-5 text-white group-hover:text-amber-300 transition-colors duration-200" />
+                
+                {/* Pulse animation */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-amber-400 opacity-30"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.1, 0.3],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                
+                {/* Tooltip */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  whileHover={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-full mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg pointer-events-none"
+                >
+                  Donate to The Bible Bus
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-t-4 border-t-gray-900 border-l-4 border-l-transparent border-r-4 border-r-transparent" />
+                </motion.div>
+              </Link>
+            </motion.div>
           </div>
 
           {/* Mobile hamburger */}
