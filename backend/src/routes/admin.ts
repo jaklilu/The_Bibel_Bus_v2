@@ -973,6 +973,44 @@ router.get('/group-messages', async (req: Request, res: Response) => {
   }
 })
 
+// Get all user messages (messages from members)
+router.get('/user-messages', async (req: Request, res: Response) => {
+  try {
+    const messages = await getRows(`
+      SELECT 
+        um.id,
+        um.title,
+        um.content,
+        um.message_type,
+        um.status,
+        um.visibility,
+        um.created_at,
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        bg.id as group_id,
+        bg.name as group_name
+      FROM user_messages um
+      JOIN users u ON um.user_id = u.id
+      LEFT JOIN bible_groups bg ON um.group_id = bg.id
+      ORDER BY um.created_at DESC
+    `)
+
+    res.json({
+      success: true,
+      data: messages
+    })
+  } catch (error) {
+    console.error('Error fetching user messages:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Admin: delete a user-submitted message
 router.delete('/user-messages/:id', async (req: Request, res: Response) => {
   try {

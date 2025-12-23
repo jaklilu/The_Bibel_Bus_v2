@@ -31,14 +31,31 @@ interface BibleGroup {
   status: string
 }
 
+interface UserMessage {
+  id: number
+  title: string | null
+  content: string
+  message_type: string
+  status: string
+  visibility: string
+  created_at: string
+  user_id: number
+  user_name: string
+  user_email: string
+  group_id: number | null
+  group_name: string | null
+}
+
 const AdminMessageManager = () => {
   const [messages, setMessages] = useState<GroupMessage[]>([])
+  const [userMessages, setUserMessages] = useState<UserMessage[]>([])
   const [groups, setGroups] = useState<BibleGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingMessage, setEditingMessage] = useState<GroupMessage | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
   const [selectedType, setSelectedType] = useState<string>('all')
+  const [showUserMessages, setShowUserMessages] = useState(true)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -51,6 +68,7 @@ const AdminMessageManager = () => {
 
   useEffect(() => {
     fetchMessages()
+    fetchUserMessages()
     fetchGroups()
   }, [])
 
@@ -65,6 +83,18 @@ const AdminMessageManager = () => {
       console.error('Error fetching messages:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchUserMessages = async () => {
+    try {
+      const response = await fetch('/api/admin/user-messages')
+      if (response.ok) {
+        const data = await response.json()
+        setUserMessages(data.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching user messages:', error)
     }
   }
 
@@ -241,6 +271,114 @@ const AdminMessageManager = () => {
           <Plus className="h-4 w-4" />
           <span>New Message</span>
         </button>
+      </div>
+
+      {/* Member Messages Section */}
+      <div className="mb-8 bg-purple-700/30 rounded-xl p-6 border border-purple-600/20">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <Users className="h-6 w-6 text-amber-400" />
+            <div>
+              <h3 className="text-xl font-semibold text-white">Messages from Members</h3>
+              <p className="text-purple-300 text-sm">View messages posted by group members</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setShowUserMessages(!showUserMessages)
+              if (showUserMessages) {
+                fetchUserMessages() // Refresh when expanding
+              }
+            }}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+          >
+            {showUserMessages ? 'Hide' : 'Show'} ({userMessages.length})
+          </button>
+        </div>
+
+        {showUserMessages && (
+          <div className="space-y-4 mt-4">
+            {userMessages.length === 0 ? (
+              <div className="text-center py-8 text-purple-300">
+                <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No messages from members yet</p>
+              </div>
+            ) : (
+              userMessages.map((userMsg, index) => (
+                <motion.div
+                  key={userMsg.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="p-4 bg-purple-800/50 rounded-lg border border-purple-600/30"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Users className="h-4 w-4 text-amber-400" />
+                        <span className="text-xs font-semibold text-amber-400 bg-amber-400/10 px-2 py-1 rounded">
+                          FROM MEMBER
+                        </span>
+                        {userMsg.status && (
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            userMsg.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                            userMsg.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {userMsg.status}
+                          </span>
+                        )}
+                      </div>
+                      {userMsg.title && (
+                        <h4 className="text-lg font-semibold text-white mb-1">{userMsg.title}</h4>
+                      )}
+                      <div className="flex items-center space-x-3 text-sm text-purple-300 mb-2">
+                        <span className="font-medium text-white">{userMsg.user_name}</span>
+                        <span>•</span>
+                        <span>{userMsg.user_email}</span>
+                        {userMsg.group_name && (
+                          <>
+                            <span>•</span>
+                            <span>Group: {userMsg.group_name}</span>
+                          </>
+                        )}
+                        <span>•</span>
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(userMsg.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Are you sure you want to delete this message?')) return
+                        try {
+                          const response = await fetch(`/api/admin/user-messages/${userMsg.id}`, {
+                            method: 'DELETE'
+                          })
+                          if (response.ok) {
+                            fetchUserMessages()
+                          }
+                        } catch (error) {
+                          console.error('Error deleting user message:', error)
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors ml-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-purple-200 leading-relaxed whitespace-pre-wrap">{userMsg.content}</p>
+                  {userMsg.message_type && (
+                    <div className="mt-2">
+                      <span className="text-xs text-purple-400">Type: {userMsg.message_type}</span>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Filters */}
