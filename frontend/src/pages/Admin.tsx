@@ -307,7 +307,7 @@ const Admin = () => {
         setPostMessageError('Your admin session expired. Please sign in again.')
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
       } else {
         const data = await response.json().catch(() => null)
         setPostMessageError(data?.error?.message || 'Failed to post message')
@@ -618,7 +618,7 @@ const Admin = () => {
                  onClick={() => {
                    localStorage.removeItem('adminToken')
                    setIsLoggedIn(false)
-                   setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
+                   setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
                  }}
                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                >
