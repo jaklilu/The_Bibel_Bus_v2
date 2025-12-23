@@ -689,6 +689,9 @@ router.get('/progress-by-group', async (req: Request, res: Response) => {
 
 // Send progress reminders to users with no milestone progress (October 2025 and newer groups only)
 router.post('/send-progress-reminders', async (req: Request, res: Response) => {
+  // Set a longer timeout for this endpoint (5 minutes)
+  req.setTimeout(300000) // 5 minutes
+  
   try {
     // Find all users in active/closed groups who have no milestone progress
     // Only include "Bible Bus October 2025 Travelers" and groups created after October 2025
@@ -727,7 +730,9 @@ router.post('/send-progress-reminders', async (req: Request, res: Response) => {
     let sentCount = 0
     let failedCount = 0
 
-    for (const user of usersWithoutProgress) {
+    // Send emails with a small delay between each to avoid overwhelming the email service
+    for (let i = 0; i < usersWithoutProgress.length; i++) {
+      const user = usersWithoutProgress[i]
       try {
         const emailSent = await sendProgressReminderEmail(
           user.user_email,
@@ -739,6 +744,11 @@ router.post('/send-progress-reminders', async (req: Request, res: Response) => {
           console.log(`Progress reminder sent to: ${user.user_email} (${user.group_name})`)
         } else {
           failedCount++
+        }
+        
+        // Add a small delay between emails (except for the last one) to avoid rate limiting
+        if (i < usersWithoutProgress.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100)) // 100ms delay
         }
       } catch (error) {
         failedCount++

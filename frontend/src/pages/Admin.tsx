@@ -340,10 +340,17 @@ const Admin = () => {
 
     setSendingReminders(true)
     try {
+      // Create an AbortController for timeout handling
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+      
       const response = await fetch('/api/admin/send-progress-reminders', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error')
@@ -361,7 +368,14 @@ const Admin = () => {
       }
     } catch (err: any) {
       console.error('Error sending reminders:', err)
-      const errorMessage = err?.message || 'Failed to send reminders. Please try again.'
+      let errorMessage = 'Failed to send reminders. Please try again.'
+      
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timed out. The emails may still be sending in the background. Please check the server logs or try again later.'
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      
       alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
     } finally {
       setSendingReminders(false)
