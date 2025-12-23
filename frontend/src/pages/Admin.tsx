@@ -345,6 +345,11 @@ const Admin = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error')
+        throw new Error(`Server error (${response.status}): ${errorText}`)
+      }
+      
       const data = await response.json()
       
       if (data.success) {
@@ -354,9 +359,10 @@ const Admin = () => {
       } else {
         alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending reminders:', err)
-      alert('Failed to send reminders. Please try again.')
+      const errorMessage = err?.message || 'Failed to send reminders. Please try again.'
+      alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
     } finally {
       setSendingReminders(false)
     }
