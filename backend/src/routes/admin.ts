@@ -583,6 +583,109 @@ router.get('/milestone-progress', async (req: Request, res: Response) => {
   }
 })
 
+// Get progress grouped by group with latest milestone for each member
+router.get('/progress-by-group', async (req: Request, res: Response) => {
+  try {
+    // First, get all active/closed groups with their members
+    const groups = await getRows(`
+      SELECT DISTINCT
+        bg.id as group_id,
+        bg.name as group_name,
+        bg.status as group_status,
+        bg.start_date,
+        bg.end_date
+      FROM bible_groups bg
+      JOIN group_members gm ON bg.id = gm.group_id
+      WHERE bg.status IN ('active', 'closed')
+      ORDER BY bg.start_date DESC
+    `)
+
+    // For each group, get members with their latest milestone progress
+    const groupsWithMembers = await Promise.all(groups.map(async (group: any) => {
+      const members = await getRows(`
+        SELECT 
+          u.id as user_id,
+          u.name as user_name,
+          u.email as user_email,
+          u.trophies_count,
+          mp.milestone_id,
+          mp.milestone_name,
+          mp.day_number,
+          mp.days_completed,
+          mp.percentage,
+          mp.grade,
+          mp.completed,
+          mp.updated_at as last_updated
+        FROM users u
+        JOIN group_members gm ON u.id = gm.user_id
+        LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND gm.group_id = mp.group_id
+        WHERE gm.group_id = ? AND gm.status = 'active'
+          AND (mp.id IS NULL OR mp.id = (
+            SELECT mp2.id 
+            FROM milestone_progress mp2 
+            WHERE mp2.user_id = u.id 
+              AND mp2.group_id = gm.group_id 
+            ORDER BY mp2.updated_at DESC 
+            LIMIT 1
+          ))
+        ORDER BY u.name ASC
+      `, [group.group_id])
+
+      // Process members to get latest milestone
+      const processedMembers = members.map((member: any) => {
+        if (member.milestone_id) {
+          return {
+            user_id: member.user_id,
+            user_name: member.user_name,
+            user_email: member.user_email,
+            trophies_count: member.trophies_count || 0,
+            latest_milestone: {
+              milestone_id: member.milestone_id,
+              milestone_name: member.milestone_name,
+              day_number: member.day_number,
+              days_completed: member.days_completed,
+              percentage: member.percentage,
+              grade: member.grade,
+              completed: member.completed === 1,
+              updated_at: member.last_updated
+            }
+          }
+        } else {
+          return {
+            user_id: member.user_id,
+            user_name: member.user_name,
+            user_email: member.user_email,
+            trophies_count: member.trophies_count || 0,
+            latest_milestone: null
+          }
+        }
+      })
+
+      return {
+        group_id: group.group_id,
+        group_name: group.group_name,
+        group_status: group.group_status,
+        start_date: group.start_date,
+        end_date: group.end_date,
+        members: processedMembers
+      }
+    }))
+
+    res.json({
+      success: true,
+      data: groupsWithMembers
+    })
+  } catch (error) {
+    console.error('Error fetching progress by group:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Create admin message/announcement
 router.post('/messages', [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),

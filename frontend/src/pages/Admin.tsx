@@ -18,6 +18,7 @@ interface AdminData {
   users: any[]
   progress: any[]
   milestoneProgress: any[]
+  progressByGroup: any[]
   messages: any[]
   donations: any[]
 }
@@ -37,6 +38,7 @@ const Admin = () => {
     users: [],
     progress: [],
     milestoneProgress: [],
+    progressByGroup: [],
     messages: [],
     donations: []
   })
@@ -185,20 +187,21 @@ const Admin = () => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
       
-      const [groupsRes, usersRes, progressRes, milestoneProgressRes, messagesRes, donationsRes] = await Promise.all([
+      const [groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes] = await Promise.all([
         fetch('/api/admin/groups', { headers }),
         fetch('/api/admin/users', { headers }),
         fetch('/api/admin/progress', { headers }),
         fetch('/api/admin/milestone-progress', { headers }),
+        fetch('/api/admin/progress-by-group', { headers }),
         fetch('/api/admin/messages', { headers }),
         fetch('/api/admin/donations', { headers })
       ])
 
       // If token expired/invalid after a deploy, force re-login instead of showing empty lists
-      if ([groupsRes, usersRes, progressRes, milestoneProgressRes, messagesRes, donationsRes].some(r => r.status === 401)) {
+      if ([groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes].some(r => r.status === 401)) {
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
         setError('Your admin session expired. Please sign in again.')
         return
       }
@@ -207,6 +210,7 @@ const Admin = () => {
       const users = await usersRes.json()
       const progress = await progressRes.json()
       const milestoneProgress = await milestoneProgressRes.json()
+      const progressByGroup = await progressByGroupRes.json()
       const messages = await messagesRes.json()
       const donations = await donationsRes.json()
 
@@ -217,6 +221,7 @@ const Admin = () => {
         users: users.data || [],
         progress: progress.data || [],
         milestoneProgress: milestoneProgress.data || [],
+        progressByGroup: progressByGroup.data || [],
         messages: messages.data || [],
         donations: donations.success ? donations.data.donations : []
       })
@@ -939,81 +944,114 @@ const Admin = () => {
 
                      {activeTab === 'progress' && (
             <div>
-              <h2 className="text-xl font-semibold text-white mb-6">Milestone Progress</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-purple-600/30">
-                  <thead className="bg-purple-700/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Group</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophies</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Milestones</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Avg %</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Trophy Request</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-purple-600/50 divide-y divide-purple-600/30">
-                    {adminData.milestoneProgress.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{item.user_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">{item.group_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          <div className="flex items-center space-x-2">
-                            <span className="inline-block min-w-[1.5rem] text-center font-semibold text-white">{item.trophies_count || 0}</span>
-                            <span className="text-xs text-purple-300">trophies</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-white font-medium">{item.milestones_completed || 0}</span>
-                            <span className="text-purple-300">/</span>
-                            <span className="text-purple-300">{item.milestones_tracked || 0}</span>
-                            <span className="text-xs text-purple-300">completed</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-purple-700 rounded-full h-2 mr-2">
-                              <div 
-                                className="bg-amber-500 h-2 rounded-full" 
-                                style={{ width: `${Math.min(100, Math.round(item.avg_percentage || 0))}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs">{Math.round(item.avg_percentage || 0)}%</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          {item.trophy_request_id ? (
-                            <span className="text-amber-400 font-medium">Journey Completion</span>
-                          ) : (
-                            <span className="text-purple-300">No request</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                          {item.trophy_request_status ? (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              item.trophy_request_status === 'approved' ? 'bg-green-600 text-white' :
-                              item.trophy_request_status === 'rejected' ? 'bg-red-600 text-white' :
-                              item.trophy_request_status === 'pending' ? 'bg-amber-600 text-purple-900' :
-                              'bg-gray-600 text-white'
-                            }`}>
-                              {item.trophy_request_status}
-                            </span>
-                          ) : (
-                            <span className="text-purple-300">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {adminData.milestoneProgress.length === 0 && (
+              <h2 className="text-xl font-semibold text-white mb-6">Member Progress by Group</h2>
+              
+              {adminData.progressByGroup.length === 0 ? (
                 <div className="text-center py-12">
                   <BarChart3 className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Milestone Data</h3>
-                  <p className="text-purple-300">No milestone progress data available yet.</p>
+                  <h3 className="text-lg font-medium text-white mb-2">No Progress Data</h3>
+                  <p className="text-purple-300">No group progress data available yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {adminData.progressByGroup.map((group: any) => (
+                    <div key={group.group_id} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl border border-purple-700/30 overflow-hidden">
+                      {/* Group Header */}
+                      <div className="bg-purple-700/50 px-6 py-4 border-b border-purple-600/30">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">{group.group_name}</h3>
+                            <div className="flex items-center space-x-4 mt-1">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                group.group_status === 'active' ? 'bg-green-600 text-white' :
+                                group.group_status === 'closed' ? 'bg-amber-600 text-purple-900' :
+                                'bg-gray-600 text-white'
+                              }`}>
+                                {group.group_status}
+                              </span>
+                              <span className="text-sm text-purple-300">
+                                Started: {new Date(group.start_date).toLocaleDateString()}
+                              </span>
+                              <span className="text-sm text-purple-300">
+                                {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Members List */}
+                      <div className="p-6">
+                        {group.members.length === 0 ? (
+                          <p className="text-purple-300 text-center py-4">No members in this group</p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {group.members.map((member: any) => (
+                              <div key={member.user_id} className="bg-purple-900/40 border border-purple-700/40 rounded-lg p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <h4 className="text-white font-medium">{member.user_name}</h4>
+                                    <p className="text-xs text-purple-300 mt-1">{member.user_email}</p>
+                                  </div>
+                                  {member.trophies_count > 0 && (
+                                    <span className="text-amber-400 font-semibold text-sm">
+                                      🏆 {member.trophies_count}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {member.latest_milestone ? (
+                                  <div className="mt-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-purple-200 font-medium">
+                                        {member.latest_milestone.milestone_name}
+                                      </span>
+                                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded ${
+                                        member.latest_milestone.grade === 'A' ? 'bg-green-600 text-white' :
+                                        member.latest_milestone.grade === 'B' ? 'bg-blue-600 text-white' :
+                                        member.latest_milestone.grade === 'C' ? 'bg-yellow-600 text-purple-900' :
+                                        'bg-red-600 text-white'
+                                      }`}>
+                                        Grade {member.latest_milestone.grade}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <div className="flex-1 bg-purple-700 rounded-full h-2">
+                                        <div 
+                                          className={`h-2 rounded-full ${
+                                            member.latest_milestone.grade === 'A' ? 'bg-green-500' :
+                                            member.latest_milestone.grade === 'B' ? 'bg-blue-500' :
+                                            member.latest_milestone.grade === 'C' ? 'bg-yellow-500' :
+                                            'bg-red-500'
+                                          }`}
+                                          style={{ width: `${Math.min(100, member.latest_milestone.percentage)}%` }}
+                                        ></div>
+                                      </div>
+                                      <span className="text-xs text-purple-300">
+                                        {member.latest_milestone.percentage}%
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-purple-400">
+                                      {member.latest_milestone.days_completed} / {member.latest_milestone.day_number} days
+                                    </div>
+                                    {member.latest_milestone.updated_at && (
+                                      <div className="text-xs text-purple-400 mt-1">
+                                        Updated: {new Date(member.latest_milestone.updated_at).toLocaleDateString()}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="mt-3">
+                                    <p className="text-sm text-purple-400 italic">No progress recorded yet</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
