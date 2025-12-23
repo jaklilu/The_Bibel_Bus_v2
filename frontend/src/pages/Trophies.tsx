@@ -10,22 +10,25 @@ const Trophies = () => {
   const [publicList, setPublicList] = useState<Array<{id:number;name:string;trophies_count:number;tier:string;avatar_url?:string|null}>>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [open, setOpen] = useState<Record<string, boolean>>({ diamond: false, platinum: false, gold: false, silver: false, bronze: false })
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false)
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in (optional - page is public)
     const token = localStorage.getItem('userToken')
-    if (!token) {
-      navigate('/login')
-      return
+    setIsLoggedIn(!!token)
+    
+    if (token) {
+      const stored = localStorage.getItem('userData')
+      if (stored) {
+        try {
+          const u = JSON.parse(stored)
+          setName(u.name)
+          setCount(u.trophies_count || 0)
+        } catch {}
+      }
     }
-    const stored = localStorage.getItem('userData')
-    if (stored) {
-      try {
-        const u = JSON.parse(stored)
-        setName(u.name)
-        setCount(u.trophies_count || 0)
-      } catch {}
-    }
+    
+    // Fetch public trophies list (no auth required)
     ;(async () => {
       try {
         const res = await fetch('/api/auth/public/trophies')
@@ -106,7 +109,7 @@ const Trophies = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <h1 className="text-4xl font-heading text-white mb-1">Awards</h1>
-          <p className="text-amber-400">{name}</p>
+          {name && <p className="text-amber-400">{name}</p>}
         </motion.div>
 
         {/* Celebration hero */}
@@ -140,10 +143,12 @@ const Trophies = () => {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center mb-8">
-          <div className="text-6xl font-extrabold text-amber-400">{count}</div>
-          <div className="mt-2 text-purple-200">Your Completed Journey</div>
-        </motion.div>
+        {isLoggedIn && count > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center mb-8">
+            <div className="text-6xl font-extrabold text-amber-400">{count}</div>
+            <div className="mt-2 text-purple-200">Your Completed Journey</div>
+          </motion.div>
+        )}
 
         {loading ? (
           <div className="text-center text-white">Loading…</div>
@@ -221,7 +226,11 @@ const Trophies = () => {
         )}
 
         <div className="mt-10 text-center">
-          <button onClick={() => navigate('/dashboard')} className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg">Back to Dashboard</button>
+          {isLoggedIn ? (
+            <button onClick={() => navigate('/dashboard')} className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg">Back to Dashboard</button>
+          ) : (
+            <button onClick={() => navigate('/')} className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg">Back to Home</button>
+          )}
         </div>
       </div>
     </div>
