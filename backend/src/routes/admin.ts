@@ -730,29 +730,46 @@ router.post('/send-progress-reminders', async (req: Request, res: Response) => {
     let sentCount = 0
     let failedCount = 0
 
-    // Send emails with a small delay between each to avoid overwhelming the email service
-    for (let i = 0; i < usersWithoutProgress.length; i++) {
-      const user = usersWithoutProgress[i]
-      try {
-        const emailSent = await sendProgressReminderEmail(
-          user.user_email,
-          user.user_name,
-          user.group_name
-        )
-        if (emailSent) {
-          sentCount++
-          console.log(`Progress reminder sent to: ${user.user_email} (${user.group_name})`)
-        } else {
+    // Send emails in batches of 5 to avoid timeout
+    const batchSize = 5
+    const batches = []
+    for (let i = 0; i < usersWithoutProgress.length; i += batchSize) {
+      batches.push(usersWithoutProgress.slice(i, i + batchSize))
+    }
+
+    // Process each batch
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex]
+      
+      // Send all emails in the current batch in parallel
+      const batchPromises = batch.map(async (user: any) => {
+        try {
+          const emailSent = await sendProgressReminderEmail(
+            user.user_email,
+            user.user_name,
+            user.group_name
+          )
+          if (emailSent) {
+            sentCount++
+            console.log(`Progress reminder sent to: ${user.user_email} (${user.group_name})`)
+            return { success: true, email: user.user_email }
+          } else {
+            failedCount++
+            return { success: false, email: user.user_email }
+          }
+        } catch (error) {
           failedCount++
+          console.error(`Failed to send to ${user.user_email}:`, error)
+          return { success: false, email: user.user_email, error }
         }
-        
-        // Add a small delay between emails (except for the last one) to avoid rate limiting
-        if (i < usersWithoutProgress.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100)) // 100ms delay
-        }
-      } catch (error) {
-        failedCount++
-        console.error(`Failed to send to ${user.user_email}:`, error)
+      })
+
+      // Wait for all emails in this batch to complete
+      await Promise.all(batchPromises)
+
+      // Add a delay between batches (except after the last batch) to avoid overwhelming the service
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between batches
       }
     }
 
