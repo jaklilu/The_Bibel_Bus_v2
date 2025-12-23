@@ -267,6 +267,9 @@ router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Must be a valid email'),
+  body('city').trim().notEmpty().withMessage('City is required'),
+  body('mailing_address').trim().notEmpty().withMessage('Mailing address is required'),
+  body('referral').trim().notEmpty().withMessage('Referral is required'),
   body('phone').optional().isMobilePhone('any').withMessage('Must be a valid phone number')
 ], async (req: Request, res: Response) => {
   try {

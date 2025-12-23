@@ -154,7 +154,7 @@ const Register = () => {
           email: formData.email.trim(),
           city: formData.city.trim(),
           mailing_address: formData.mailingAddress.trim(),
-          referral: formData.referral.trim() || null
+          referral: formData.referral.trim()
         })
       })
 
@@ -597,7 +597,7 @@ const Register = () => {
             {/* Referral */}
             <div>
               <label htmlFor="referral" className="block text-sm font-medium text-amber-500 mb-2">
-                Who Referred You?
+                Who Referred You? *
               </label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
@@ -605,6 +605,7 @@ const Register = () => {
                   type="text"
                   id="referral"
                   name="referral"
+                  required
                   value={formData.referral}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
