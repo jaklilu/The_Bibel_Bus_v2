@@ -1717,6 +1717,124 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
+## 27. Admin Dashboard & Registration Flow Enhancements ✨ **JANUARY 2026 SESSION**
+
+### **Problem Identified** 🎯
+- Admin progress view was crowded with all groups expanded
+- Progress reminder emails were timing out due to gateway limits
+- Desktop donation icon was missing from navigation
+- Admin couldn't see member messages in Message tab
+- WhatsApp registration needed clearer introduction instructions
+
+### **Solutions Implemented** ✅
+
+#### **1. Collapsible Progress Groups** (`frontend/src/pages/Admin.tsx`)
+- **Feature**: Made progress groups collapsible by default
+- **Implementation**: Added `expandedGroups` state with Set data structure
+- **UI**: Clickable group headers with chevron icons (right = collapsed, down = expanded)
+- **Benefits**: Cleaner admin dashboard, easier navigation through multiple groups
+- **Files Modified**: `frontend/src/pages/Admin.tsx`
+
+#### **2. Progress Reminder Email System** (`backend/src/routes/admin.ts`, `backend/src/utils/emailService.ts`)
+- **Feature**: Automated email reminders for members without milestone progress
+- **Target Groups**: "Bible Bus October 2025 Travelers" and groups with start_date >= '2025-10-01'
+- **Email Function**: `sendProgressReminderEmail()` with instructions and dashboard link
+- **Batch Processing**: Sends emails in batches of 5 to prevent gateway timeouts
+- **Admin Endpoint**: `POST /api/admin/send-progress-reminders`
+- **UI Button**: "Send Progress Reminders" button in admin Progress tab
+- **Error Handling**: Improved timeout handling with 2-minute frontend timeout and 5-minute backend timeout
+- **Files Modified**: 
+  - `backend/src/utils/emailService.ts` (new email function)
+  - `backend/src/routes/admin.ts` (new endpoint with batch processing)
+  - `frontend/src/pages/Admin.tsx` (UI button and handler)
+
+#### **3. Desktop Donation Heart Icon** (`frontend/src/components/Navigation.tsx`)
+- **Feature**: Added donation heart icon button to desktop navigation
+- **Implementation**: Removed "Donate" text link, added heart icon with pulse animation
+- **Styling**: Matches mobile version with gradient background and hover effects
+- **Position**: Top-right of navigation bar, always visible
+- **Tooltip**: "Donate to The Bible Bus" on hover
+- **Files Modified**: `frontend/src/components/Navigation.tsx`
+
+#### **4. Member Messages Display in Admin** (`backend/src/routes/admin.ts`, `frontend/src/components/AdminMessageManager.tsx`)
+- **Feature**: Display all messages posted by members in admin Message tab
+- **Backend Endpoint**: `GET /api/admin/user-messages` - fetches all user messages with user and group info
+- **UI Section**: "Messages from Members" collapsible section at top of Message tab
+- **Display Info**: Shows member name, email, group, message content, status, and timestamp
+- **Actions**: Delete button for admin to remove member messages
+- **Authentication Fix**: Added admin token to all API calls in AdminMessageManager
+- **Files Modified**:
+  - `backend/src/routes/admin.ts` (new endpoint)
+  - `frontend/src/components/AdminMessageManager.tsx` (new section + auth fixes)
+
+#### **5. WhatsApp Registration Instructions Update** (`frontend/src/pages/Register.tsx`)
+- **Feature**: Added clear instructions for WhatsApp group introduction
+- **Content**: Box with instructions to introduce yourself with:
+  - Your Name
+  - Which city you live in
+  - Who referred you?
+- **Styling**: Purple background box matching design system
+- **Location**: Inside WhatsApp gate step before joining
+- **Files Modified**: `frontend/src/pages/Register.tsx`
+
+### **Technical Implementation** 🔧
+
+#### **Progress Reminder System**
+- **Query Logic**: Finds users in October 2025+ groups with no milestone progress
+- **Email Batching**: Processes 5 emails in parallel, then 500ms delay between batches
+- **Error Handling**: Tracks sent/failed counts, continues on individual failures
+- **Response Data**: Returns sent count, failed count, total, and list of groups targeted
+
+#### **Collapsible Groups**
+- **State Management**: Uses `Set<number>` to track expanded group IDs
+- **Toggle Logic**: Adds/removes group_id from Set on click
+- **Visual Feedback**: Chevron icons change based on expanded state
+- **Default State**: All groups collapsed by default
+
+#### **Member Messages Display**
+- **Data Structure**: Combines user_messages table with users and bible_groups
+- **Status Display**: Color-coded badges (approved/pending/rejected)
+- **Auto-refresh**: Fetches latest messages when section is expanded
+- **Authentication**: All API calls include `Authorization: Bearer ${adminToken}` header
+
+### **Results Achieved** 🎯
+
+#### **User Experience Improvements**
+- ✅ Admin can easily navigate through multiple groups with collapsible sections
+- ✅ Members receive automated reminders to update their progress
+- ✅ Desktop users have consistent donation icon access
+- ✅ Admin can monitor all member messages in one place
+- ✅ New registrants have clear instructions for WhatsApp introduction
+
+#### **Technical Improvements**
+- ✅ Batch email processing prevents gateway timeouts
+- ✅ Better error handling and user feedback
+- ✅ Consistent authentication across all admin API calls
+- ✅ Improved code organization and maintainability
+
+#### **Business Impact**
+- ✅ Increased progress tracking compliance through automated reminders
+- ✅ Better admin visibility into member engagement
+- ✅ Consistent donation access across all devices
+- ✅ Clearer onboarding process for new members
+
+### **Deployment Status** 🚀
+- ✅ All changes committed and pushed to `main` branch
+- ✅ Backend TypeScript compilation successful
+- ✅ Frontend build successful
+- ✅ No linter errors
+- ✅ All features tested and working correctly
+
+### **Files Changed Summary**
+1. `backend/src/utils/emailService.ts` - Added `sendProgressReminderEmail()` function
+2. `backend/src/routes/admin.ts` - Added progress reminder endpoint with batch processing
+3. `frontend/src/pages/Admin.tsx` - Collapsible groups, progress reminder button, expandedGroups state
+4. `frontend/src/components/Navigation.tsx` - Desktop donation heart icon
+5. `frontend/src/components/AdminMessageManager.tsx` - Member messages section + auth fixes
+6. `frontend/src/pages/Register.tsx` - WhatsApp introduction instructions
+
+---
+
 **Last Updated**: January 2026  
-**Session Status**: Form modal improvements fully implemented - converted all inline forms to centered popup modals using React Portal, made Add User button sticky, added auto-scroll after user creation, improved UX across admin panel and user interface, all modals now appear centered regardless of scroll position, feature tested and working correctly, ready for production use  
-**Next Session Goals**: Continue user experience optimization, monitor modal performance, gather user feedback on improved UX
+**Session Status**: Admin dashboard enhancements, progress reminder system, desktop donation icon, member messages display, and registration instructions all fully implemented and tested - ready for production use  
+**Next Session Goals**: Monitor progress reminder effectiveness, gather admin feedback on new features, continue user experience optimization
