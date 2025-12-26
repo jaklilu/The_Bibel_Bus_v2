@@ -407,37 +407,87 @@ router.post('/register-existing', [
     }
 
     // Check if user already exists (case-insensitive)
-    const existingUser = await getRow('SELECT id, status FROM users WHERE LOWER(email) = LOWER(?)', [email])
+    const existingUser = await getRow('SELECT id, status, name, city, mailing_address, referral, phone FROM users WHERE LOWER(email) = LOWER(?)', [email])
+    
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'An account with this email already exists'
+      // User exists - update missing information and set pending group identifier
+      const updates: string[] = []
+      const params: any[] = []
+      
+      // Update name if provided
+      if (name) {
+        updates.push('name = ?')
+        params.push(name)
+      }
+      
+      // Update city if missing (only fill in missing data)
+      if (!existingUser.city && city) {
+        updates.push('city = ?')
+        params.push(city)
+      }
+      
+      // Update mailing_address if missing
+      if (!existingUser.mailing_address && mailing_address) {
+        updates.push('mailing_address = ?')
+        params.push(mailing_address)
+      }
+      
+      // Update referral if missing
+      if (!existingUser.referral && referral) {
+        updates.push('referral = ?')
+        params.push(referral)
+      }
+      
+      // Update phone if missing
+      if (!existingUser.phone && phone) {
+        updates.push('phone = ?')
+        params.push(phone)
+      }
+      
+      // Always update pending_group_identifier
+      updates.push('pending_group_identifier = ?')
+      params.push(group_identifier)
+      
+      // Update status to pending if currently active (so they show up in pending list)
+      if (existingUser.status === 'active') {
+        updates.push('status = ?')
+        params.push('pending')
+      }
+      
+      updates.push('updated_at = CURRENT_TIMESTAMP')
+      params.push(existingUser.id)
+      
+      await runQuery(
+        `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+        params
+      )
+      
+      const updatedUser = await getRow('SELECT * FROM users WHERE id = ?', [existingUser.id])
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Your information has been updated! Your account is pending approval and will be added to your group soon.',
+        data: {
+          user: updatedUser,
+          updated: true
         }
       })
     }
 
-    // Create user with pending status and group identifier
+    // Create new user with pending status and group identifier
     const result = await runQuery(
       'INSERT INTO users (name, email, phone, city, mailing_address, referral, status, pending_group_identifier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [name, email, phone, city, mailing_address, referral, 'pending', group_identifier]
     )
 
+    const newUser = await getRow('SELECT * FROM users WHERE id = ?', [result.id])
+
     res.status(201).json({
       success: true,
       message: 'Registration submitted successfully! Your account is pending approval and will be added to your group soon.',
       data: {
-        user: {
-          id: result.id,
-          name,
-          email,
-          phone,
-          city,
-          mailing_address,
-          referral,
-          status: 'pending',
-          pending_group_identifier: group_identifier
-        }
+        user: newUser,
+        updated: false
       }
     })
   } catch (error) {
