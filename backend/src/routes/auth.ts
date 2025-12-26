@@ -365,6 +365,92 @@ router.post('/register', [
   }
 })
 
+// Register existing member (pending approval)
+router.post('/register-existing', [
+  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('email').isEmail().withMessage('Must be a valid email'),
+  body('city').trim().notEmpty().withMessage('City is required'),
+  body('mailing_address').trim().notEmpty().withMessage('Mailing address is required'),
+  body('referral').trim().notEmpty().withMessage('Referral is required'),
+  body('phone').optional().isMobilePhone('any').withMessage('Must be a valid phone number'),
+  body('group_identifier').trim().notEmpty().withMessage('Group identifier is required')
+], async (req: Request, res: Response) => {
+  try {
+    // Check validation errors
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          details: errors.array()
+        }
+      })
+    }
+
+    const { name, email, phone, city, mailing_address, referral, group_identifier } = req.body
+
+    // Validate group identifier
+    const validGroups = [
+      'Bible Bus January 2025 Travelers',
+      'Bible Bus April 2025 Travelers',
+      'Bible Bus July 2025 Travelers',
+      'Bible Bus October 2025 Travelers'
+    ]
+    if (!validGroups.includes(group_identifier)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid group identifier'
+        }
+      })
+    }
+
+    // Check if user already exists (case-insensitive)
+    const existingUser = await getRow('SELECT id, status FROM users WHERE LOWER(email) = LOWER(?)', [email])
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'An account with this email already exists'
+        }
+      })
+    }
+
+    // Create user with pending status and group identifier
+    const result = await runQuery(
+      'INSERT INTO users (name, email, phone, city, mailing_address, referral, status, pending_group_identifier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone, city, mailing_address, referral, 'pending', group_identifier]
+    )
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration submitted successfully! Your account is pending approval and will be added to your group soon.',
+      data: {
+        user: {
+          id: result.id,
+          name,
+          email,
+          phone,
+          city,
+          mailing_address,
+          referral,
+          status: 'pending',
+          pending_group_identifier: group_identifier
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Pending registration error:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Check if email exists (for pre-populating returning users)
 router.get('/check-email/:email', async (req: Request, res: Response) => {
   try {

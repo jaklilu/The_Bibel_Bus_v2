@@ -258,6 +258,15 @@ const initializeTables = () => {
     }
   })
 
+  // Add pending_group_identifier column to users if not exists
+  db.run(`
+    ALTER TABLE users ADD COLUMN pending_group_identifier TEXT
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding pending_group_identifier column to users:', err)
+    }
+  })
+
   // Group messages table
   db.run(`
     CREATE TABLE IF NOT EXISTS group_messages (

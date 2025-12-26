@@ -4,6 +4,7 @@ import Navigation from './components/Navigation'
 import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Register from './pages/Register'
+import RegisterExisting from './pages/RegisterExisting'
 import Login from './pages/Login'
 import Donate from './pages/Donate'
 import Dashboard from './pages/Dashboard'
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register-existing" element={<RegisterExisting />} />
           <Route path="/login" element={<Login />} />
           <Route path="/welcome-back" element={<WelcomeBack />} />
           <Route path="/donate" element={<Donate />} />

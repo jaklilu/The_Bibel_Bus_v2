@@ -1228,4 +1228,162 @@ router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) 
   }
 })
 
+// Get all pending registrations grouped by group identifier
+router.get('/pending-registrations', async (req: Request, res: Response) => {
+  try {
+    const pendingUsers = await getRows(`
+      SELECT 
+        id,
+        name,
+        email,
+        phone,
+        city,
+        mailing_address,
+        referral,
+        pending_group_identifier,
+        created_at
+      FROM users
+      WHERE status = 'pending' AND pending_group_identifier IS NOT NULL
+      ORDER BY pending_group_identifier, created_at DESC
+    `)
+
+    // Group by pending_group_identifier
+    const grouped: { [key: string]: any[] } = {}
+    pendingUsers.forEach((user: any) => {
+      const groupId = user.pending_group_identifier
+      if (!grouped[groupId]) {
+        grouped[groupId] = []
+      }
+      grouped[groupId].push(user)
+    })
+
+    res.json({
+      success: true,
+      data: grouped
+    })
+  } catch (error) {
+    console.error('Error fetching pending registrations:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
+// Approve pending registration and add to group
+router.post('/pending-registrations/:userId/approve', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId)
+    if (Number.isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid user ID' }
+      })
+    }
+
+    // Get user with pending group identifier
+    const user = await getRow(`
+      SELECT id, name, email, pending_group_identifier, status
+      FROM users
+      WHERE id = ? AND status = 'pending' AND pending_group_identifier IS NOT NULL
+    `, [userId])
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Pending registration not found' }
+      })
+    }
+
+    // Find the group by name
+    const group = await getRow(`
+      SELECT id, name, max_members
+      FROM bible_groups
+      WHERE name = ?
+    `, [user.pending_group_identifier])
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        error: { message: `Group "${user.pending_group_identifier}" not found` }
+      })
+    }
+
+    // Check group capacity
+    const memberCountRow = await getRow(`
+      SELECT COUNT(*) as count 
+      FROM group_members 
+      WHERE group_id = ? AND status = 'active'
+    `, [group.id])
+    const memberCount = memberCountRow?.count || 0
+
+    if (memberCount >= group.max_members) {
+      return res.status(400).json({
+        success: false,
+        error: { message: `Group "${group.name}" is full (${memberCount}/${group.max_members} members)` }
+      })
+    }
+
+    // Check if user is already in this group
+    const existingMember = await getRow(`
+      SELECT id 
+      FROM group_members 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [group.id, userId])
+
+    if (existingMember) {
+      // User is already in group, just update status and clear pending_group_identifier
+      await runQuery(`
+        UPDATE users 
+        SET status = 'active', pending_group_identifier = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [userId])
+
+      return res.json({
+        success: true,
+        message: 'User activated. Already a member of this group.',
+        data: {
+          userId,
+          groupId: group.id,
+          groupName: group.name
+        }
+      })
+    }
+
+    // Update user status and clear pending_group_identifier
+    await runQuery(`
+      UPDATE users 
+      SET status = 'active', pending_group_identifier = NULL, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [userId])
+
+    // Add user to group
+    const todayIso = new Date().toISOString().split('T')[0]
+    await runQuery(`
+      INSERT INTO group_members (group_id, user_id, join_date, status)
+      VALUES (?, ?, ?, 'active')
+    `, [group.id, userId, todayIso])
+
+    res.json({
+      success: true,
+      message: `User approved and added to ${group.name}`,
+      data: {
+        userId,
+        groupId: group.id,
+        groupName: group.name
+      }
+    })
+  } catch (error) {
+    console.error('Error approving pending registration:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 export default router

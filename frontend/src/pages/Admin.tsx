@@ -25,6 +25,7 @@ interface AdminData {
   progressByGroup: any[]
   messages: any[]
   donations: any[]
+  pendingRegistrations: { [key: string]: any[] }
 }
 
 const Admin = () => {
@@ -44,7 +45,8 @@ const Admin = () => {
     milestoneProgress: [],
     progressByGroup: [],
     messages: [],
-    donations: []
+    donations: [],
+    pendingRegistrations: {}
   })
   const [activeTab, setActiveTab] = useState('overview')
   // removed unused newMessage state
@@ -193,21 +195,22 @@ const Admin = () => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
       
-      const [groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes] = await Promise.all([
+      const [groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes, pendingRegistrationsRes] = await Promise.all([
         fetch('/api/admin/groups', { headers }),
         fetch('/api/admin/users', { headers }),
         fetch('/api/admin/progress', { headers }),
         fetch('/api/admin/milestone-progress', { headers }),
         fetch('/api/admin/progress-by-group', { headers }),
         fetch('/api/admin/messages', { headers }),
-        fetch('/api/admin/donations', { headers })
+        fetch('/api/admin/donations', { headers }),
+        fetch('/api/admin/pending-registrations', { headers })
       ])
 
       // If token expired/invalid after a deploy, force re-login instead of showing empty lists
-      if ([groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes].some(r => r.status === 401)) {
+      if ([groupsRes, usersRes, progressRes, milestoneProgressRes, progressByGroupRes, messagesRes, donationsRes, pendingRegistrationsRes].some(r => r.status === 401)) {
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [], pendingRegistrations: {} })
         setError('Your admin session expired. Please sign in again.')
         return
       }
@@ -219,6 +222,7 @@ const Admin = () => {
       const progressByGroup = await progressByGroupRes.json()
       const messages = await messagesRes.json()
       const donations = await donationsRes.json()
+      const pendingRegistrations = await pendingRegistrationsRes.json()
 
       console.log('Donations response:', donations) // Debug log
       console.log('Progress by group response:', progressByGroup) // Debug log
@@ -233,7 +237,8 @@ const Admin = () => {
         milestoneProgress: milestoneProgress.data || [],
         progressByGroup: progressByGroup.success ? (progressByGroup.data || []) : [],
         messages: messages.data || [],
-        donations: donations.success ? donations.data.donations : []
+        donations: donations.success ? donations.data.donations : [],
+        pendingRegistrations: pendingRegistrations.success ? (pendingRegistrations.data || {}) : {}
       })
     } catch (err) {
       console.error('Error fetching admin data:', err)
@@ -317,7 +322,7 @@ const Admin = () => {
         setPostMessageError('Your admin session expired. Please sign in again.')
         localStorage.removeItem('adminToken')
         setIsLoggedIn(false)
-        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [], pendingRegistrations: {} })
       } else {
         const data = await response.json().catch(() => null)
         setPostMessageError(data?.error?.message || 'Failed to post message')
@@ -626,6 +631,7 @@ const Admin = () => {
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
+                 { id: 'pending', label: 'Pending', icon: Users },
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
@@ -654,6 +660,7 @@ const Admin = () => {
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
+                 { id: 'pending', label: 'Pending Registrations', icon: Users },
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
@@ -680,7 +687,7 @@ const Admin = () => {
                  onClick={() => {
                    localStorage.removeItem('adminToken')
                    setIsLoggedIn(false)
-                   setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
+                   setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [], pendingRegistrations: {} })
                  }}
                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                >
@@ -1210,6 +1217,106 @@ const Admin = () => {
                </div>
              </div>
            )}
+
+                     {activeTab === 'pending' && (
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-6">Pending Registrations</h2>
+              
+              {Object.keys(adminData.pendingRegistrations).length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 text-purple-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No Pending Registrations</h3>
+                  <p className="text-purple-300">All registrations have been processed.</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {Object.entries(adminData.pendingRegistrations).map(([groupName, registrations]: [string, any[]]) => (
+                    <div key={groupName} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-white">{groupName}</h3>
+                        <span className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium">
+                          {registrations.length} pending
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {registrations.map((registration: any) => (
+                          <div key={registration.id} className="bg-purple-700/30 rounded-lg p-4 border border-purple-600/30">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <h4 className="text-white font-semibold">{registration.name}</h4>
+                                  <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">Pending</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-purple-200">
+                                  <div>
+                                    <span className="text-purple-300">Email:</span> {registration.email}
+                                  </div>
+                                  {registration.phone && (
+                                    <div>
+                                      <span className="text-purple-300">Phone:</span> {registration.phone}
+                                    </div>
+                                  )}
+                                  {registration.city && (
+                                    <div>
+                                      <span className="text-purple-300">City:</span> {registration.city}
+                                    </div>
+                                  )}
+                                  {registration.referral && (
+                                    <div>
+                                      <span className="text-purple-300">Referred by:</span> {registration.referral}
+                                    </div>
+                                  )}
+                                  {registration.mailing_address && (
+                                    <div className="md:col-span-2">
+                                      <span className="text-purple-300">Address:</span> {registration.mailing_address}
+                                    </div>
+                                  )}
+                                  <div className="md:col-span-2 text-xs text-purple-400">
+                                    Registered: {new Date(registration.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Approve ${registration.name} and add them to ${groupName}?`)) return
+                                  
+                                  const token = localStorage.getItem('adminToken')
+                                  if (!token) return
+                                  
+                                  try {
+                                    const response = await fetch(`/api/admin/pending-registrations/${registration.id}/approve`, {
+                                      method: 'POST',
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    })
+                                    
+                                    const data = await response.json()
+                                    
+                                    if (data.success) {
+                                      alert(`✅ ${registration.name} approved and added to ${groupName}!`)
+                                      fetchAdminData() // Refresh to remove from pending list
+                                    } else {
+                                      alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
+                                    }
+                                  } catch (err) {
+                                    console.error('Error approving registration:', err)
+                                    alert('Failed to approve registration. Please try again.')
+                                  }
+                                }}
+                                className="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+                              >
+                                Approve & Add
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
                      {activeTab === 'password' && (
              <div>
