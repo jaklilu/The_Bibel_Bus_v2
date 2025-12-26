@@ -455,6 +455,8 @@ router.post('/register-existing', [
       }
       
       updates.push('updated_at = CURRENT_TIMESTAMP')
+      
+      // Add the id for the WHERE clause AFTER all SET values
       params.push(existingUser.id)
       
       await runQuery(

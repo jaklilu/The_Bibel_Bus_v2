@@ -891,7 +891,7 @@ const Admin = () => {
                    </button>
                  </div>
                </div>
-               <div className="overflow-x-auto">
+               <div className="overflow-auto max-h-[calc(100vh-300px)] border border-purple-600/30 rounded-lg">
                  <table className="min-w-full divide-y divide-purple-600/30">
                    <thead className="bg-purple-700/50">
                      <tr>
