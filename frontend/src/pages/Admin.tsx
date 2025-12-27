@@ -2090,7 +2090,7 @@ const Admin = () => {
                   </div>
                 )}
 
-                <div className="flex space-x-3 pt-6">
+                <div className="flex space-x-3 pt-4">
                   <button
                     onClick={async () => {
                       const token = localStorage.getItem('adminToken'); if (!token) return;
