@@ -1835,6 +1835,149 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
+## 28. Pending Registration System for Existing Members ✨ **JANUARY 2026 SESSION**
+
+### **Problem Identified** 🎯
+- Many existing members were reading the Bible but hadn't registered in the system
+- Manual data entry was time-consuming for admin
+- Needed a way to gather missing information from existing members
+- Needed to track which group each member belonged to (Jan 2025, April 2025, July 2025, October 2025)
+
+### **Solutions Implemented** ✅
+
+#### **1. Database Schema Update** (`backend/src/database/database.ts`)
+- **Feature**: Added `pending_group_identifier` column to users table
+- **Purpose**: Stores which group link the user registered for
+- **Values**: Full group names ("Bible Bus January 2025 Travelers", etc.)
+- **Files Modified**: `backend/src/database/database.ts`
+
+#### **2. Pending Registration Endpoint** (`backend/src/routes/auth.ts`)
+- **Feature**: `POST /api/auth/register-existing` endpoint
+- **Functionality**: 
+  - Accepts group-specific registration data
+  - Checks if email exists
+  - If email exists: Updates missing fields (city, mailing_address, referral, phone) and sets status to 'pending'
+  - If email doesn't exist: Creates new user with status='pending' and stores group identifier
+  - Validates group identifier against allowed groups
+- **Smart Update Logic**: Only updates fields that are missing (null or empty), preserves existing data
+- **Files Modified**: `backend/src/routes/auth.ts`
+
+#### **3. Frontend Registration Page** (`frontend/src/pages/RegisterExisting.tsx`)
+- **Feature**: New public registration page for existing members
+- **URL Pattern**: `/register-existing?group=jan-2025` (supports: jan-2025, april-2025, july-2025, october-2025)
+- **Group Mapping**: Maps URL parameters to full group names
+- **Form Fields**: Same as regular registration (name, email, city, mailing_address, referral, phone)
+- **Success Message**: Shows confirmation that registration is pending approval
+- **Files Modified**: `frontend/src/pages/RegisterExisting.tsx` (new file), `frontend/src/App.tsx`
+
+#### **4. Admin Pending Registrations Endpoints** (`backend/src/routes/admin.ts`)
+- **GET /api/admin/pending-registrations**: Fetches all pending users grouped by group identifier
+- **POST /api/admin/pending-registrations/:userId/approve**: 
+  - Activates user (status='active')
+  - Finds group by name
+  - Adds user to group
+  - Clears pending_group_identifier
+  - Handles capacity checks and duplicate membership
+- **Files Modified**: `backend/src/routes/admin.ts`
+
+#### **5. Admin Panel - Pending Registrations Tab** (`frontend/src/pages/Admin.tsx`)
+- **Feature**: New "Pending Registrations" tab in admin panel
+- **Display**: Shows pending users grouped by their intended group
+- **Information Shown**: Name, email, phone, city, referral, mailing_address, registration date
+- **Actions**: "Approve & Add" button for each user
+- **UI**: Clean card-based layout with group headers and member cards
+- **Files Modified**: `frontend/src/pages/Admin.tsx`
+
+#### **6. Admin Users List Enhancement** (`backend/src/routes/admin.ts`)
+- **Feature**: Added `mailing_address` and `referral` to users list query
+- **Purpose**: Allows admin to see submitted information when editing users
+- **Files Modified**: `backend/src/routes/admin.ts`
+
+#### **7. UPDATE Query Bug Fixes** (`backend/src/routes/auth.ts`)
+- **Issue**: Mailing address and referral fields weren't being saved properly
+- **Fix**: 
+  - Corrected parameter ordering in UPDATE query (id must be last)
+  - Improved null/empty string handling with proper trimming and type conversion
+  - Only updates missing fields, preserves existing data
+- **Files Modified**: `backend/src/routes/auth.ts`
+
+#### **8. UI/UX Improvements**
+- **User Modal Size**: Reduced max-height from 85vh to 80vh, reduced padding and gaps
+- **Users Table Scrolling**: Added max-height container with overflow for better scrolling
+- **Watch Introduction Video Button**: Changed from purple to blue for better visibility
+- **Login Button**: Made darker (purple-900) for better contrast
+- **Files Modified**: `frontend/src/pages/Admin.tsx`, `frontend/src/pages/Home.tsx`
+
+### **Registration Links Created**
+- January 2025: `/register-existing?group=jan-2025` → "Bible Bus January 2025 Travelers"
+- April 2025: `/register-existing?group=april-2025` → "Bible Bus April 2025 Travelers"
+- July 2025: `/register-existing?group=july-2025` → "Bible Bus July 2025 Travelers"
+- October 2025: `/register-existing?group=october-2025` → "Bible Bus October 2025 Travelers"
+
+### **Technical Implementation** 🔧
+
+#### **Data Flow for Existing Users**
+1. User clicks group-specific link
+2. Fills out registration form
+3. Backend checks if email exists
+4. If exists: Updates missing fields, sets status='pending', stores group identifier
+5. User appears in admin Pending Registrations tab
+6. Admin approves → User activated and added to group
+
+#### **Data Flow for New Users**
+1. User clicks group-specific link
+2. Fills out registration form
+3. Backend creates new user with status='pending'
+4. Stores group identifier
+5. User appears in admin Pending Registrations tab
+6. Admin approves → User activated and added to group
+
+#### **Field Update Logic**
+- Checks if existing field is null or empty (after trimming)
+- Only updates if field is missing AND new value is provided
+- Preserves existing data, doesn't overwrite
+- Handles null/undefined safely with type conversion
+
+### **Results Achieved** 🎯
+
+#### **User Experience Improvements**
+- ✅ Existing members can easily register for their group
+- ✅ Missing information can be collected automatically
+- ✅ Group-specific registration links for easy distribution
+- ✅ Clear success messages and approval workflow
+
+#### **Admin Experience Improvements**
+- ✅ One-click approval process
+- ✅ All pending registrations visible in one place
+- ✅ Grouped by intended group for easy processing
+- ✅ Can see all submitted information before approving
+- ✅ User modal fits better on screen
+- ✅ Better scrolling for users table
+
+#### **Business Impact**
+- ✅ Reduced manual data entry time
+- ✅ Better data collection for existing members
+- ✅ Clearer organization by group
+- ✅ Temporary solution for catching up with current readers
+
+### **Deployment Status** 🚀
+- ✅ All changes committed and pushed to `main` branch
+- ✅ Backend TypeScript compilation successful
+- ✅ Frontend build successful
+- ✅ No linter errors
+- ✅ All features tested and working correctly
+
+### **Files Changed Summary**
+1. `backend/src/database/database.ts` - Added pending_group_identifier column
+2. `backend/src/routes/auth.ts` - Added register-existing endpoint, fixed UPDATE query
+3. `backend/src/routes/admin.ts` - Added pending registrations endpoints, added fields to users query
+4. `frontend/src/pages/RegisterExisting.tsx` - New registration page for existing members
+5. `frontend/src/App.tsx` - Added route for register-existing
+6. `frontend/src/pages/Admin.tsx` - Added Pending Registrations tab, improved User modal and table
+7. `frontend/src/pages/Home.tsx` - Improved button visibility (Watch Video to blue, Login darker)
+
+---
+
 **Last Updated**: January 2026  
-**Session Status**: Admin dashboard enhancements, progress reminder system, desktop donation icon, member messages display, and registration instructions all fully implemented and tested - ready for production use  
-**Next Session Goals**: Monitor progress reminder effectiveness, gather admin feedback on new features, continue user experience optimization
+**Session Status**: Pending registration system for existing members fully implemented - group-specific registration links, auto-create with pending status, admin approval interface, data collection for missing fields, UI improvements for better visibility and usability - all tested and ready for production use  
+**Next Session Goals**: Monitor registration link usage, gather feedback on approval workflow, continue user experience optimization
