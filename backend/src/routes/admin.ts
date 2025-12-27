@@ -297,6 +297,7 @@ router.get('/users', async (req: Request, res: Response) => {
     const users = await getRows(`
       SELECT 
         u.id, u.name, u.email, u.phone, u.role, u.status, u.city,
+        u.mailing_address, u.referral,
         u.award_approved, u.avatar_url, u.trophies_count,
         u.created_at, u.updated_at,
         GROUP_CONCAT(bg.name) as group_names
