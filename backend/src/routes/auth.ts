@@ -421,25 +421,25 @@ router.post('/register-existing', [
       }
       
       // Update city if missing (only fill in missing data)
-      if ((!existingUser.city || existingUser.city.trim() === '') && city) {
+      if ((!existingUser.city || (existingUser.city && existingUser.city.trim() === '')) && city) {
         updates.push('city = ?')
         params.push(city)
       }
       
       // Update mailing_address if missing or empty
-      if ((!existingUser.mailing_address || existingUser.mailing_address.trim() === '') && mailing_address) {
+      if ((!existingUser.mailing_address || (existingUser.mailing_address && existingUser.mailing_address.trim() === '')) && mailing_address) {
         updates.push('mailing_address = ?')
         params.push(mailing_address)
       }
       
       // Update referral if missing or empty
-      if ((!existingUser.referral || existingUser.referral.trim() === '') && referral) {
+      if ((!existingUser.referral || (existingUser.referral && existingUser.referral.trim() === '')) && referral) {
         updates.push('referral = ?')
         params.push(referral)
       }
       
       // Update phone if missing or empty
-      if ((!existingUser.phone || existingUser.phone.trim() === '') && phone) {
+      if ((!existingUser.phone || (existingUser.phone && existingUser.phone.trim() === '')) && phone) {
         updates.push('phone = ?')
         params.push(phone)
       }
