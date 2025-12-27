@@ -2028,14 +2028,14 @@ const Admin = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-6 w-full max-w-xl max-h-[85vh] overflow-y-auto border border-purple-600/30"
+                    className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-5 w-full max-w-xl max-h-[80vh] overflow-y-auto border border-purple-600/30"
                   >
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-white">{editingUser ? 'Edit User' : 'Add User'}</h2>
                   <button onClick={() => setShowCreateUserModal(false)} className="text-purple-300 hover:text-white transition-colors">✕</button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">Full Name</label>
                     <input type="text" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="w-full px-3 py-2 border border-purple-600 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-800/50 text-white placeholder-purple-300" />
