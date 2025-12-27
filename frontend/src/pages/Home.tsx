@@ -249,7 +249,7 @@ const Home = () => {
                {/* Existing Users - Login */}
                <Link
                  to="/login"
-                 className="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 text-lg w-full"
+                 className="bg-purple-900 hover:bg-purple-950 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 text-lg w-full border border-purple-800"
                >
                  <span>Login</span>
                  <span className="text-sm font-normal opacity-80">Returning member?</span>
