@@ -261,7 +261,7 @@ const Home = () => {
                  href="https://www.youtube.com/watch?v=c-VWZN76hoc"
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="bg-purple-600/50 hover:bg-purple-600 text-white font-medium px-8 md:px-10 py-2.5 md:py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 text-base w-full border border-purple-500"
+                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 md:px-10 py-2.5 md:py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 text-base w-full border border-blue-500 shadow-lg"
                >
                  <Play className="h-4 w-4" />
                  <span>Watch Introduction Video</span>
