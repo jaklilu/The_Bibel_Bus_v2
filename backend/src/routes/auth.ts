@@ -390,12 +390,16 @@ router.post('/register-existing', [
 
     const { name, email, phone, city, mailing_address, referral, group_identifier } = req.body
 
-    // Validate group identifier
+    // Validate group identifier (accept both with and without "The" prefix)
     const validGroups = [
       'Bible Bus January 2025 Travelers',
+      'The Bible Bus January 2025 Travelers',
       'Bible Bus April 2025 Travelers',
+      'The Bible Bus April 2025 Travelers',
       'Bible Bus July 2025 Travelers',
-      'Bible Bus October 2025 Travelers'
+      'The Bible Bus July 2025 Travelers',
+      'Bible Bus October 2025 Travelers',
+      'The Bible Bus October 2025 Travelers'
     ]
     if (!validGroups.includes(group_identifier)) {
       return res.status(400).json({

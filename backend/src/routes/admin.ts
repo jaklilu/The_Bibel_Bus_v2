@@ -1232,7 +1232,10 @@ router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) 
 // Get all pending registrations grouped by group identifier
 router.get('/pending-registrations', async (req: Request, res: Response) => {
   try {
-    const pendingUsers = await getRows(`
+    // Optional search query parameter
+    const searchQuery = req.query.search as string | undefined
+    
+    let query = `
       SELECT 
         id,
         name,
@@ -1242,11 +1245,29 @@ router.get('/pending-registrations', async (req: Request, res: Response) => {
         mailing_address,
         referral,
         pending_group_identifier,
-        created_at
+        created_at,
+        status
       FROM users
-      WHERE status = 'pending' AND pending_group_identifier IS NOT NULL
-      ORDER BY pending_group_identifier, created_at DESC
-    `)
+      WHERE pending_group_identifier IS NOT NULL
+      AND (
+        status = 'pending' 
+        OR (status = 'active' AND id NOT IN (
+          SELECT DISTINCT user_id FROM group_members WHERE status = 'active'
+        ))
+      )
+    `
+    const params: any[] = []
+    
+    // If search query provided, filter by name or email
+    if (searchQuery && searchQuery.trim()) {
+      query += ` AND (LOWER(name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?))`
+      const searchTerm = `%${searchQuery.trim()}%`
+      params.push(searchTerm, searchTerm)
+    }
+    
+    query += ` ORDER BY pending_group_identifier, created_at DESC`
+    
+    const pendingUsers = await getRows(query, params)
 
     // Group by pending_group_identifier
     const grouped: { [key: string]: any[] } = {}
@@ -1260,7 +1281,9 @@ router.get('/pending-registrations', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: grouped
+      data: grouped,
+      total: pendingUsers.length,
+      searchQuery: searchQuery || null
     })
   } catch (error) {
     console.error('Error fetching pending registrations:', error)
@@ -1284,21 +1307,22 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
       })
     }
 
-    // Get user with pending group identifier
+    // Get user with pending group identifier (allow both pending and active status)
+    // This handles cases where user was activated from Users tab but not added to group
     const user = await getRow(`
       SELECT id, name, email, pending_group_identifier, status
       FROM users
-      WHERE id = ? AND status = 'pending' AND pending_group_identifier IS NOT NULL
+      WHERE id = ? AND pending_group_identifier IS NOT NULL
     `, [userId])
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: { message: 'Pending registration not found' }
+        error: { message: 'User with pending group identifier not found' }
       })
     }
 
-    // Find the group by name (case-insensitive, trimmed)
+    // Find the group by name (case-insensitive, trimmed, handle "The" prefix)
     const searchName = (user.pending_group_identifier || '').trim()
     console.log(`[Approve Pending] Looking for group: "${searchName}"`)
     
@@ -1318,13 +1342,36 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
       `, [searchName])
     }
 
+    // If still not found, try with/without "The" prefix
+    if (!group) {
+      // Try adding "The" prefix if not present
+      const withThe = searchName.startsWith('The ') ? searchName : `The ${searchName}`
+      group = await getRow(`
+        SELECT id, name, max_members
+        FROM bible_groups
+        WHERE LOWER(TRIM(name)) = LOWER(?)
+      `, [withThe])
+    }
+
+    if (!group) {
+      // Try removing "The" prefix if present
+      const withoutThe = searchName.replace(/^The\s+/i, '').trim()
+      if (withoutThe !== searchName) {
+        group = await getRow(`
+          SELECT id, name, max_members
+          FROM bible_groups
+          WHERE LOWER(TRIM(name)) = LOWER(?)
+        `, [withoutThe])
+      }
+    }
+
     // If still not found, try LIKE match (for partial matches)
     if (!group) {
       group = await getRow(`
         SELECT id, name, max_members
         FROM bible_groups
         WHERE LOWER(TRIM(name)) LIKE LOWER(?)
-      `, [`%${searchName}%`])
+      `, [`%${searchName.replace(/^The\s+/i, '')}%`])
     }
 
     // If still not found, list available groups for debugging

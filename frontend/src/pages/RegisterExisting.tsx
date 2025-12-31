@@ -8,6 +8,7 @@ const RegisterExisting = () => {
   const groupIdentifier = searchParams.get('group') || ''
 
   // Map group identifiers to full group names
+  // Note: Database may have "The" prefix, but we'll try both formats
   const groupMap: { [key: string]: string } = {
     'jan-2025': 'Bible Bus January 2025 Travelers',
     'april-2025': 'Bible Bus April 2025 Travelers',
