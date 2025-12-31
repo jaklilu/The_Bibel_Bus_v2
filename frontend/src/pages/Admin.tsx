@@ -2028,14 +2028,15 @@ const Admin = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-5 w-full max-w-xl max-h-[80vh] overflow-y-auto border border-purple-600/30"
+                    className="bg-purple-800/90 backdrop-blur-sm rounded-2xl p-4 w-full max-w-xl max-h-[75vh] flex flex-col border border-purple-600/30"
                   >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-white">{editingUser ? 'Edit User' : 'Add User'}</h2>
-                  <button onClick={() => setShowCreateUserModal(false)} className="text-purple-300 hover:text-white transition-colors">✕</button>
+                <div className="flex justify-between items-center mb-3 sticky top-0 bg-purple-800/90 pb-2 z-10">
+                  <h2 className="text-lg font-semibold text-white">{editingUser ? 'Edit User' : 'Add User'}</h2>
+                  <button onClick={() => setShowCreateUserModal(false)} className="text-purple-300 hover:text-white transition-colors text-xl leading-none">✕</button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="overflow-y-auto flex-1 pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">Full Name</label>
                     <input type="text" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="w-full px-3 py-2 border border-purple-600 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-800/50 text-white placeholder-purple-300" />
@@ -2083,14 +2084,15 @@ const Admin = () => {
                     <input type="text" value={newUser.referral} onChange={(e) => setNewUser({ ...newUser, referral: e.target.value })} className="w-full px-3 py-2 border border-purple-600 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-800/50 text-white placeholder-purple-300" />
                   </div>
                 </div>
+                </div>
 
                 {newUserError && (
-                  <div className="mt-4 text-red-300 bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-sm">
+                  <div className="mt-3 text-red-300 bg-red-900/20 border border-red-500/30 rounded-lg p-2 text-sm">
                     {newUserError}
                   </div>
                 )}
 
-                <div className="flex space-x-3 pt-4">
+                <div className="flex space-x-3 pt-3 mt-3 border-t border-purple-600/30">
                   <button
                     onClick={async () => {
                       const token = localStorage.getItem('adminToken'); if (!token) return;
