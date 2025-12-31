@@ -883,12 +883,39 @@ const Admin = () => {
                <div className="sticky top-0 z-10 bg-purple-800/95 backdrop-blur-sm -mx-6 px-6 py-4 mb-6 border-b border-purple-700/30">
                  <div className="flex items-center justify-between">
                    <h2 className="text-xl font-semibold text-white">Users</h2>
-                   <button
-                     onClick={() => { setEditingUser(null); setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' }); setShowCreateUserModal(true) }}
-                     className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-semibold"
-                   >
-                     + Add User
-                   </button>
+                   <div className="flex items-center space-x-3">
+                     <button
+                       onClick={async () => {
+                         const token = localStorage.getItem('adminToken')
+                         if (!token) return
+                         if (!confirm('Approve all users with trophies to appear on Awards page?')) return
+                         try {
+                           const res = await fetch('/api/admin/approve-users-with-trophies', {
+                             method: 'POST',
+                             headers: { 'Authorization': `Bearer ${token}` }
+                           })
+                           const data = await res.json()
+                           if (data.success) {
+                             alert(`✅ ${data.message}`)
+                             fetchAdminData()
+                           } else {
+                             alert(`❌ ${data.error?.message || 'Failed to approve users'}`)
+                           }
+                         } catch (err) {
+                           alert('Failed to approve users. Please try again.')
+                         }
+                       }}
+                       className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
+                     >
+                       Approve Users with Trophies
+                     </button>
+                     <button
+                       onClick={() => { setEditingUser(null); setNewUser({ name: '', email: '', phone: '', role: 'user', status: 'active', award_approved: false, avatar_url: '', city: '', mailing_address: '', referral: '' }); setShowCreateUserModal(true) }}
+                       className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-semibold"
+                     >
+                       + Add User
+                     </button>
+                   </div>
                  </div>
                </div>
                <div className="overflow-auto max-h-[calc(100vh-300px)] border border-purple-600/30 rounded-lg">

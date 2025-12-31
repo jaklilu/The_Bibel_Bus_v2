@@ -1229,6 +1229,54 @@ router.post('/trophy-requests/:id/:action', async (req: Request, res: Response) 
   }
 })
 
+// Bulk approve users with trophies for Awards page
+router.post('/approve-users-with-trophies', async (req: Request, res: Response) => {
+  try {
+    // Find all active users with trophies_count > 0 and award_approved = 0
+    const usersToApprove = await getRows(`
+      SELECT id, name, email, trophies_count
+      FROM users
+      WHERE status = 'active' 
+      AND COALESCE(trophies_count, 0) > 0
+      AND COALESCE(award_approved, 0) = 0
+    `)
+
+    if (usersToApprove.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No users found to approve',
+        data: { approved: 0, total: 0 }
+      })
+    }
+
+    // Update all found users to award_approved = 1
+    const userIds = usersToApprove.map((u: any) => u.id)
+    const placeholders = userIds.map(() => '?').join(',')
+    
+    await runQuery(
+      `UPDATE users SET award_approved = 1 WHERE id IN (${placeholders})`,
+      userIds
+    )
+
+    res.json({
+      success: true,
+      message: `Approved ${usersToApprove.length} user(s) for Awards page`,
+      data: {
+        approved: usersToApprove.length,
+        users: usersToApprove.map((u: any) => ({ id: u.id, name: u.name, trophies_count: u.trophies_count }))
+      }
+    })
+  } catch (error) {
+    console.error('Error bulk approving users:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Internal server error'
+      }
+    })
+  }
+})
+
 // Get all pending registrations grouped by group identifier
 router.get('/pending-registrations', async (req: Request, res: Response) => {
   try {
