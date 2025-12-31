@@ -1298,19 +1298,54 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
       })
     }
 
-    // Find the group by name
-    const group = await getRow(`
+    // Find the group by name (case-insensitive, trimmed)
+    const searchName = (user.pending_group_identifier || '').trim()
+    console.log(`[Approve Pending] Looking for group: "${searchName}"`)
+    
+    // Try exact match first
+    let group = await getRow(`
       SELECT id, name, max_members
       FROM bible_groups
       WHERE name = ?
-    `, [user.pending_group_identifier])
+    `, [searchName])
 
+    // If not found, try case-insensitive match
     if (!group) {
+      group = await getRow(`
+        SELECT id, name, max_members
+        FROM bible_groups
+        WHERE LOWER(TRIM(name)) = LOWER(?)
+      `, [searchName])
+    }
+
+    // If still not found, try LIKE match (for partial matches)
+    if (!group) {
+      group = await getRow(`
+        SELECT id, name, max_members
+        FROM bible_groups
+        WHERE LOWER(TRIM(name)) LIKE LOWER(?)
+      `, [`%${searchName}%`])
+    }
+
+    // If still not found, list available groups for debugging
+    if (!group) {
+      const availableGroups = await getRows(`
+        SELECT id, name, start_date, status
+        FROM bible_groups
+        ORDER BY start_date DESC
+        LIMIT 10
+      `)
+      console.log(`[Approve Pending] Available groups:`, availableGroups)
+      
       return res.status(404).json({
         success: false,
-        error: { message: `Group "${user.pending_group_identifier}" not found` }
+        error: { 
+          message: `Group "${searchName}" not found. Available groups: ${availableGroups.map((g: any) => g.name).join(', ')}`
+        }
       })
     }
+    
+    console.log(`[Approve Pending] Found group: ${group.name} (ID: ${group.id})`)
 
     // Check group capacity
     const memberCountRow = await getRow(`
