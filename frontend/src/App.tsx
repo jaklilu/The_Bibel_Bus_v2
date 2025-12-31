@@ -19,6 +19,7 @@ import Reflections from './pages/Reflections'
 const LegacyIntake = lazy(() => import('./pages/LegacyIntake'))
 
 function App() {
+  // App component - main router for The Bible Bus
   const location = useLocation()
   const hideNav = location.pathname === '/legacy' || location.pathname === '/alumni'
   return (
