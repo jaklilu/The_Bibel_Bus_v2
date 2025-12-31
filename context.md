@@ -1,7 +1,7 @@
 # The Bible Bus - Project Context & Progress
 
 ## 🎯 **Project Overview**
-**The Bible Bus - Web App** is a mobile-first React web application for managing Bible reading groups, user dashboards, milestone notifications, and community engagement. The backend is Node.js/Express with SQLite for local development, with deployment to Netlify.
+**The Bible Bus - Web App** is a mobile-first React web application for managing Bible reading groups, user dashboards, milestone notifications, and community engagement. The backend is Node.js/Express with SQLite for local development. Frontend deploys to Netlify, backend deploys to Render, with Netlify proxying API requests to the Render backend.
 
 ## 🏗️ **Architecture & Technology Stack**
 
@@ -435,33 +435,6 @@ cd backend && npm run db:reset
 ```
 
 ---
-
-**Last Updated**: September 27, 2025  
-**Session Status**: Three-button landing page implementation completed - solved legacy member group joining issue with intuitive user flow buttons  
-**Next Session Goals**: Monitor message board functionality, continue user experience optimization, and implement any additional features as needed
-
-## ✨ Recent Updates (Session)
-- Deployment routing fixed for Netlify → Render proxy: corrected domain typo (`the-bibel-bus-v2.onrender.com`). Added Netlify redirects in both `netlify.toml` and `frontend/public/_redirects`. Ensured SPA fallback order.
-- Backend CORS hardened and preflight enabled. Added `/health` and `/api/health` plus root `/` text response. Added `postinstall` and `prestart` build hooks so Render always compiles TypeScript before boot.
-- Mobile navigation: centered brand title, icon left, hamburger right. Added sticky header and mobile sheet menu.
-- Home page hero tightened for mobile: resized bus image, kept main heading on one line on phones, tag line right-aligned under it. Countdown tiles slimmed (rectangles). Seconds tile now uses a gentle 2s fade/background cycle (noticeable but not harsh).
-- Registration form: fixed backend field mapping (`name`, `mailing_address`, etc.) to resolve “Validation failed”; now sends correct body to `/api/auth/register`.
-
-## 🛠 Handoff Notes (for next agent)
-- Frontend calls use relative `/api/...`. Netlify proxies to Render. Confirm redirects in `netlify.toml` and `frontend/public/_redirects` point to `https://the-bibel-bus-v2.onrender.com` (note: bibel vs bible typo caused prior outage).
-- If API health is unclear, test:
-  - Render: `/`, `/health`, `/api/health`
-  - Netlify proxy: `/health`, `/api/health`
-- Render builds can serve stale dist; we added:
-  - `backend/package.json`: `"postinstall": "npm run build"`, `"prestart": "npm run build"`.
-  - When redeploying, use “Clear build cache & deploy” and watch for `tsc` in logs.
-- Backend CORS is permissive by suffix (`ALLOWED_ORIGIN_SUFFIXES=stalwart-sunflower-596007.netlify.app`). Add any new domains to `ALLOWED_ORIGINS`.
-- Registration assignment failures: see `GroupService.assignUserToGroup`. It returns detailed messages when group is full/closed. If October 2025 is Active with capacity, registration should succeed; otherwise, check `registration_deadline` and capacity in DB.
-- Mobile polish: hero paddings, countdown grid, and CTA paddings adjusted in `Home.tsx`. Seconds tile animation is controlled by a 2s looping fade — easy to tweak.
-
-## 🔗 Deployment URLs
-- Netlify site(s): stalwart‑sunflower‑596007.netlify.app (primary), dulcet‑toffee‑... (older test). Prefer the stalwart‑sunflower site.
-- Render backend: https://the-bibel-bus-v2.onrender.com
 
 ## 🚀 **Major Updates Since December 2024** ✨ **COMPREHENSIVE SESSION WORK**
 
@@ -1026,7 +999,7 @@ const exists = await getRows(
 
 ---
 
-## 23. Landing Page Countdown Mismatch & Dual Countdown Logic
+## 22. Landing Page Countdown Mismatch & Dual Countdown Logic
 
 ### **Problem Identified** 🔍
 - **Misleading Countdown**: Landing page showed "Next Group Starts January 1, 2026" while registration was still open for October 2025 group
@@ -1119,7 +1092,7 @@ useEffect(() => {
 
 ---
 
-## 24. Invitation Reminder Automation & Message Formatting Fixes
+## 23. Invitation Reminder Automation & Message Formatting Fixes
 
 ### **Problem Identified** 🔍
 - **Invitation Acceptance Issue**: 34+ members registered but only 13 actually accepted invitation and started reading
@@ -1213,7 +1186,7 @@ export const sendInvitationReminderEmail = async (
 
 ---
 
-## 25. Daily Reflections Feature Implementation ✨ **NEW COMMUNITY FEATURE**
+## 24. Daily Reflections Feature Implementation ✨ **NEW COMMUNITY FEATURE**
 
 ### **Problem Identified** 🎯
 - **Need for Public Sharing**: Members wanted to share their daily Bible reading reflections publicly
@@ -1326,7 +1299,7 @@ LIMIT 100
 
 ---
 
-## 26. WhatsApp Invitation & Tracking System ✨ **NEW COMMUNICATION FEATURE**
+## 25. WhatsApp Invitation & Tracking System ✨ **NEW COMMUNICATION FEATURE**
 
 ### **Problem Identified** 🎯
 - **Low Engagement**: Members were not clicking WhatsApp links after registration
@@ -1517,7 +1490,7 @@ ORDER BY gm.join_date ASC
 
 ---
 
-## 27. Account Recovery Feature ✨ **NEW USER SUPPORT FEATURE**
+## 26. Account Recovery Feature ✨ **NEW USER SUPPORT FEATURE**
 
 ### **Problem Identified** 🎯
 - **Forgotten Credentials**: Members sometimes forget their email or name needed to log in
@@ -1626,7 +1599,7 @@ User receives email and can log in
 
 ---
 
-## **28. Form Modal Improvements & UX Enhancements** ✨ **NEW!**
+## 27. Form Modal Improvements & UX Enhancements ✨ **NEW!**
 
 ### **Problem**
 Multiple forms throughout the admin panel and user interface were appearing inline within the page content, requiring users to scroll down to access them. This created a poor user experience, especially on desktop where forms could be buried deep in the page.
@@ -1717,7 +1690,7 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
-## 27. Admin Dashboard & Registration Flow Enhancements ✨ **JANUARY 2026 SESSION**
+## 28. Admin Dashboard & Registration Flow Enhancements ✨ **JANUARY 2026 SESSION**
 
 ### **Problem Identified** 🎯
 - Admin progress view was crowded with all groups expanded
@@ -1835,7 +1808,7 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
-## 28. Pending Registration System for Existing Members ✨ **JANUARY 2026 SESSION**
+## 29. Pending Registration System for Existing Members ✨ **JANUARY 2026 SESSION**
 
 ### **Problem Identified** 🎯
 - Many existing members were reading the Bible but hadn't registered in the system
@@ -1978,6 +1951,26 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
-**Last Updated**: January 2026  
+---
+
+## 🛠 Handoff Notes (for next agent)
+- Frontend calls use relative `/api/...`. Netlify proxies to Render. Confirm redirects in `netlify.toml` and `frontend/public/_redirects` point to `https://the-bibel-bus-v2.onrender.com` (note: bibel vs bible typo caused prior outage).
+- If API health is unclear, test:
+  - Render: `/`, `/health`, `/api/health`
+  - Netlify proxy: `/health`, `/api/health`
+- Render builds can serve stale dist; we added:
+  - `backend/package.json`: `"postinstall": "npm run build"`, `"prestart": "npm run build"`.
+  - When redeploying, use "Clear build cache & deploy" and watch for `tsc` in logs.
+- Backend CORS is permissive by suffix (`ALLOWED_ORIGIN_SUFFIXES=stalwart-sunflower-596007.netlify.app`). Add any new domains to `ALLOWED_ORIGINS`.
+- Registration assignment failures: see `GroupService.assignUserToGroup`. It returns detailed messages when group is full/closed. If October 2025 is Active with capacity, registration should succeed; otherwise, check `registration_deadline` and capacity in DB.
+- Mobile polish: hero paddings, countdown grid, and CTA paddings adjusted in `Home.tsx`. Seconds tile animation is controlled by a 2s looping fade — easy to tweak.
+
+## 🔗 Deployment URLs
+- Netlify site(s): stalwart‑sunflower‑596007.netlify.app (primary), dulcet‑toffee‑... (older test). Prefer the stalwart‑sunflower site.
+- Render backend: https://the-bibel-bus-v2.onrender.com
+
+---
+
+**Last Updated**: 01-15-26  
 **Session Status**: Pending registration system for existing members fully implemented - group-specific registration links, auto-create with pending status, admin approval interface, data collection for missing fields, UI improvements for better visibility and usability - all tested and ready for production use  
 **Next Session Goals**: Monitor registration link usage, gather feedback on approval workflow, continue user experience optimization
