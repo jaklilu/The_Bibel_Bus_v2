@@ -284,28 +284,9 @@ const Dashboard = () => {
       }
     }
 
-    // Get user data from localStorage first
-    const storedUserData = localStorage.getItem('userData')
-    if (storedUserData) {
-      try {
-        const userData = JSON.parse(storedUserData)
-        setUserData({
-          name: userData.name.split(' ')[0], // Extract first name only
-          email: userData.email,
-          progress: 0, // Default values
-          currentGroup: 'Not assigned',
-          nextMilestone: 'Keep reading!',
-          trophies_count: userData.trophies_count || 0
-        })
-        setLoading(false)
-      } catch (error) {
-        console.error('Error parsing stored user data:', error)
-        fetchUserData()
-      }
-    } else {
-      // Fallback to API if no stored data
-      fetchUserData()
-    }
+    // Always fetch fresh data from API to prevent showing wrong user's dashboard
+    // Never trust localStorage userData - it could be from a deleted user
+    fetchUserData()
 
     // Fetch current group links for Quick Actions
     ;(async () => {
@@ -395,6 +376,12 @@ const Dashboard = () => {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('userToken')
+      if (!token) {
+        console.error('No token found, redirecting to login')
+        navigate('/login')
+        return
+      }
+
       const response = await fetch('/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -403,13 +390,38 @@ const Dashboard = () => {
 
       if (response.ok) {
         const data = await response.json()
-        setUserData({
-          ...data.data,
-          name: data.data.name.split(' ')[0] // Extract first name only
-        })
+        if (data.success && data.data) {
+          // Update localStorage with fresh data to ensure consistency
+          const freshUserData = {
+            name: data.data.user.name,
+            email: data.data.user.email,
+            trophies_count: data.data.user.trophies_count || 0
+          }
+          localStorage.setItem('userData', JSON.stringify(freshUserData))
+          
+          setUserData({
+            ...data.data,
+            name: data.data.user.name.split(' ')[0] // Extract first name only
+          })
+        } else {
+          // Invalid response, clear and redirect
+          localStorage.removeItem('userToken')
+          localStorage.removeItem('userData')
+          navigate('/login')
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Token invalid or expired, clear and redirect
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userData')
+        localStorage.removeItem('groupStatus')
+        navigate('/login')
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
+      // On error, clear potentially corrupted data and redirect
+      localStorage.removeItem('userToken')
+      localStorage.removeItem('userData')
+      navigate('/login')
     } finally {
       setLoading(false)
     }

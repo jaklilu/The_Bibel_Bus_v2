@@ -113,6 +113,12 @@ const Register = () => {
       const data = await response.json()
 
       if (data.success) {
+        // Clear old user data to prevent showing wrong user's dashboard
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userData')
+        localStorage.removeItem('groupStatus')
+        localStorage.removeItem('adminToken')
+        
         // Store token and user data
         localStorage.setItem('userToken', data.data.token)
         localStorage.setItem('userData', JSON.stringify(data.data.user))
@@ -163,6 +169,12 @@ const Register = () => {
       if (data.success) {
         setSuccess(true)
         setGroupInfo(data.data?.group)
+        
+        // Clear old user data to prevent showing wrong user's dashboard
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userData')
+        localStorage.removeItem('groupStatus')
+        localStorage.removeItem('adminToken')
         
         // Store token if provided
         if (data.data?.token) {

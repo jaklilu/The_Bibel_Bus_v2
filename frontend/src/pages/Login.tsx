@@ -85,6 +85,12 @@ const Login = () => {
         // Save credentials for future use
         saveCredentials(formData.email, formData.name)
         
+        // Clear old user data to prevent showing wrong user's dashboard
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userData')
+        localStorage.removeItem('groupStatus')
+        localStorage.removeItem('adminToken')
+        
         // Store token based on user role
         if (data.data.user.role === 'admin') {
           localStorage.setItem('adminToken', data.data.token)
