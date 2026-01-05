@@ -1733,11 +1733,17 @@ const Admin = () => {
                                       const data = await res.json()
                                       if (data.success) {
                                         setGroupMembers(data.data.members || [])
+                                        // Also refresh Status page data if Status tab is active
+                                        if (activeTab === 'status') {
+                                          setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
+                                        }
+                                        console.log('✅ WhatsApp status updated successfully')
                                       } else {
+                                        console.error('❌ Failed to toggle WhatsApp:', data.error)
                                         alert(data.error?.message || 'Failed to toggle WhatsApp status')
                                       }
                                     } catch (e) {
-                                      console.error(e)
+                                      console.error('❌ Error toggling WhatsApp:', e)
                                       alert('Failed to toggle WhatsApp status')
                                     }
                                   }}
@@ -1765,11 +1771,17 @@ const Admin = () => {
                                       const data = await res.json()
                                       if (data.success) {
                                         setGroupMembers(data.data.members || [])
+                                        // Also refresh Status page data if Status tab is active
+                                        if (activeTab === 'status') {
+                                          setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
+                                        }
+                                        console.log('✅ Invitation status updated successfully')
                                       } else {
+                                        console.error('❌ Failed to toggle invitation:', data.error)
                                         alert(data.error?.message || 'Failed to toggle invitation status')
                                       }
                                     } catch (e) {
-                                      console.error(e)
+                                      console.error('❌ Error toggling invitation:', e)
                                       alert('Failed to toggle invitation status')
                                     }
                                   }}

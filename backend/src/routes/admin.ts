@@ -118,19 +118,30 @@ router.post('/groups/:id/members/:userId/toggle-invitation', async (req: Request
     }
     
     // Toggle: if accepted, set to NULL; if not accepted, set to current timestamp
-    if (member.invitation_accepted_at) {
-      await runQuery(`
+    const wasAccepted = !!member.invitation_accepted_at
+    if (wasAccepted) {
+      const result = await runQuery(`
         UPDATE group_members 
         SET invitation_accepted_at = NULL 
         WHERE group_id = ? AND user_id = ? AND status = 'active'
       `, [groupId, userId])
+      console.log(`[Toggle Invitation] Removed acceptance for user ${userId} in group ${groupId}. Changes: ${result.changes}`)
     } else {
-      await runQuery(`
+      const result = await runQuery(`
         UPDATE group_members 
         SET invitation_accepted_at = CURRENT_TIMESTAMP 
         WHERE group_id = ? AND user_id = ? AND status = 'active'
       `, [groupId, userId])
+      console.log(`[Toggle Invitation] Set acceptance for user ${userId} in group ${groupId}. Changes: ${result.changes}`)
     }
+    
+    // Verify the update worked
+    const verify = await getRow(`
+      SELECT invitation_accepted_at 
+      FROM group_members 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [groupId, userId])
+    console.log(`[Toggle Invitation] Verification - User ${userId}: invitation_accepted_at = ${verify?.invitation_accepted_at || 'NULL'}`)
     
     // Return updated members list
     const members = await GroupService.getGroupMembers(groupId)
@@ -169,12 +180,22 @@ router.post('/groups/:id/members/:userId/toggle-whatsapp', async (req: Request, 
     }
     
     // Toggle: if joined (1), set to 0; if not joined (0), set to 1
-    const newStatus = member.whatsapp_joined ? 0 : 1
-    await runQuery(`
+    const wasJoined = member.whatsapp_joined === 1
+    const newStatus = wasJoined ? 0 : 1
+    const result = await runQuery(`
       UPDATE group_members 
       SET whatsapp_joined = ? 
       WHERE group_id = ? AND user_id = ? AND status = 'active'
     `, [newStatus, groupId, userId])
+    console.log(`[Toggle WhatsApp] User ${userId} in group ${groupId}: ${wasJoined ? 'removed' : 'set'} WhatsApp join. Changes: ${result.changes}`)
+    
+    // Verify the update worked
+    const verify = await getRow(`
+      SELECT whatsapp_joined 
+      FROM group_members 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [groupId, userId])
+    console.log(`[Toggle WhatsApp] Verification - User ${userId}: whatsapp_joined = ${verify?.whatsapp_joined || 0}`)
     
     // Return updated members list
     const members = await GroupService.getGroupMembers(groupId)
