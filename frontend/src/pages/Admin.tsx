@@ -51,6 +51,7 @@ const Admin = () => {
   })
   const [statusData, setStatusData] = useState<any>(null)
   const [loadingStatus, setLoadingStatus] = useState(false)
+  const [statusLastUpdated, setStatusLastUpdated] = useState<Date | null>(null)
 
   // Fetch status data
   const fetchStatusData = async () => {
@@ -73,6 +74,7 @@ const Admin = () => {
       const data = await response.json()
       if (data.success) {
         setStatusData(data.data)
+        setStatusLastUpdated(new Date())
       }
     } catch (error) {
       console.error('Error fetching status:', error)
@@ -788,20 +790,37 @@ const Admin = () => {
 
           {activeTab === 'status' && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">Member Status Tracking</h2>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Member Status Tracking</h2>
+                  {statusLastUpdated && (
+                    <p className="text-sm text-purple-300 mt-1">
+                      Last updated: {statusLastUpdated.toLocaleTimeString()} • 
+                      Data is not auto-refreshed - click Refresh to update
+                    </p>
+                  )}
+                  {!statusLastUpdated && (
+                    <p className="text-sm text-purple-300 mt-1">
+                      Click Refresh to load status data
+                    </p>
+                  )}
+                </div>
                 <button
                   onClick={fetchStatusData}
                   disabled={loadingStatus}
-                  className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                  className="bg-amber-500 text-purple-900 px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center space-x-2 font-semibold shadow-lg"
+                  title="Refresh status data manually"
                 >
                   {loadingStatus ? (
                     <>
-                      <Loader className="h-4 w-4 animate-spin" />
-                      <span>Loading...</span>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      <span>Refreshing...</span>
                     </>
                   ) : (
-                    <span>Refresh</span>
+                    <>
+                      <Activity className="h-5 w-5" />
+                      <span>Refresh Data</span>
+                    </>
                   )}
                 </button>
               </div>
