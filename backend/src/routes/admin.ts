@@ -1615,11 +1615,12 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
 // Get user-level status tracking organized by groups
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    // Get all active and upcoming groups
+    // Get all groups (active, upcoming, and completed) for tracking
+    // Include completed groups like October 2025 for status tracking
     const groups = await getRows(`
       SELECT id, name, start_date, registration_deadline, status
       FROM bible_groups
-      WHERE status IN ('active', 'upcoming')
+      WHERE status IN ('active', 'upcoming', 'completed')
       ORDER BY start_date DESC
     `)
     
