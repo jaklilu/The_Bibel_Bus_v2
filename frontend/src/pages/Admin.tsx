@@ -811,145 +811,129 @@ const Admin = () => {
                   <Loader className="h-12 w-12 text-amber-500 mx-auto mb-4 animate-spin" />
                   <p className="text-purple-200">Loading status data...</p>
                 </div>
-              ) : statusData ? (
+              ) : statusData && statusData.groups ? (
                 <div className="space-y-6">
-                  {/* Overall Statistics */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
-                      <p className="text-sm font-medium text-amber-500">Total Groups</p>
-                      <p className="text-2xl font-bold text-white">{statusData.overall.total_groups}</p>
-                    </div>
-                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
-                      <p className="text-sm font-medium text-amber-500">Total Members</p>
-                      <p className="text-2xl font-bold text-white">{statusData.overall.total_members}</p>
-                    </div>
-                    <div className="bg-green-600 rounded-lg p-4 shadow-lg">
-                      <p className="text-sm font-medium text-amber-500">WhatsApp Joined</p>
-                      <p className="text-2xl font-bold text-white">{statusData.overall.total_whatsapp_joined}</p>
-                      <p className="text-xs text-green-200 mt-1">
-                        {statusData.overall.total_members > 0 
-                          ? Math.round((statusData.overall.total_whatsapp_joined / statusData.overall.total_members) * 100) 
-                          : 0}%
-                      </p>
-                    </div>
-                    <div className="bg-blue-600 rounded-lg p-4 shadow-lg">
-                      <p className="text-sm font-medium text-amber-500">Invitation Accepted</p>
-                      <p className="text-2xl font-bold text-white">{statusData.overall.total_invitation_accepted}</p>
-                      <p className="text-xs text-blue-200 mt-1">
-                        {statusData.overall.total_members > 0 
-                          ? Math.round((statusData.overall.total_invitation_accepted / statusData.overall.total_members) * 100) 
-                          : 0}%
-                      </p>
-                    </div>
-                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
-                      <p className="text-sm font-medium text-amber-500">Progress Updated</p>
-                      <p className="text-2xl font-bold text-white">{statusData.overall.total_progress_updated}</p>
-                      <p className="text-xs text-purple-200 mt-1">
-                        {statusData.overall.total_members > 0 
-                          ? Math.round((statusData.overall.total_progress_updated / statusData.overall.total_members) * 100) 
-                          : 0}%
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Group Details */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">Group Status Breakdown</h3>
-                    {statusData.groups.map((group: any) => (
+                  {statusData.groups.map((group: any) => {
+                    const isExpanded = expandedGroups.has(group.group_id)
+                    return (
                       <motion.div
                         key={group.group_id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-purple-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-700/30"
+                        className="bg-purple-800/50 backdrop-blur-sm rounded-xl border border-purple-700/30 overflow-hidden"
                       >
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h4 className="text-lg font-semibold text-white">{group.group_name}</h4>
-                            <p className="text-sm text-purple-300">
-                              {group.status === 'active' ? '🟢 Active' : '🔵 Upcoming'} • 
-                              Start: {new Date(group.start_date).toLocaleDateString()} • 
-                              {group.total_members} members
-                            </p>
+                        {/* Group Header - Clickable to expand/collapse */}
+                        <button
+                          onClick={() => {
+                            const newExpanded = new Set(expandedGroups)
+                            if (isExpanded) {
+                              newExpanded.delete(group.group_id)
+                            } else {
+                              newExpanded.add(group.group_id)
+                            }
+                            setExpandedGroups(newExpanded)
+                          }}
+                          className="w-full p-6 flex justify-between items-center hover:bg-purple-700/30 transition-colors"
+                        >
+                          <div className="text-left">
+                            <h3 className="text-lg font-semibold text-white mb-1">{group.group_name}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-purple-300">
+                              <span>{group.status === 'active' ? '🟢 Active' : '🔵 Upcoming'}</span>
+                              <span>Start: {new Date(group.start_date).toLocaleDateString()}</span>
+                              <span>{group.summary.total_members} members</span>
+                            </div>
+                            <div className="flex items-center space-x-4 mt-2 text-xs">
+                              <span className="text-green-300">📱 WhatsApp: {group.summary.whatsapp_joined}/{group.summary.total_members}</span>
+                              <span className="text-blue-300">✅ Invitation: {group.summary.invitation_accepted}/{group.summary.total_members}</span>
+                              <span className="text-purple-300">📊 Progress: {group.summary.progress_updated}/{group.summary.total_members}</span>
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                          <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-green-300">📱 WhatsApp</span>
-                              <span className="text-lg font-bold text-white">{group.whatsapp_joined}</span>
-                            </div>
-                            <div className="mt-1">
-                              <div className="w-full bg-green-900/30 rounded-full h-2">
-                                <div 
-                                  className="bg-green-500 h-2 rounded-full transition-all"
-                                  style={{ width: `${group.percentages.whatsapp}%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs text-green-300 mt-1">{group.percentages.whatsapp}%</p>
-                            </div>
-                            {group.recent_activity.whatsapp_joined > 0 && (
-                              <p className="text-xs text-green-400 mt-1">+{group.recent_activity.whatsapp_joined} this week</p>
+                          <div className="text-purple-300">
+                            {isExpanded ? (
+                              <ChevronDown className="h-5 w-5" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5" />
                             )}
                           </div>
+                        </button>
 
-                          <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-blue-300">✅ Invitation</span>
-                              <span className="text-lg font-bold text-white">{group.invitation_accepted}</span>
-                            </div>
-                            <div className="mt-1">
-                              <div className="w-full bg-blue-900/30 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-500 h-2 rounded-full transition-all"
-                                  style={{ width: `${group.percentages.invitation}%` }}
-                                ></div>
+                        {/* Group Members Table - Collapsible */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-6 pb-6">
+                                <div className="overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead>
+                                      <tr className="border-b border-purple-600/30">
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-purple-200">Name</th>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-purple-200">Email</th>
+                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">📱 WhatsApp</th>
+                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">✅ Invitation</th>
+                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">📊 Progress</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {group.members.length > 0 ? (
+                                        group.members.map((member: any) => (
+                                          <tr
+                                            key={member.user_id}
+                                            className="border-b border-purple-700/20 hover:bg-purple-700/20 transition-colors"
+                                          >
+                                            <td className="py-3 px-4 text-white font-medium">{member.name}</td>
+                                            <td className="py-3 px-4 text-purple-200 text-sm">{member.email}</td>
+                                            <td className="py-3 px-4 text-center">
+                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                                                member.status.whatsapp_joined
+                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                              }`}>
+                                                {member.status.whatsapp_joined ? 'Y' : 'N'}
+                                              </span>
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
+                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                                                member.status.invitation_accepted
+                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                              }`}>
+                                                {member.status.invitation_accepted ? 'Y' : 'N'}
+                                              </span>
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
+                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                                                member.status.progress_updated
+                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                              }`}>
+                                                {member.status.progress_updated ? 'Y' : 'N'}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        ))
+                                      ) : (
+                                        <tr>
+                                          <td colSpan={5} className="py-8 text-center text-purple-300">
+                                            No members in this group
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                              <p className="text-xs text-blue-300 mt-1">{group.percentages.invitation}%</p>
-                            </div>
-                            {group.recent_activity.invitation_accepted > 0 && (
-                              <p className="text-xs text-blue-400 mt-1">+{group.recent_activity.invitation_accepted} this week</p>
-                            )}
-                          </div>
-
-                          <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-purple-300">📊 Progress</span>
-                              <span className="text-lg font-bold text-white">{group.progress_updated}</span>
-                            </div>
-                            <div className="mt-1">
-                              <div className="w-full bg-purple-900/30 rounded-full h-2">
-                                <div 
-                                  className="bg-purple-500 h-2 rounded-full transition-all"
-                                  style={{ width: `${group.percentages.progress}%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs text-purple-300 mt-1">{group.percentages.progress}%</p>
-                            </div>
-                            {group.recent_activity.progress_updated > 0 && (
-                              <p className="text-xs text-purple-400 mt-1">+{group.recent_activity.progress_updated} this week</p>
-                            )}
-                          </div>
-
-                          <div className="bg-amber-600/20 rounded-lg p-3 border border-amber-500/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-amber-300">🏆 Completed</span>
-                              <span className="text-lg font-bold text-white">{group.journey_completed}</span>
-                            </div>
-                            <div className="mt-1">
-                              <div className="w-full bg-amber-900/30 rounded-full h-2">
-                                <div 
-                                  className="bg-amber-500 h-2 rounded-full transition-all"
-                                  style={{ width: `${group.percentages.completed}%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs text-amber-300 mt-1">{group.percentages.completed}%</p>
-                            </div>
-                          </div>
-                        </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </motion.div>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
