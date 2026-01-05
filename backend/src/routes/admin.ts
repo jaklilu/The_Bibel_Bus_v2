@@ -148,6 +148,50 @@ router.post('/groups/:id/members/:userId/toggle-invitation', async (req: Request
   }
 })
 
+// Toggle WhatsApp join status for a member
+router.post('/groups/:id/members/:userId/toggle-whatsapp', async (req: Request, res: Response) => {
+  try {
+    const groupId = parseInt(req.params.id)
+    const userId = parseInt(req.params.userId)
+    
+    // Get current status
+    const member = await getRow(`
+      SELECT whatsapp_joined 
+      FROM group_members 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [groupId, userId])
+    
+    if (!member) {
+      return res.status(404).json({ 
+        success: false, 
+        error: { message: 'Member not found' } 
+      })
+    }
+    
+    // Toggle: if joined (1), set to 0; if not joined (0), set to 1
+    const newStatus = member.whatsapp_joined ? 0 : 1
+    await runQuery(`
+      UPDATE group_members 
+      SET whatsapp_joined = ? 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [newStatus, groupId, userId])
+    
+    // Return updated members list
+    const members = await GroupService.getGroupMembers(groupId)
+    res.json({ 
+      success: true, 
+      message: member.whatsapp_joined ? 'WhatsApp join status removed' : 'WhatsApp marked as joined',
+      data: { members } 
+    })
+  } catch (error) {
+    console.error('Error toggling WhatsApp join status:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: { message: 'Failed to toggle WhatsApp join status' } 
+    })
+  }
+})
+
 // Manually trigger cron jobs (for testing)
 router.post('/cron/run', async (req: Request, res: Response) => {
   try {

@@ -1496,12 +1496,37 @@ const Admin = () => {
                               }`}>
                                 {member.status}
                               </span>
-                              <div className="mt-1">
+                              <div className="mt-1 flex items-center space-x-2">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  member.whatsapp_joined ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
+                                  member.whatsapp_joined ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                 }`}>
-                                  {member.whatsapp_joined ? '📱 WhatsApp Joined' : '📱 Not Joined'}
+                                  {member.whatsapp_joined ? '📱 WhatsApp: Y' : '📱 WhatsApp: N'}
                                 </span>
+                                <button
+                                  onClick={async () => {
+                                    const token = localStorage.getItem('adminToken')
+                                    if (!token || !selectedGroup) return
+                                    try {
+                                      const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members/${member.user_id}/toggle-whatsapp`, {
+                                        method: 'POST',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      })
+                                      const data = await res.json()
+                                      if (data.success) {
+                                        setGroupMembers(data.data.members || [])
+                                      } else {
+                                        alert(data.error?.message || 'Failed to toggle WhatsApp status')
+                                      }
+                                    } catch (e) {
+                                      console.error(e)
+                                      alert('Failed to toggle WhatsApp status')
+                                    }
+                                  }}
+                                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                  title={member.whatsapp_joined ? 'Click to mark as NOT joined' : 'Click to mark as joined'}
+                                >
+                                  {member.whatsapp_joined ? 'Mark N' : 'Mark Y'}
+                                </button>
                               </div>
                               <div className="mt-1 flex items-center space-x-2">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
