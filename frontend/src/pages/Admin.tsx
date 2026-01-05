@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ChevronRight,
   Mail,
-  Loader
+  Loader,
+  Activity
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
 
@@ -48,6 +49,38 @@ const Admin = () => {
     donations: [],
     pendingRegistrations: {}
   })
+  const [statusData, setStatusData] = useState<any>(null)
+  const [loadingStatus, setLoadingStatus] = useState(false)
+
+  // Fetch status data
+  const fetchStatusData = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    setLoadingStatus(true)
+    try {
+      const response = await fetch('/api/admin/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (response.status === 401) {
+        localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
+        setError('Your admin session expired. Please sign in again.')
+        return
+      }
+      
+      const data = await response.json()
+      if (data.success) {
+        setStatusData(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching status:', error)
+    } finally {
+      setLoadingStatus(false)
+    }
+  }
+
   const [activeTab, setActiveTab] = useState('overview')
   // removed unused newMessage state
   const [passwordChange, setPasswordChange] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
@@ -464,6 +497,13 @@ const Admin = () => {
     }
   }
 
+  // Fetch status when status tab is active
+  useEffect(() => {
+    if (activeTab === 'status' && isLoggedIn) {
+      fetchStatusData()
+    }
+  }, [activeTab, isLoggedIn])
+
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
     if (token) {
@@ -629,6 +669,7 @@ const Admin = () => {
              <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
                  { id: 'pending', label: 'Pending', icon: Users },
@@ -658,6 +699,7 @@ const Admin = () => {
              <div className="flex space-x-8">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
                  { id: 'pending', label: 'Pending Registrations', icon: Users },
@@ -742,6 +784,180 @@ const Admin = () => {
             </div>
           </div>
         </div>
+          )}
+
+          {activeTab === 'status' && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-white">Member Status Tracking</h2>
+                <button
+                  onClick={fetchStatusData}
+                  disabled={loadingStatus}
+                  className="bg-amber-500 text-purple-900 px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                >
+                  {loadingStatus ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <span>Refresh</span>
+                  )}
+                </button>
+              </div>
+
+              {loadingStatus ? (
+                <div className="text-center py-12">
+                  <Loader className="h-12 w-12 text-amber-500 mx-auto mb-4 animate-spin" />
+                  <p className="text-purple-200">Loading status data...</p>
+                </div>
+              ) : statusData ? (
+                <div className="space-y-6">
+                  {/* Overall Statistics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
+                      <p className="text-sm font-medium text-amber-500">Total Groups</p>
+                      <p className="text-2xl font-bold text-white">{statusData.overall.total_groups}</p>
+                    </div>
+                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
+                      <p className="text-sm font-medium text-amber-500">Total Members</p>
+                      <p className="text-2xl font-bold text-white">{statusData.overall.total_members}</p>
+                    </div>
+                    <div className="bg-green-600 rounded-lg p-4 shadow-lg">
+                      <p className="text-sm font-medium text-amber-500">WhatsApp Joined</p>
+                      <p className="text-2xl font-bold text-white">{statusData.overall.total_whatsapp_joined}</p>
+                      <p className="text-xs text-green-200 mt-1">
+                        {statusData.overall.total_members > 0 
+                          ? Math.round((statusData.overall.total_whatsapp_joined / statusData.overall.total_members) * 100) 
+                          : 0}%
+                      </p>
+                    </div>
+                    <div className="bg-blue-600 rounded-lg p-4 shadow-lg">
+                      <p className="text-sm font-medium text-amber-500">Invitation Accepted</p>
+                      <p className="text-2xl font-bold text-white">{statusData.overall.total_invitation_accepted}</p>
+                      <p className="text-xs text-blue-200 mt-1">
+                        {statusData.overall.total_members > 0 
+                          ? Math.round((statusData.overall.total_invitation_accepted / statusData.overall.total_members) * 100) 
+                          : 0}%
+                      </p>
+                    </div>
+                    <div className="bg-purple-600 rounded-lg p-4 shadow-lg">
+                      <p className="text-sm font-medium text-amber-500">Progress Updated</p>
+                      <p className="text-2xl font-bold text-white">{statusData.overall.total_progress_updated}</p>
+                      <p className="text-xs text-purple-200 mt-1">
+                        {statusData.overall.total_members > 0 
+                          ? Math.round((statusData.overall.total_progress_updated / statusData.overall.total_members) * 100) 
+                          : 0}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Group Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Group Status Breakdown</h3>
+                    {statusData.groups.map((group: any) => (
+                      <motion.div
+                        key={group.group_id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-purple-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-700/30"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="text-lg font-semibold text-white">{group.group_name}</h4>
+                            <p className="text-sm text-purple-300">
+                              {group.status === 'active' ? '🟢 Active' : '🔵 Upcoming'} • 
+                              Start: {new Date(group.start_date).toLocaleDateString()} • 
+                              {group.total_members} members
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                          <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-green-300">📱 WhatsApp</span>
+                              <span className="text-lg font-bold text-white">{group.whatsapp_joined}</span>
+                            </div>
+                            <div className="mt-1">
+                              <div className="w-full bg-green-900/30 rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${group.percentages.whatsapp}%` }}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-green-300 mt-1">{group.percentages.whatsapp}%</p>
+                            </div>
+                            {group.recent_activity.whatsapp_joined > 0 && (
+                              <p className="text-xs text-green-400 mt-1">+{group.recent_activity.whatsapp_joined} this week</p>
+                            )}
+                          </div>
+
+                          <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-blue-300">✅ Invitation</span>
+                              <span className="text-lg font-bold text-white">{group.invitation_accepted}</span>
+                            </div>
+                            <div className="mt-1">
+                              <div className="w-full bg-blue-900/30 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${group.percentages.invitation}%` }}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-blue-300 mt-1">{group.percentages.invitation}%</p>
+                            </div>
+                            {group.recent_activity.invitation_accepted > 0 && (
+                              <p className="text-xs text-blue-400 mt-1">+{group.recent_activity.invitation_accepted} this week</p>
+                            )}
+                          </div>
+
+                          <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-purple-300">📊 Progress</span>
+                              <span className="text-lg font-bold text-white">{group.progress_updated}</span>
+                            </div>
+                            <div className="mt-1">
+                              <div className="w-full bg-purple-900/30 rounded-full h-2">
+                                <div 
+                                  className="bg-purple-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${group.percentages.progress}%` }}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-purple-300 mt-1">{group.percentages.progress}%</p>
+                            </div>
+                            {group.recent_activity.progress_updated > 0 && (
+                              <p className="text-xs text-purple-400 mt-1">+{group.recent_activity.progress_updated} this week</p>
+                            )}
+                          </div>
+
+                          <div className="bg-amber-600/20 rounded-lg p-3 border border-amber-500/30">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-amber-300">🏆 Completed</span>
+                              <span className="text-lg font-bold text-white">{group.journey_completed}</span>
+                            </div>
+                            <div className="mt-1">
+                              <div className="w-full bg-amber-900/30 rounded-full h-2">
+                                <div 
+                                  className="bg-amber-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${group.percentages.completed}%` }}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-amber-300 mt-1">{group.percentages.completed}%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Activity className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                  <p className="text-purple-200">No status data available</p>
+                </div>
+              )}
+            </div>
           )}
 
                                            {activeTab === 'groups' && (

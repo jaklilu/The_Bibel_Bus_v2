@@ -1612,6 +1612,130 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
   }
 })
 
+// Get status/statistics for all groups and members
+router.get('/status', async (req: Request, res: Response) => {
+  try {
+    // Get all active groups
+    const groups = await getRows(`
+      SELECT id, name, start_date, registration_deadline, status
+      FROM bible_groups
+      WHERE status IN ('active', 'upcoming')
+      ORDER BY start_date DESC
+    `)
+    
+    const statusData = []
+    
+    for (const group of groups) {
+      // Get total members
+      const totalMembers = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active'
+      `, [group.id])
+      
+      // Get WhatsApp joined count
+      const whatsappJoined = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active' AND COALESCE(whatsapp_joined, 0) = 1
+      `, [group.id])
+      
+      // Get invitation accepted count
+      const invitationAccepted = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active' AND invitation_accepted_at IS NOT NULL
+      `, [group.id])
+      
+      // Get progress updated count (members with milestone progress)
+      const progressUpdated = await getRow(`
+        SELECT COUNT(DISTINCT user_id) as count
+        FROM milestone_progress
+        WHERE group_id = ?
+      `, [group.id])
+      
+      // Get members who completed journey
+      const journeyCompleted = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active' AND completed_at IS NOT NULL
+      `, [group.id])
+      
+      // Get recent activity (last 7 days)
+      const recentWhatsApp = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active' 
+          AND whatsapp_joined = 1
+          AND join_date >= date('now', '-7 days')
+      `, [group.id])
+      
+      const recentInvitation = await getRow(`
+        SELECT COUNT(*) as count
+        FROM group_members
+        WHERE group_id = ? AND status = 'active' 
+          AND invitation_accepted_at IS NOT NULL
+          AND date(invitation_accepted_at) >= date('now', '-7 days')
+      `, [group.id])
+      
+      const recentProgress = await getRow(`
+        SELECT COUNT(DISTINCT user_id) as count
+        FROM milestone_progress
+        WHERE group_id = ?
+          AND date(updated_at) >= date('now', '-7 days')
+      `, [group.id])
+      
+      statusData.push({
+        group_id: group.id,
+        group_name: group.name,
+        start_date: group.start_date,
+        registration_deadline: group.registration_deadline,
+        status: group.status,
+        total_members: totalMembers?.count || 0,
+        whatsapp_joined: whatsappJoined?.count || 0,
+        invitation_accepted: invitationAccepted?.count || 0,
+        progress_updated: progressUpdated?.count || 0,
+        journey_completed: journeyCompleted?.count || 0,
+        recent_activity: {
+          whatsapp_joined: recentWhatsApp?.count || 0,
+          invitation_accepted: recentInvitation?.count || 0,
+          progress_updated: recentProgress?.count || 0
+        },
+        percentages: {
+          whatsapp: totalMembers?.count > 0 ? Math.round((whatsappJoined?.count || 0) / totalMembers.count * 100) : 0,
+          invitation: totalMembers?.count > 0 ? Math.round((invitationAccepted?.count || 0) / totalMembers.count * 100) : 0,
+          progress: totalMembers?.count > 0 ? Math.round((progressUpdated?.count || 0) / totalMembers.count * 100) : 0,
+          completed: totalMembers?.count > 0 ? Math.round((journeyCompleted?.count || 0) / totalMembers.count * 100) : 0
+        }
+      })
+    }
+    
+    // Overall statistics
+    const overallStats = {
+      total_groups: groups.length,
+      total_members: statusData.reduce((sum, g) => sum + g.total_members, 0),
+      total_whatsapp_joined: statusData.reduce((sum, g) => sum + g.whatsapp_joined, 0),
+      total_invitation_accepted: statusData.reduce((sum, g) => sum + g.invitation_accepted, 0),
+      total_progress_updated: statusData.reduce((sum, g) => sum + g.progress_updated, 0),
+      total_journey_completed: statusData.reduce((sum, g) => sum + g.journey_completed, 0)
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        overall: overallStats,
+        groups: statusData
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching status:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to fetch status' }
+    })
+  }
+})
+
 // Backfill invitation_accepted_at for existing members
 // Useful for marking existing members who have already accepted invitations
 router.post('/backfill-invitation-accepted', async (req: Request, res: Response) => {
