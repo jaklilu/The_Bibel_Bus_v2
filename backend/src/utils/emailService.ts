@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { getRow, runQuery } from '../database/database'
 
 // Create a transporter using Gmail SMTP
 const createTransporter = () => {
@@ -11,8 +12,96 @@ const createTransporter = () => {
   })
 }
 
+// Check if email should be skipped due to too many failures (3+)
+export const shouldSkipEmail = async (email: string): Promise<boolean> => {
+  try {
+    const record = await getRow(`
+      SELECT failure_count 
+      FROM email_failures 
+      WHERE email = ?
+    `, [email])
+    
+    if (!record) {
+      return false // No failures recorded, can send
+    }
+    
+    return record.failure_count >= 3 // Skip if 3 or more failures
+  } catch (error) {
+    console.error('Error checking email failure count:', error)
+    return false // On error, allow sending (fail open)
+  }
+}
+
+// Record email failure
+export const recordEmailFailure = async (email: string): Promise<void> => {
+  try {
+    const existing = await getRow(`
+      SELECT id, failure_count 
+      FROM email_failures 
+      WHERE email = ?
+    `, [email])
+    
+    if (existing) {
+      // Update existing record
+      await runQuery(`
+        UPDATE email_failures 
+        SET failure_count = failure_count + 1,
+            last_failure_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE email = ?
+      `, [email])
+      console.log(`📧 Recorded email failure for ${email} (total: ${existing.failure_count + 1})`)
+    } else {
+      // Create new record
+      await runQuery(`
+        INSERT INTO email_failures (email, failure_count, last_failure_at)
+        VALUES (?, 1, CURRENT_TIMESTAMP)
+      `, [email])
+      console.log(`📧 Recorded first email failure for ${email}`)
+    }
+  } catch (error) {
+    console.error('Error recording email failure:', error)
+  }
+}
+
+// Record email success (reset failure count)
+export const recordEmailSuccess = async (email: string): Promise<void> => {
+  try {
+    const existing = await getRow(`
+      SELECT id 
+      FROM email_failures 
+      WHERE email = ?
+    `, [email])
+    
+    if (existing) {
+      // Reset failure count on success
+      await runQuery(`
+        UPDATE email_failures 
+        SET failure_count = 0,
+            last_success_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE email = ?
+      `, [email])
+    } else {
+      // Create record with success
+      await runQuery(`
+        INSERT INTO email_failures (email, failure_count, last_success_at)
+        VALUES (?, 0, CURRENT_TIMESTAMP)
+      `, [email])
+    }
+  } catch (error) {
+    console.error('Error recording email success:', error)
+  }
+}
+
 // Send password reset email
 export const sendPasswordResetEmail = async (email: string, resetToken: string, userName: string) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -77,9 +166,11 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Password reset email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending password reset email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
@@ -90,6 +181,12 @@ export const sendAccountRecoveryEmail = async (
   userName: string,
   recoveryType: 'name' | 'email'
 ) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -185,15 +282,23 @@ export const sendAccountRecoveryEmail = async (
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Account recovery email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending account recovery email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
 
 // Send donation confirmation email
 export const sendDonationConfirmationEmail = async (email: string, donorName: string, amount: number, donationType: string) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   console.log('=== EMAIL SERVICE DEBUG ===')
   console.log('Email:', email)
   console.log('Donor Name:', donorName)
@@ -262,9 +367,11 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Donation confirmation email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending donation confirmation email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
@@ -276,6 +383,12 @@ export const sendInvitationReminderEmail = async (
   groupName: string, 
   registrationDeadline: string
 ) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -342,9 +455,11 @@ export const sendInvitationReminderEmail = async (
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Invitation reminder email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending invitation reminder email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
@@ -357,6 +472,12 @@ export const sendWelcomeEmail = async (
   groupStartDate: string,
   registrationDeadline: string
 ) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -426,9 +547,11 @@ export const sendWelcomeEmail = async (
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Welcome email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending welcome email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
@@ -440,6 +563,12 @@ export const sendWhatsAppInvitationReminderEmail = async (
   groupName: string,
   daysSinceJoin: number
 ) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -517,9 +646,11 @@ export const sendWhatsAppInvitationReminderEmail = async (
     
     const info = await transporter.sendMail(mailOptions)
     console.log('WhatsApp/Invitation reminder email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending WhatsApp/Invitation reminder email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }
@@ -530,6 +661,12 @@ export const sendProgressReminderEmail = async (
   userName: string,
   groupName: string
 ) => {
+  // Check if email should be skipped
+  if (await shouldSkipEmail(email)) {
+    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    return false
+  }
+
   try {
     const transporter = createTransporter()
     
@@ -601,9 +738,11 @@ export const sendProgressReminderEmail = async (
     
     const info = await transporter.sendMail(mailOptions)
     console.log('Progress reminder email sent:', info.messageId)
+    await recordEmailSuccess(email)
     return true
   } catch (error) {
     console.error('Error sending progress reminder email:', error)
+    await recordEmailFailure(email)
     return false
   }
 }

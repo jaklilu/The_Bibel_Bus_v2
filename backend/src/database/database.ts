@@ -405,6 +405,19 @@ const initializeTables = () => {
     }
   })
 
+  // Email failures tracking table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS email_failures (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      failure_count INTEGER DEFAULT 0,
+      last_failure_at DATETIME,
+      last_success_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
   console.log('✅ Database tables initialized')
 }
 
