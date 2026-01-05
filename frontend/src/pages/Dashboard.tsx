@@ -531,15 +531,47 @@ const Dashboard = () => {
           {!inviteAvailable && (
             <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
           )}
-          <a
-            href={inviteAvailable ? inviteLink : '#'}
-            target={inviteAvailable ? '_blank' : undefined}
-            rel={inviteAvailable ? 'noopener noreferrer' : undefined}
-            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center`}
+          <button
+            onClick={async () => {
+              if (!inviteAvailable) return
+              
+              try {
+                const token = localStorage.getItem('userToken')
+                if (!token) {
+                  // Fallback to direct link if no token
+                  window.open(inviteLink, '_blank')
+                  return
+                }
+                
+                const response = await fetch('/api/auth/accept-invitation', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                
+                const data = await response.json()
+                
+                if (data.success && data.data.youversion_url) {
+                  // Track the click, then open YouVersion link
+                  window.open(data.data.youversion_url, '_blank')
+                } else if (data.success) {
+                  // Fallback to existing inviteLink if API doesn't return URL
+                  window.open(inviteLink, '_blank')
+                } else {
+                  // If API fails, still open the link
+                  window.open(inviteLink, '_blank')
+                }
+              } catch (error) {
+                console.error('Error accepting invitation:', error)
+                // Fallback to direct link on error
+                window.open(inviteLink, '_blank')
+              }
+            }}
+            disabled={!inviteAvailable}
+            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50`}
           >
             <Users className="h-4 w-4 mr-2" />
             Join Reading Group
-          </a>
+          </button>
         </motion.div>
 
         

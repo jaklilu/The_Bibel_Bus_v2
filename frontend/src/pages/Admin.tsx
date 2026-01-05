@@ -1435,8 +1435,13 @@ const Admin = () => {
                   <div className="text-sm text-purple-200">
                     Total Members: {groupMembers.length} / {selectedGroup?.max_members || 50}
                   </div>
-                  <div className="text-sm text-purple-200">
-                    📱 WhatsApp: {groupMembers.filter((m: any) => m.whatsapp_joined).length} / {groupMembers.length} joined
+                  <div className="flex space-x-4 text-sm text-purple-200">
+                    <div>
+                      📱 WhatsApp: {groupMembers.filter((m: any) => m.whatsapp_joined).length} / {groupMembers.length} joined
+                    </div>
+                    <div>
+                      ✅ Invitation: {groupMembers.filter((m: any) => m.invitation_accepted_at).length} / {groupMembers.length} accepted
+                    </div>
                   </div>
                 </div>
                 
@@ -1497,6 +1502,38 @@ const Admin = () => {
                                 }`}>
                                   {member.whatsapp_joined ? '📱 WhatsApp Joined' : '📱 Not Joined'}
                                 </span>
+                              </div>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  member.invitation_accepted_at ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                }`}>
+                                  {member.invitation_accepted_at ? '✅ Invitation: Y' : '❌ Invitation: N'}
+                                </span>
+                                <button
+                                  onClick={async () => {
+                                    const token = localStorage.getItem('adminToken')
+                                    if (!token || !selectedGroup) return
+                                    try {
+                                      const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members/${member.user_id}/toggle-invitation`, {
+                                        method: 'POST',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      })
+                                      const data = await res.json()
+                                      if (data.success) {
+                                        setGroupMembers(data.data.members || [])
+                                      } else {
+                                        alert(data.error?.message || 'Failed to toggle invitation status')
+                                      }
+                                    } catch (e) {
+                                      console.error(e)
+                                      alert('Failed to toggle invitation status')
+                                    }
+                                  }}
+                                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                  title={member.invitation_accepted_at ? 'Click to mark as NOT accepted' : 'Click to mark as accepted'}
+                                >
+                                  {member.invitation_accepted_at ? 'Mark N' : 'Mark Y'}
+                                </button>
                               </div>
                               <p className="text-purple-400 text-xs mt-1">
                                 Joined: {formatDate(member.join_date)}

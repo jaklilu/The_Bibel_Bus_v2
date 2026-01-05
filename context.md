@@ -1,5 +1,141 @@
 # The Bible Bus - Project Context & Progress
 
+> **📌 FOR AGENTS**: This document is your primary reference for understanding the project. Always read the Quick Reference section first, then check Last Session Summary for recent work. Maintain the same format when updating this file.
+
+---
+
+## 🚀 **QUICK REFERENCE** (START HERE)
+
+### **What Is This Project?**
+Mobile-first React web application for managing Bible reading groups, user dashboards, milestone notifications, and community engagement.
+
+### **Deployment URLs**
+- **Frontend (Netlify)**: `https://stalwart-sunflower-596007.netlify.app`
+- **Backend (Render)**: `https://the-bibel-bus-v2.onrender.com` ⚠️ **NOTE**: URL contains typo "bibel" (should be "bible") - **DO NOT CHANGE** as it's the actual production URL
+- **Local Frontend**: `http://localhost:3000`
+- **Local Backend**: `http://localhost:5002/api` (changed from 5001)
+
+### **Admin Credentials**
+- **Email**: `JayTheBibleBus@gmail.com`
+- **Password**: `admin123`
+- **Role**: Administrator with full access
+
+### **Key Technical Details**
+- **Backend Port**: `5002` (changed from 5001 due to conflicts)
+- **Database**: SQLite (`backend/database/bible_bus.db`)
+- **Frontend Build**: Vite + React + TypeScript
+- **Backend Build**: Node.js + Express + TypeScript
+- **Proxy**: Netlify proxies `/api/*` to Render backend
+
+### **Common Commands**
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Start only backend
+npm run dev:backend
+
+# Start only frontend
+npm run dev:frontend
+
+# Build backend (required after schema changes)
+cd backend && npm run build
+
+# Seed database
+cd backend && npm run db:seed
+
+# Reset database
+cd backend && npm run db:reset
+```
+
+### **Critical Gotchas**
+1. **Render URL Typo**: Production URL uses "bibel" (typo for "bible") - **DO NOT CHANGE** as it's the actual production URL. Changing it would break production.
+2. **Port Conflicts**: If `EADDRINUSE` error, use port 5002 or kill Node processes: `Get-Process | Where-Object {$_.ProcessName -like "*node*"} | Stop-Process -Force`
+3. **Database Schema Changes**: Always rebuild backend (`npm run build`) after schema updates
+4. **Render Builds**: Must run `tsc` - check `postinstall` and `prestart` scripts in `backend/package.json`
+5. **Email Normalization**: `.normalizeEmail()` was removed from admin login - don't re-add it
+6. **Stripe Webhook**: Must be in `index.ts` BEFORE `express.json()` middleware (uses `express.raw()`)
+
+---
+
+## 📋 **LAST SESSION SUMMARY**
+
+**Date**: 01-15-26  
+**Status**: ✅ **COMPLETED**
+
+### **What Was Done**
+- **Pending Registration System**: Implemented group-specific registration links for existing members
+- **Admin Approval Interface**: Added "Pending Registrations" tab with one-click approval
+- **Data Collection**: Auto-collects missing fields (city, mailing_address, referral, phone) from existing members
+- **UI Improvements**: Better modal sizing, table scrolling, button visibility
+
+### **Current State**
+- ✅ All features tested and working
+- ✅ Backend and frontend built successfully
+- ✅ No linter errors
+- ✅ Ready for production use
+
+### **Next Priorities** (if any)
+- Monitor pending registrations and approval workflow
+- Consider follow-up features based on user feedback
+
+---
+
+## 📑 **TABLE OF CONTENTS**
+
+1. [Quick Reference](#-quick-reference-start-here) ← You are here
+2. [Last Session Summary](#-last-session-summary)
+3. [Project Overview](#-project-overview)
+4. [Architecture & Technology Stack](#️-architecture--technology-stack)
+5. [Core Features Implemented](#-core-features-implemented)
+6. [Database Schema](#️-database-schema)
+7. [API Endpoints](#-api-endpoints)
+8. [UI/UX Features](#-uiux-features)
+9. [Recent Major Updates](#-recent-major-updates)
+10. [Known Issues & Solutions](#️-known-issues--solutions)
+11. [File Structure](#-file-structure)
+12. [Next Steps & Future Features](#-next-steps--future-features)
+13. [Handoff Notes](#️-handoff-notes-for-next-agent)
+
+---
+
+## 📝 **FORMAT GUIDELINES FOR AGENTS**
+
+**⚠️ IMPORTANT**: When updating this file, maintain the following format:
+
+### **Status Indicators**
+- ✅ **COMPLETED** - Feature/issue is fully done
+- 🔄 **IN PROGRESS** - Currently being worked on
+- ❌ **BLOCKED** - Cannot proceed due to dependency/issue
+- ⏸️ **PAUSED** - Temporarily stopped
+- 🐛 **BUG** - Known issue that needs fixing
+
+### **Update Last Session Summary**
+After each session, update the "Last Session Summary" section with:
+- **Date**: Use MM-DD-YY format (e.g., 01-15-26)
+- **Status**: Use status indicators above
+- **What Was Done**: Brief bullet points of completed work
+- **Current State**: What's working, what's not
+- **Next Priorities**: What should be done next
+
+### **Adding New Sections**
+- Use emoji headers for visual scanning (🎯, 🚀, 🔧, etc.)
+- Follow problem/solution format for new features
+- Include file paths and code examples when relevant
+- Add to "Recent Major Updates" section with full details
+- Update "Last Session Summary" with brief summary
+
+### **Date Format**
+- Always use **MM-DD-YY** format (e.g., 01-15-26)
+- Update "Last Updated" at bottom of file
+
+### **Code Examples**
+- Include file paths: `frontend/src/pages/Home.tsx`
+- Show before/after when relevant
+- Use proper code blocks with language tags
+
+---
+
 ## 🎯 **Project Overview**
 **The Bible Bus - Web App** is a mobile-first React web application for managing Bible reading groups, user dashboards, milestone notifications, and community engagement. The backend is Node.js/Express with SQLite for local development. Frontend deploys to Netlify, backend deploys to Render, with Netlify proxying API requests to the Render backend.
 
@@ -315,14 +451,14 @@ CREATE TABLE password_reset_tokens (
 
 ## 🚧 **Known Issues & Solutions**
 
-### **Unread Message Indicator Issues** ✨ **IN PROGRESS!**
+### **Unread Message Indicator Issues** 🔄 **IN PROGRESS**
 - **Issue**: Red dots appearing on message types with no new messages (e.g., Questions showing unread when no questions exist)
 - **Issue**: Red dots not disappearing after clicking filter buttons to mark as read
 - **Solution**: Added debugging and force update mechanism
 - **Status**: Debugging implemented, needs testing and refinement
 - **Next Steps**: Test the fixes and remove debugging code once working
 
-### **Email Normalization Issues** ✨ **FIXED!**
+### **Email Normalization Issues** ✅ **FIXED**
 - **Issue**: `.normalizeEmail()` converting emails to lowercase, breaking database lookups
 - **Solution**: Removed `.normalizeEmail()` from admin login and password reset routes
 - **Impact**: Fixed admin login and password reset functionality
@@ -386,7 +522,7 @@ The-Bible-Bus/
 ## 🎯 **Next Steps & Future Features**
 
 ### **Immediate Priorities**
-- ✅ **Interactive Message Board System** - COMPLETED ✨ **MAJOR UPDATE!**
+- ✅ **Interactive Message Board System** - COMPLETED
 - ✅ **Automated Group Management** - COMPLETED
 - ✅ **Simplified User Authentication** - COMPLETED
 - ✅ **Password Reset System** - COMPLETED
@@ -1485,7 +1621,7 @@ ORDER BY gm.join_date ASC
   - Falls back to `BACKEND_URL` or `API_URL` environment variables
   - Defaults to localhost only in development
   - Updated `env.example` with `BACKEND_URL` documentation
-- **Production URL**: `https://the-bibel-bus-v2.onrender.com`
+- **Production URL**: `https://the-bibel-bus-v2.onrender.com` (note: contains typo "bibel")
 - **Result**: All tracking URLs now use correct production endpoint
 
 ---
@@ -1953,8 +2089,12 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ---
 
-## 🛠 Handoff Notes (for next agent)
-- Frontend calls use relative `/api/...`. Netlify proxies to Render. Confirm redirects in `netlify.toml` and `frontend/public/_redirects` point to `https://the-bibel-bus-v2.onrender.com` (note: bibel vs bible typo caused prior outage).
+## 🛠 **Handoff Notes (for next agent)**
+
+### **Critical Deployment Information**
+- **Frontend calls use relative `/api/...`**: Netlify proxies to Render automatically
+- **Render URL**: `https://the-bibel-bus-v2.onrender.com` ⚠️ **IMPORTANT**: URL contains typo "bibel" (should be "bible") - **DO NOT CHANGE** as it's the actual production URL. Changing it would break production.
+- **Proxy Configuration**: Confirm redirects in `netlify.toml` and `frontend/public/_redirects` point to Render URL above
 - If API health is unclear, test:
   - Render: `/`, `/health`, `/api/health`
   - Netlify proxy: `/health`, `/api/health`
@@ -1965,12 +2105,17 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 - Registration assignment failures: see `GroupService.assignUserToGroup`. It returns detailed messages when group is full/closed. If October 2025 is Active with capacity, registration should succeed; otherwise, check `registration_deadline` and capacity in DB.
 - Mobile polish: hero paddings, countdown grid, and CTA paddings adjusted in `Home.tsx`. Seconds tile animation is controlled by a 2s looping fade — easy to tweak.
 
-## 🔗 Deployment URLs
-- Netlify site(s): stalwart‑sunflower‑596007.netlify.app (primary), dulcet‑toffee‑... (older test). Prefer the stalwart‑sunflower site.
-- Render backend: https://the-bibel-bus-v2.onrender.com
+### **Deployment URLs**
+- **Netlify (Primary)**: `stalwart-sunflower-596007.netlify.app` (use this one)
+- **Netlify (Test)**: `dulcet-toffee-...` (older test site, avoid)
+- **Render Backend**: `https://the-bibel-bus-v2.onrender.com` ⚠️ **NOTE**: Contains typo "bibel" (should be "bible") - keep as-is for production
 
 ---
 
+## 📅 **DOCUMENT METADATA**
+
 **Last Updated**: 01-15-26  
-**Session Status**: Pending registration system for existing members fully implemented - group-specific registration links, auto-create with pending status, admin approval interface, data collection for missing fields, UI improvements for better visibility and usability - all tested and ready for production use  
-**Next Session Goals**: Monitor registration link usage, gather feedback on approval workflow, continue user experience optimization
+**Last Session**: Pending registration system for existing members fully implemented - group-specific registration links, auto-create with pending status, admin approval interface, data collection for missing fields, UI improvements for better visibility and usability - all tested and ready for production use
+
+**Format Version**: 2.0 (Agent-Optimized)  
+**Maintained By**: AI Agents (follow format guidelines above)

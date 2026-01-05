@@ -84,6 +84,7 @@ const initializeTables = () => {
       join_date TEXT NOT NULL,
       completed_at DATETIME DEFAULT NULL,
       status TEXT DEFAULT 'active',
+      invitation_accepted_at DATETIME DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (group_id) REFERENCES bible_groups (id),
       FOREIGN KEY (user_id) REFERENCES users (id)
@@ -352,6 +353,46 @@ const initializeTables = () => {
   `, (err) => {
     if (err && !String(err.message).includes('duplicate column name')) {
       console.error('Error adding whatsapp_joined column to group_members:', err)
+    }
+  })
+
+  // Add invitation_accepted_at tracking to group_members if not exists
+  db.run(`
+    ALTER TABLE group_members ADD COLUMN invitation_accepted_at DATETIME DEFAULT NULL
+  `, (err) => {
+    if (err && !String(err.message).includes('duplicate column name')) {
+      console.error('Error adding invitation_accepted_at column to group_members:', err)
+    } else {
+      // Migration: Set invitation_accepted_at for existing active members who joined before today
+      // If they joined before today and are still active, they likely accepted the invitation
+      // Set it to their join_date as a reasonable approximation
+      // Only backfill members who joined before today to avoid marking new members as accepted
+      const today = new Date().toISOString().split('T')[0]
+      db.run(`
+        UPDATE group_members 
+        SET invitation_accepted_at = join_date 
+        WHERE invitation_accepted_at IS NULL 
+          AND status = 'active'
+          AND join_date IS NOT NULL
+          AND join_date < ?
+      `, [today], (updateErr) => {
+        if (updateErr) {
+          console.error('Error backfilling invitation_accepted_at for existing members:', updateErr)
+        } else {
+          // Get count of updated rows
+          db.get(`
+            SELECT COUNT(*) as count 
+            FROM group_members 
+            WHERE invitation_accepted_at IS NOT NULL 
+              AND status = 'active'
+              AND invitation_accepted_at = join_date
+          `, [], (_, row: any) => {
+            if (row && row.count > 0) {
+              console.log(`✅ Backfilled invitation_accepted_at for existing members (joined before ${today})`)
+            }
+          })
+        }
+      })
     }
   })
 

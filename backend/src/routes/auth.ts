@@ -1690,6 +1690,54 @@ router.post('/join-current-group', userAuth, async (req: Request, res: Response)
   }
 })
 
+// Track invitation acceptance and return YouVersion link
+router.post('/accept-invitation', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    
+    // Get user's current active group membership
+    const userGroup = await getRow(`
+      SELECT gm.id, gm.group_id, gm.invitation_accepted_at, bg.youversion_plan_url
+      FROM group_members gm
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      WHERE gm.user_id = ? AND bg.status = 'active' AND gm.status = 'active'
+      ORDER BY bg.start_date DESC
+      LIMIT 1
+    `, [userId])
+    
+    if (!userGroup) {
+      return res.status(404).json({ 
+        success: false, 
+        error: { message: 'No active group found' } 
+      })
+    }
+    
+    // Update invitation_accepted_at if not already set
+    if (!userGroup.invitation_accepted_at) {
+      await runQuery(`
+        UPDATE group_members 
+        SET invitation_accepted_at = CURRENT_TIMESTAMP 
+        WHERE id = ? AND invitation_accepted_at IS NULL
+      `, [userGroup.id])
+      
+      console.log(`Invitation accepted by user ${userId} for group ${userGroup.group_id}`)
+    }
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        youversion_url: userGroup.youversion_plan_url || null 
+      } 
+    })
+  } catch (error) {
+    console.error('Error accepting invitation:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: { message: 'Failed to accept invitation' } 
+    })
+  }
+})
+
 // Create donation with payment intent (public endpoint)
 router.post('/donations', [
   body('donor_name').trim().isLength({ min: 2 }).withMessage('Donor name must be at least 2 characters'),

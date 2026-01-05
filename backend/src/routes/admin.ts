@@ -97,6 +97,57 @@ router.delete('/groups/:id/members/:userId', async (req: Request, res: Response)
   }
 })
 
+// Toggle invitation acceptance status for a member
+router.post('/groups/:id/members/:userId/toggle-invitation', async (req: Request, res: Response) => {
+  try {
+    const groupId = parseInt(req.params.id)
+    const userId = parseInt(req.params.userId)
+    
+    // Get current status
+    const member = await getRow(`
+      SELECT invitation_accepted_at 
+      FROM group_members 
+      WHERE group_id = ? AND user_id = ? AND status = 'active'
+    `, [groupId, userId])
+    
+    if (!member) {
+      return res.status(404).json({ 
+        success: false, 
+        error: { message: 'Member not found' } 
+      })
+    }
+    
+    // Toggle: if accepted, set to NULL; if not accepted, set to current timestamp
+    if (member.invitation_accepted_at) {
+      await runQuery(`
+        UPDATE group_members 
+        SET invitation_accepted_at = NULL 
+        WHERE group_id = ? AND user_id = ? AND status = 'active'
+      `, [groupId, userId])
+    } else {
+      await runQuery(`
+        UPDATE group_members 
+        SET invitation_accepted_at = CURRENT_TIMESTAMP 
+        WHERE group_id = ? AND user_id = ? AND status = 'active'
+      `, [groupId, userId])
+    }
+    
+    // Return updated members list
+    const members = await GroupService.getGroupMembers(groupId)
+    res.json({ 
+      success: true, 
+      message: member.invitation_accepted_at ? 'Invitation acceptance removed' : 'Invitation marked as accepted',
+      data: { members } 
+    })
+  } catch (error) {
+    console.error('Error toggling invitation acceptance:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: { message: 'Failed to toggle invitation acceptance' } 
+    })
+  }
+})
+
 // Manually trigger cron jobs (for testing)
 router.post('/cron/run', async (req: Request, res: Response) => {
   try {
@@ -1513,6 +1564,62 @@ router.post('/pending-registrations/:userId/approve', async (req: Request, res: 
       error: {
         message: 'Internal server error'
       }
+    })
+  }
+})
+
+// Backfill invitation_accepted_at for existing members
+// Useful for marking existing members who have already accepted invitations
+router.post('/backfill-invitation-accepted', async (req: Request, res: Response) => {
+  try {
+    const { groupId, markAll } = req.body
+    
+    let query = `
+      UPDATE group_members 
+      SET invitation_accepted_at = join_date 
+      WHERE invitation_accepted_at IS NULL 
+        AND status = 'active'
+        AND join_date IS NOT NULL
+    `
+    const params: any[] = []
+    
+    if (groupId) {
+      // Backfill for specific group
+      query += ' AND group_id = ?'
+      params.push(groupId)
+    }
+    
+    if (!markAll) {
+      // Only mark members who joined before today (default behavior)
+      const today = new Date().toISOString().split('T')[0]
+      query += ' AND join_date < ?'
+      params.push(today)
+    }
+    // If markAll is true, mark all members regardless of join date
+    
+    const result = await runQuery(query, params)
+    
+    // Get count of updated members
+    const countQuery = groupId 
+      ? 'SELECT COUNT(*) as count FROM group_members WHERE invitation_accepted_at IS NOT NULL AND status = "active" AND group_id = ?'
+      : 'SELECT COUNT(*) as count FROM group_members WHERE invitation_accepted_at IS NOT NULL AND status = "active"'
+    const countParams = groupId ? [groupId] : []
+    const countResult = await getRow(countQuery, countParams)
+    
+    res.json({
+      success: true,
+      message: `Backfilled invitation_accepted_at for members`,
+      data: {
+        updated: result.changes || 0,
+        total_marked: countResult?.count || 0,
+        group_id: groupId || 'all groups'
+      }
+    })
+  } catch (error) {
+    console.error('Error backfilling invitation_accepted_at:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to backfill invitation_accepted_at' }
     })
   }
 })

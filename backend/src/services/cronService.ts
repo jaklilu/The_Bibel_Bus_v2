@@ -211,12 +211,14 @@ export async function sendInvitationReminders(): Promise<void> {
         created_by: adminId
       })
 
-      // Send emails to all group members
+      // Send emails only to members who haven't accepted invitation yet
       const members = await getRows(`
         SELECT u.id, u.name, u.email
         FROM group_members gm
         JOIN users u ON gm.user_id = u.id
-        WHERE gm.group_id = ? AND gm.status = 'active'
+        WHERE gm.group_id = ? 
+          AND gm.status = 'active'
+          AND gm.invitation_accepted_at IS NULL
       `, [group.id])
 
       console.log(`Sending invitation reminder emails to ${members.length} members`)
