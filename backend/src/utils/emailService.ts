@@ -433,6 +433,97 @@ export const sendWelcomeEmail = async (
   }
 }
 
+// Send WhatsApp/Invitation reminder email (for first 30 days)
+export const sendWhatsAppInvitationReminderEmail = async (
+  email: string,
+  userName: string,
+  groupName: string,
+  daysSinceJoin: number
+) => {
+  try {
+    const transporter = createTransporter()
+    
+    const mailOptions = {
+      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      to: email,
+      subject: 'Complete Your Registration - The Bible Bus',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🚌 The Bible Bus</h1>
+            <p style="color: #fbbf24; margin: 10px 0 0 0; font-size: 18px; font-weight: bold;">Action Required</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}!</h2>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              We noticed you registered for <strong>${groupName}</strong> ${daysSinceJoin} day${daysSinceJoin !== 1 ? 's' : ''} ago, but haven't completed your registration yet.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              To fully join your Bible reading group, please complete these two important steps:
+            </p>
+            
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #92400e; margin: 0; font-weight: bold; font-size: 14px;">
+                📱 Step 1: Join Your WhatsApp Group
+              </p>
+              <p style="color: #92400e; margin: 5px 0 0 0; font-size: 14px;">
+                Connect with your fellow travelers for daily updates and encouragement!
+              </p>
+            </div>
+            
+            <div style="background: #ede9fe; border-left: 4px solid #7c3aed; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #5b21b6; margin: 0; font-weight: bold; font-size: 14px;">
+                ✅ Step 2: Accept Your Invitation
+              </p>
+              <p style="color: #5b21b6; margin: 5px 0 0 0; font-size: 14px;">
+                Click "Join Reading Group" to start your 365-day Bible reading journey!
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
+                        color: #7c2d12; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 8px; 
+                        font-weight: bold; 
+                        font-size: 16px;
+                        display: inline-block;
+                        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                Complete Registration
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 14px; margin-top: 30px;">
+              Don't miss out on this incredible journey! Complete your registration today to stay connected with your group.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+              Blessings,<br>
+              <strong>The Bible Bus Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">The Bible Bus - Journey to the Heart of God</p>
+          </div>
+        </div>
+      `
+    }
+    
+    const info = await transporter.sendMail(mailOptions)
+    console.log('WhatsApp/Invitation reminder email sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending WhatsApp/Invitation reminder email:', error)
+    return false
+  }
+}
+
 // Send progress reminder email
 export const sendProgressReminderEmail = async (
   email: string,

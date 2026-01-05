@@ -69,6 +69,8 @@ export class CronService {
       await this.ensureNextGroupExists()
       await postWelcomeMessagesForNewlyActiveGroups()
       await sendInvitationReminders()
+      await sendWhatsAppInvitationReminders()
+      await sendProgressReportReminders()
       
       console.log('✅ All cron jobs completed successfully')
     } catch (error) {
@@ -243,5 +245,253 @@ export async function sendInvitationReminders(): Promise<void> {
     }
   } catch (e) {
     console.error('Error sending invitation reminders:', e)
+  }
+}
+
+// Helper: Send WhatsApp/Invitation reminders for first 30 days only
+export async function sendWhatsAppInvitationReminders(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const todayDate = new Date(today)
+    
+    // Find active groups
+    const groups = await getRows(`
+      SELECT id, name, start_date, registration_deadline 
+      FROM bible_groups 
+      WHERE status = 'active' 
+      AND start_date <= ?
+      AND registration_deadline >= ?
+    `, [today, today])
+
+    for (const group of groups) {
+      // Find members who haven't joined WhatsApp OR haven't accepted invitation
+      // AND joined within the last 30 days
+      const members = await getRows(`
+        SELECT 
+          u.id, 
+          u.name, 
+          u.email,
+          gm.join_date,
+          gm.whatsapp_joined,
+          gm.invitation_accepted_at
+        FROM group_members gm
+        JOIN users u ON gm.user_id = u.id
+        WHERE gm.group_id = ? 
+          AND gm.status = 'active'
+          AND (
+            (gm.whatsapp_joined IS NULL OR gm.whatsapp_joined = 0)
+            OR gm.invitation_accepted_at IS NULL
+          )
+      `, [group.id])
+
+      if (members.length === 0) {
+        continue
+      }
+
+      // Filter members who joined within last 30 days
+      const eligibleMembers = members.filter((member: any) => {
+        if (!member.join_date) return false
+        
+        const joinDate = new Date(member.join_date)
+        const daysSinceJoin = Math.floor((todayDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24))
+        
+        // Only send if joined within last 30 days
+        return daysSinceJoin >= 0 && daysSinceJoin <= 30
+      })
+
+      if (eligibleMembers.length === 0) {
+        continue
+      }
+
+      console.log(`Sending WhatsApp/Invitation reminders for group ${group.id} (${group.name}) to ${eligibleMembers.length} members`)
+
+      // Check if we've already sent a reminder today for this group
+      const reminderExists = await getRows(`
+        SELECT id FROM group_messages 
+        WHERE group_id = ? 
+        AND created_at LIKE ?
+        AND title LIKE '%Complete Your Registration%'
+        LIMIT 1
+      `, [group.id, `${today}%`])
+
+      if (reminderExists && reminderExists.length > 0) {
+        console.log(`WhatsApp/Invitation reminder already sent today for group ${group.id}`)
+        continue
+      }
+
+      // Create message board post
+      const content = `Some members haven't completed their registration yet.\n\nTo fully join your Bible reading group:\n1. Join Your WhatsApp Group - Connect with fellow travelers for daily updates\n2. Accept Your Invitation - Click "Join Reading Group" to start your journey\n\nComplete your registration today to stay connected with your group!\n\nSee you on the Bus!`
+
+      // Get admin user ID
+      const adminUser = await getRows('SELECT id FROM users WHERE role = ? LIMIT 1', ['admin'])
+      const adminId = adminUser && adminUser.length > 0 ? adminUser[0].id : 1
+
+      // Post to message board
+      await MessageService.createMessage({
+        group_id: group.id,
+        title: 'Complete Your Registration',
+        content: content,
+        message_type: 'reminder',
+        priority: 'high',
+        created_by: adminId
+      })
+
+      // Send emails
+      const { sendWhatsAppInvitationReminderEmail } = await import('../utils/emailService')
+      
+      for (const member of eligibleMembers) {
+        try {
+          const joinDate = new Date(member.join_date)
+          const daysSinceJoin = Math.floor((todayDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24))
+          
+          await sendWhatsAppInvitationReminderEmail(
+            member.email,
+            member.name,
+            group.name,
+            daysSinceJoin
+          )
+        } catch (emailError) {
+          console.error(`Failed to send WhatsApp/Invitation reminder email to ${member.email}:`, emailError)
+          // Continue with other emails even if one fails
+        }
+      }
+
+      console.log(`WhatsApp/Invitation reminders sent for group ${group.id} to ${eligibleMembers.length} members`)
+    }
+  } catch (e) {
+    console.error('Error sending WhatsApp/Invitation reminders:', e)
+  }
+}
+
+// Helper: Send progress report reminders based on milestone_progress.updated_at
+export async function sendProgressReportReminders(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const todayDate = new Date(today)
+    
+    // Find active/closed groups
+    const groups = await getRows(`
+      SELECT id, name, start_date, end_date
+      FROM bible_groups 
+      WHERE status IN ('active', 'closed')
+      AND start_date <= ?
+    `, [today])
+
+    for (const group of groups) {
+      // Find members who have milestone progress but haven't updated in 14+ days
+      // OR members who should have progress by now (group started 60+ days ago) but have no progress
+      const groupStartDate = new Date(group.start_date)
+      const daysSinceGroupStart = Math.floor((todayDate.getTime() - groupStartDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Only send progress reminders if group has been active for at least 60 days
+      if (daysSinceGroupStart < 60) {
+        continue
+      }
+
+      // Members with stale progress (last updated 14+ days ago)
+      // Get all members with progress and filter in JavaScript
+      const membersWithProgress = await getRows(`
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.email,
+          MAX(mp.updated_at) as last_updated
+        FROM users u
+        JOIN group_members gm ON u.id = gm.user_id
+        JOIN milestone_progress mp ON u.id = mp.user_id AND gm.group_id = mp.group_id
+        WHERE gm.group_id = ?
+          AND gm.status = 'active'
+          AND u.status = 'active'
+          AND mp.updated_at IS NOT NULL
+        GROUP BY u.id, u.name, u.email
+      `, [group.id])
+      
+      // Filter members whose last update was 14+ days ago
+      const fourteenDaysAgo = new Date(todayDate)
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+      const membersWithStaleProgress = membersWithProgress.filter((member: any) => {
+        if (!member.last_updated) return false
+        const lastUpdated = new Date(member.last_updated)
+        return lastUpdated < fourteenDaysAgo
+      })
+
+      // Members with no progress at all (group started 60+ days ago)
+      const membersWithNoProgress = await getRows(`
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.email
+        FROM users u
+        JOIN group_members gm ON u.id = gm.user_id
+        LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND gm.group_id = mp.group_id
+        WHERE gm.group_id = ?
+          AND gm.status = 'active'
+          AND u.status = 'active'
+          AND mp.id IS NULL
+      `, [group.id])
+
+      // Combine both lists, removing duplicates
+      const allMembers = [...membersWithStaleProgress, ...membersWithNoProgress]
+      const uniqueMembers = Array.from(
+        new Map(allMembers.map((m: any) => [m.id, m])).values()
+      )
+
+      if (uniqueMembers.length === 0) {
+        continue
+      }
+
+      console.log(`Sending progress report reminders for group ${group.id} (${group.name}) to ${uniqueMembers.length} members`)
+
+      // Check if we've already sent a progress reminder today for this group
+      const reminderExists = await getRows(`
+        SELECT id FROM group_messages 
+        WHERE group_id = ? 
+        AND created_at LIKE ?
+        AND title LIKE '%Update Your Progress%'
+        LIMIT 1
+      `, [group.id, `${today}%`])
+
+      if (reminderExists && reminderExists.length > 0) {
+        console.log(`Progress reminder already sent today for group ${group.id}`)
+        continue
+      }
+
+      // Create message board post
+      const content = `Don't forget to update your milestone progress!\n\nTracking your progress helps you stay on track with your 365-day Bible reading journey. Update your progress in your dashboard to see how far you've come!\n\nKeep up the great work!\n\nSee you on the Bus!`
+
+      // Get admin user ID
+      const adminUser = await getRows('SELECT id FROM users WHERE role = ? LIMIT 1', ['admin'])
+      const adminId = adminUser && adminUser.length > 0 ? adminUser[0].id : 1
+
+      // Post to message board
+      await MessageService.createMessage({
+        group_id: group.id,
+        title: 'Update Your Progress Report',
+        content: content,
+        message_type: 'reminder',
+        priority: 'normal',
+        created_by: adminId
+      })
+
+      // Send emails
+      const { sendProgressReminderEmail } = await import('../utils/emailService')
+      
+      for (const member of uniqueMembers) {
+        try {
+          await sendProgressReminderEmail(
+            member.email,
+            member.name,
+            group.name
+          )
+        } catch (emailError) {
+          console.error(`Failed to send progress reminder email to ${member.email}:`, emailError)
+          // Continue with other emails even if one fails
+        }
+      }
+
+      console.log(`Progress report reminders sent for group ${group.id} to ${uniqueMembers.length} members`)
+    }
+  } catch (e) {
+    console.error('Error sending progress report reminders:', e)
   }
 }
