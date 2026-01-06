@@ -1652,7 +1652,7 @@ router.get('/status', async (req: Request, res: Response) => {
   try {
     // Get all groups (active, upcoming, and completed) for tracking
     // Explicitly include Bible Bus October 2025 Travelers (always included regardless of status)
-    // Exclude Bible Bus October 2024 (all variations including "The Bible Bus October 2024 Travelers")
+    // Exclude Bible Bus October 2024 (all variations including "The Bible Bus October 2024 Travelers" and "The Bible Bus Oct 2024 Travelers")
     // Exclude Bible Bus January 2025 (closed)
     // Sort by created_at DESC to show most recent groups first
     const groups = await getRows(`
@@ -1663,6 +1663,7 @@ router.get('/status', async (req: Request, res: Response) => {
         OR name LIKE '%October 2025%'
       )
         AND name NOT LIKE '%October 2024%'
+        AND name NOT LIKE '%Oct 2024%'
         AND name != 'Bible Bus January 2025 Travelers'
       ORDER BY created_at DESC
     `)
