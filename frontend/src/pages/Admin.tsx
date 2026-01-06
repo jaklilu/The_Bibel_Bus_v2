@@ -297,7 +297,13 @@ const Admin = () => {
       if (data.success) {
         const group = adminData.groups.find((g: any) => g.id === groupId)
         setSelectedGroup(group)
-        setGroupMembers(data.data.members || [])
+        // Ensure data types are correct (whatsapp_joined as boolean, invitation_accepted_at as date or null)
+        const normalizedMembers = (data.data.members || []).map((m: any) => ({
+          ...m,
+          whatsapp_joined: m.whatsapp_joined === 1 || m.whatsapp_joined === true,
+          invitation_accepted_at: m.invitation_accepted_at || null
+        }))
+        setGroupMembers(normalizedMembers)
         setShowMembersModal(true)
         try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
       }
@@ -1732,12 +1738,17 @@ const Admin = () => {
                                       })
                                       const data = await res.json()
                                       if (data.success) {
-                                        setGroupMembers(data.data.members || [])
+                                        // Ensure whatsapp_joined is properly converted to boolean
+                                        const updatedMembers = (data.data.members || []).map((m: any) => ({
+                                          ...m,
+                                          whatsapp_joined: m.whatsapp_joined === 1 || m.whatsapp_joined === true
+                                        }))
+                                        setGroupMembers(updatedMembers)
                                         // Also refresh Status page data if Status tab is active
                                         if (activeTab === 'status') {
                                           setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
                                         }
-                                        console.log('✅ WhatsApp status updated successfully')
+                                        console.log('✅ WhatsApp status updated successfully', updatedMembers.find((m: any) => m.user_id === member.user_id))
                                       } else {
                                         console.error('❌ Failed to toggle WhatsApp:', data.error)
                                         alert(data.error?.message || 'Failed to toggle WhatsApp status')
@@ -1770,12 +1781,17 @@ const Admin = () => {
                                       })
                                       const data = await res.json()
                                       if (data.success) {
-                                        setGroupMembers(data.data.members || [])
+                                        // Ensure invitation_accepted_at is properly handled
+                                        const updatedMembers = (data.data.members || []).map((m: any) => ({
+                                          ...m,
+                                          invitation_accepted_at: m.invitation_accepted_at || null
+                                        }))
+                                        setGroupMembers(updatedMembers)
                                         // Also refresh Status page data if Status tab is active
                                         if (activeTab === 'status') {
                                           setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
                                         }
-                                        console.log('✅ Invitation status updated successfully')
+                                        console.log('✅ Invitation status updated successfully', updatedMembers.find((m: any) => m.user_id === member.user_id))
                                       } else {
                                         console.error('❌ Failed to toggle invitation:', data.error)
                                         alert(data.error?.message || 'Failed to toggle invitation status')

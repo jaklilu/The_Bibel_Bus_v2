@@ -135,15 +135,24 @@ router.post('/groups/:id/members/:userId/toggle-invitation', async (req: Request
       console.log(`[Toggle Invitation] Set acceptance for user ${userId} in group ${groupId}. Changes: ${result.changes}`)
     }
     
-    // Verify the update worked
+    // Verify the update worked - add small delay to ensure DB commit
+    await new Promise(resolve => setTimeout(resolve, 100))
     const verify = await getRow(`
       SELECT invitation_accepted_at 
       FROM group_members 
       WHERE group_id = ? AND user_id = ? AND status = 'active'
     `, [groupId, userId])
-    console.log(`[Toggle Invitation] Verification - User ${userId}: invitation_accepted_at = ${verify?.invitation_accepted_at || 'NULL'}`)
+    const expectedValue = wasAccepted ? null : 'NOT NULL'
+    const actualValue = verify?.invitation_accepted_at ? 'NOT NULL' : 'NULL'
+    console.log(`[Toggle Invitation] Verification - User ${userId}: invitation_accepted_at = ${actualValue}`)
     
-    // Return updated members list
+    if (wasAccepted && verify?.invitation_accepted_at !== null) {
+      console.error(`[Toggle Invitation] WARNING: Update verification failed! Expected NULL, got ${verify?.invitation_accepted_at}`)
+    } else if (!wasAccepted && verify?.invitation_accepted_at === null) {
+      console.error(`[Toggle Invitation] WARNING: Update verification failed! Expected NOT NULL, got NULL`)
+    }
+    
+    // Return updated members list - fetch fresh from DB
     const members = await GroupService.getGroupMembers(groupId)
     res.json({ 
       success: true, 
@@ -189,7 +198,8 @@ router.post('/groups/:id/members/:userId/toggle-whatsapp', async (req: Request, 
     `, [newStatus, groupId, userId])
     console.log(`[Toggle WhatsApp] User ${userId} in group ${groupId}: ${wasJoined ? 'removed' : 'set'} WhatsApp join. Changes: ${result.changes}`)
     
-    // Verify the update worked
+    // Verify the update worked - add small delay to ensure DB commit
+    await new Promise(resolve => setTimeout(resolve, 100))
     const verify = await getRow(`
       SELECT whatsapp_joined 
       FROM group_members 
@@ -197,7 +207,11 @@ router.post('/groups/:id/members/:userId/toggle-whatsapp', async (req: Request, 
     `, [groupId, userId])
     console.log(`[Toggle WhatsApp] Verification - User ${userId}: whatsapp_joined = ${verify?.whatsapp_joined || 0}`)
     
-    // Return updated members list
+    if (verify && verify.whatsapp_joined !== newStatus) {
+      console.error(`[Toggle WhatsApp] WARNING: Update verification failed! Expected ${newStatus}, got ${verify.whatsapp_joined}`)
+    }
+    
+    // Return updated members list - fetch fresh from DB
     const members = await GroupService.getGroupMembers(groupId)
     res.json({ 
       success: true, 
