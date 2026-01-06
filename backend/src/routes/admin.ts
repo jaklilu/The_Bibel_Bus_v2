@@ -1639,13 +1639,14 @@ router.get('/status', async (req: Request, res: Response) => {
     // Get all groups (active, upcoming, and completed) for tracking
     // Include completed groups like October 2025 for status tracking
     // Explicitly include Bible Bus October 2025 Travelers (should be included if status is active/upcoming/completed)
-    // Exclude Bible Bus October 2024 and Bible Bus January 2025 (closed)
+    // Exclude Bible Bus October 2024 (all variations including "The Bible Bus October 2024 Travelers")
+    // Exclude Bible Bus January 2025 (closed)
     // Sort by created_at DESC to show most recent groups first
     const groups = await getRows(`
       SELECT id, name, start_date, registration_deadline, status, created_at
       FROM bible_groups
       WHERE status IN ('active', 'upcoming', 'completed')
-        AND name != 'Bible Bus October 2024'
+        AND name NOT LIKE '%October 2024%'
         AND name != 'Bible Bus January 2025 Travelers'
       ORDER BY created_at DESC
     `)
