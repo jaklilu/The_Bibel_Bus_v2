@@ -336,6 +336,7 @@ export class GroupService {
       ORDER BY 
         CASE WHEN bg.sort_index IS NULL THEN 1 ELSE 0 END ASC,
         bg.sort_index ASC,
+        bg.created_at DESC,
         bg.start_date DESC
     `)
   }
