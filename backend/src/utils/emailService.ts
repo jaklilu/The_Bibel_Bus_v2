@@ -1,6 +1,11 @@
 import nodemailer from 'nodemailer'
 import { getRow, runQuery } from '../database/database'
 
+// Get the frontend URL - use production URL as default
+const getFrontendUrl = () => {
+  return process.env.FRONTEND_URL || 'https://stalwart-sunflower-596007.netlify.app'
+}
+
 // Create a transporter using Gmail SMTP
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -105,7 +110,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
   try {
     const transporter = createTransporter()
     
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    const resetLink = `${getFrontendUrl()}/reset-password?token=${resetToken}`
     
     const mailOptions = {
       from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
@@ -249,7 +254,7 @@ export const sendAccountRecoveryEmail = async (
             ${content}
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" 
+              <a href="${getFrontendUrl()}/login" 
                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
                         color: #7c2d12; 
                         padding: 15px 30px; 
@@ -426,7 +431,7 @@ export const sendInvitationReminderEmail = async (
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+              <a href="${getFrontendUrl()}/dashboard" 
                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
                         color: #7c2d12; 
                         padding: 15px 30px; 
@@ -514,7 +519,7 @@ export const sendWelcomeEmail = async (
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+              <a href="${getFrontendUrl()}/dashboard" 
                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
                         color: #7c2d12; 
                         padding: 15px 30px; 
@@ -613,7 +618,7 @@ export const sendWhatsAppInvitationReminderEmail = async (
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+              <a href="${getFrontendUrl()}/dashboard" 
                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
                         color: #7c2d12; 
                         padding: 15px 30px; 
@@ -705,7 +710,7 @@ export const sendProgressReminderEmail = async (
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" 
+              <a href="${getFrontendUrl()}/dashboard" 
                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); 
                         color: #7c2d12; 
                         padding: 15px 30px; 
