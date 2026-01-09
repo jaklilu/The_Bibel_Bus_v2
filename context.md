@@ -60,24 +60,32 @@ cd backend && npm run db:reset
 
 ## 📋 **LAST SESSION SUMMARY**
 
-**Date**: 01-15-26  
+**Date**: 01-16-26  
 **Status**: ✅ **COMPLETED**
 
 ### **What Was Done**
-- **Pending Registration System**: Implemented group-specific registration links for existing members
-- **Admin Approval Interface**: Added "Pending Registrations" tab with one-click approval
-- **Data Collection**: Auto-collects missing fields (city, mailing_address, referral, phone) from existing members
-- **UI Improvements**: Better modal sizing, table scrolling, button visibility
+- **Fixed Status Updates Persistence**: Resolved issue where WhatsApp/Invitation status toggles weren't persisting - added auto-refresh, verification logging, and data type normalization
+- **Email Reminder System**: Implemented automated email reminders:
+  - WhatsApp/Invitation reminders for first 30 days only (stops after 30 days)
+  - Progress report reminders based on milestone_progress.updated_at (sends if no update in 14+ days for groups active 60+ days)
+- **Email Failure Tracking**: Implemented system to stop sending emails after 3 failed attempts - tracks failures in database, skips unreachable addresses automatically
+- **Status Page Improvements**: 
+  - Sorted groups by most recent first (created_at DESC)
+  - Excluded October 2024 and January 2025 groups from status tracking
+  - Explicitly included October 2025 group
+- **Admin Groups Tab**: Sorted groups by most recent first for better organization
+- **Email Links Fixed**: Updated all email links to point to production domain `https://thebiblebus.net/dashboard` instead of localhost
 
 ### **Current State**
-- ✅ All features tested and working
-- ✅ Backend and frontend built successfully
-- ✅ No linter errors
-- ✅ Ready for production use
+- ✅ All email reminder systems working and integrated into cron jobs
+- ✅ Email failure tracking prevents sending to unreachable addresses
+- ✅ Status page shows most recent groups first with proper exclusions
+- ✅ All email links point to correct production dashboard URL
+- ✅ All changes tested, committed, and pushed to production
 
 ### **Next Priorities** (if any)
-- Monitor pending registrations and approval workflow
-- Consider follow-up features based on user feedback
+- Monitor email reminder effectiveness and adjust timing if needed
+- Review email failure logs to identify common failure patterns
 
 ---
 
@@ -2114,8 +2122,8 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ## 📅 **DOCUMENT METADATA**
 
-**Last Updated**: 01-15-26  
-**Last Session**: Pending registration system for existing members fully implemented - group-specific registration links, auto-create with pending status, admin approval interface, data collection for missing fields, UI improvements for better visibility and usability - all tested and ready for production use
+**Last Updated**: 01-16-26  
+**Last Session**: Email reminder system fully implemented (WhatsApp/Invitation reminders for 30 days, progress report reminders), email failure tracking system (stops after 3 failures), fixed status update persistence issues, improved Status page sorting and exclusions, fixed all email links to point to production dashboard (https://thebiblebus.net/dashboard) - all tested, committed, and ready for production use
 
 **Format Version**: 2.0 (Agent-Optimized)  
 **Maintained By**: AI Agents (follow format guidelines above)
