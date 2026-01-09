@@ -3,7 +3,7 @@ import { getRow, runQuery } from '../database/database'
 
 // Get the frontend URL - use production URL as default
 const getFrontendUrl = () => {
-  return process.env.FRONTEND_URL || 'https://stalwart-sunflower-596007.netlify.app'
+  return process.env.FRONTEND_URL || 'https://thebiblebus.net'
 }
 
 // Create a transporter using Gmail SMTP
@@ -30,10 +30,14 @@ export const shouldSkipEmail = async (email: string): Promise<boolean> => {
       return false // No failures recorded, can send
     }
     
-    return record.failure_count >= 3 // Skip if 3 or more failures
+    const shouldSkip = record.failure_count >= 3 // Skip if 3 or more failures
+    if (shouldSkip) {
+      console.log(`⏭️ Skipping email to ${email} - has ${record.failure_count} failures (3+ threshold reached)`)
+    }
+    return shouldSkip
   } catch (error) {
     console.error('Error checking email failure count:', error)
-    return false // On error, allow sending (fail open)
+    return false // On error, allow sending (fail open - don't block emails if DB check fails)
   }
 }
 
