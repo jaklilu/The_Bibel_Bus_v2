@@ -378,7 +378,117 @@ CREATE TABLE password_reset_tokens (
 
 ## 🔄 **Recent Major Updates**
 
-### **Interactive Message Board System Implementation** (Latest) ✨ **MAJOR UPDATE!**
+### **Email Reminder & Failure Tracking System** (January 2026) ✨ **LATEST UPDATE!**
+
+#### **Problem Identified** 🎯
+- Members who hadn't joined WhatsApp or accepted invitations were not receiving targeted reminders
+- Members weren't updating their progress reports regularly
+- Emails were being sent to unreachable addresses repeatedly, wasting resources
+- Status updates in admin console weren't persisting properly
+- Email links were pointing to localhost instead of production site
+
+#### **Solutions Implemented** ✅
+
+**1. WhatsApp/Invitation Reminder System** (`backend/src/services/cronService.ts`, `backend/src/utils/emailService.ts`)
+- **Feature**: Automated reminders for members who haven't joined WhatsApp OR accepted invitation
+- **Time Window**: Only sends within first 30 days after joining (stops automatically after 30 days)
+- **Email Function**: `sendWhatsAppInvitationReminderEmail()` with personalized message
+- **Integration**: Added to `runAllCronJobs()` to run automatically
+- **Message Board**: Creates group message board post when sending reminders
+- **Files Modified**:
+  - `backend/src/services/cronService.ts` (new `sendWhatsAppInvitationReminders()` function)
+  - `backend/src/utils/emailService.ts` (new email template)
+
+**2. Progress Report Reminder System** (`backend/src/services/cronService.ts`)
+- **Feature**: Automated reminders for members who haven't updated milestone progress
+- **Target Criteria**: 
+  - Members with stale progress (last updated 14+ days ago)
+  - Members with no progress at all
+  - Only for groups active 60+ days (progress reports start after a couple of months)
+- **Email Function**: Uses existing `sendProgressReminderEmail()` function
+- **Integration**: Added to `runAllCronJobs()` to run automatically
+- **Message Board**: Creates group message board post when sending reminders
+- **Files Modified**: `backend/src/services/cronService.ts` (new `sendProgressReportReminders()` function)
+
+**3. Email Failure Tracking System** (`backend/src/database/database.ts`, `backend/src/utils/emailService.ts`)
+- **Feature**: Tracks email failures and stops sending after 3 failed attempts
+- **Database Table**: Created `email_failures` table with columns:
+  - `email` (unique)
+  - `failure_count`
+  - `last_failure_at`
+  - `last_success_at`
+- **Helper Functions**:
+  - `shouldSkipEmail()`: Checks if email has 3+ failures
+  - `recordEmailFailure()`: Increments failure count on send failure
+  - `recordEmailSuccess()`: Resets failure count to 0 on successful send
+- **Integration**: All email functions check `shouldSkipEmail()` before sending
+- **Logging**: Comprehensive logging shows when emails are skipped
+- **Files Modified**:
+  - `backend/src/database/database.ts` (new table creation)
+  - `backend/src/utils/emailService.ts` (helper functions and integration)
+
+**4. Status Update Persistence Fix** (`backend/src/routes/admin.ts`, `frontend/src/pages/Admin.tsx`)
+- **Problem**: WhatsApp/Invitation status toggles weren't persisting in admin console
+- **Solution**: 
+  - Added 100ms delay after DB update to ensure commit
+  - Added verification logging to detect update failures
+  - Normalized data types in frontend (whatsapp_joined as boolean, invitation_accepted_at as date/null)
+  - Added console logging to track updates
+  - Normalized initial member data fetch
+- **Files Modified**:
+  - `backend/src/routes/admin.ts` (added delay and verification)
+  - `frontend/src/pages/Admin.tsx` (data type normalization)
+
+**5. Status Page Improvements** (`backend/src/routes/admin.ts`)
+- **Sorting**: Changed to show most recent groups first (`created_at DESC`)
+- **Exclusions**: 
+  - Excluded "Bible Bus October 2024" (all variations including "Oct 2024")
+  - Excluded "Bible Bus January 2025 Travelers" (closed group)
+- **Inclusions**: Explicitly included "Bible Bus October 2025 Travelers" regardless of status
+- **Files Modified**: `backend/src/routes/admin.ts` (updated query with exclusions and sorting)
+
+**6. Admin Groups Tab Sorting** (`backend/src/services/groupService.ts`)
+- **Feature**: Show most recent groups first in Admin > Groups tab
+- **Implementation**: Added `created_at DESC` to sorting order
+- **Files Modified**: `backend/src/services/groupService.ts` (updated `getAllGroupsWithMemberCounts()`)
+
+**7. Email Links Fix** (`backend/src/utils/emailService.ts`)
+- **Problem**: All email links were pointing to `localhost:3000` when `FRONTEND_URL` wasn't set
+- **Solution**: 
+  - Created `getFrontendUrl()` helper function
+  - Defaults to production URL: `https://thebiblebus.net`
+  - All email links now point to `https://thebiblebus.net/dashboard`
+- **Files Modified**: `backend/src/utils/emailService.ts` (updated all email templates)
+
+#### **Technical Implementation** 🔧
+
+**Email Reminder Cron Jobs**:
+- Both reminder functions run as part of `runAllCronJobs()`
+- Check for duplicate prevention (won't send multiple reminders same day)
+- Create message board posts for group visibility
+- Include error handling to continue processing even if individual emails fail
+
+**Email Failure Tracking**:
+- Database table tracks failures per email address
+- Automatic skip after 3 failures
+- Failure count resets to 0 on successful send
+- Fail-open design: if DB check fails, allows sending (doesn't block emails)
+
+**Status Update Fix**:
+- Added verification queries after database updates
+- Data type normalization ensures consistent boolean/date handling
+- Auto-refresh of Status page when toggles happen in View Members modal
+
+#### **Benefits** ✅
+- ✅ Automated engagement tracking and reminders
+- ✅ Prevents wasted resources on unreachable emails
+- ✅ Better admin visibility with proper status tracking
+- ✅ All email links work correctly in production
+- ✅ Most recent groups shown first for better UX
+
+---
+
+### **Interactive Message Board System Implementation** (Previous) ✨ **MAJOR UPDATE!**
 - **User-Generated Content**: Members can post prayer requests, testimonies, questions, encouragement
 - **Comments System**: Users can comment on any message for community engagement
 - **Smart Filtering**: 8 message types with always-visible filter buttons (Milestones, Encouragement, Prayer Requests, Testimonies, Questions, Reminders, Announcements, All Messages)
