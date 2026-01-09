@@ -32,7 +32,7 @@ export const shouldSkipEmail = async (email: string): Promise<boolean> => {
     
     const shouldSkip = record.failure_count >= 3 // Skip if 3 or more failures
     if (shouldSkip) {
-      console.log(`⏭️ Skipping email to ${email} - has ${record.failure_count} failures (3+ threshold reached)`)
+      console.log(`⏭️ Skipping email to ${email} - has ${record.failure_count} failures (3+ threshold reached, will not send)`)
     }
     return shouldSkip
   } catch (error) {
