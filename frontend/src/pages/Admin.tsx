@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Mail,
   Loader,
-  Activity
+  Activity,
+  Send
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
 
@@ -117,7 +118,9 @@ const Admin = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [addingMembers, setAddingMembers] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
-  const [sendingReminders, setSendingReminders] = useState(false)
+  const [sendingInvitationReminders, setSendingInvitationReminders] = useState(false)
+  const [sendingWhatsAppReminders, setSendingWhatsAppReminders] = useState(false)
+  const [sendingProgressReminders, setSendingProgressReminders] = useState(false)
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -380,19 +383,21 @@ const Admin = () => {
     const token = localStorage.getItem('adminToken')
     if (!token) return
 
-    if (!confirm('Send progress reminder emails to members in "Bible Bus October 2025 Travelers" and newer groups who have no progress recorded?')) {
+    if (!confirm('Send progress reminder emails? This will send to members in groups active 60+ days who haven\'t updated progress in 14+ days or have no progress.')) {
       return
     }
 
-    setSendingReminders(true)
+    setSendingProgressReminders(true)
     try {
-      // Create an AbortController for timeout handling
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minute timeout
       
       const response = await fetch('/api/admin/send-progress-reminders', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         signal: controller.signal
       })
       
@@ -406,14 +411,14 @@ const Admin = () => {
       const data = await response.json()
       
       if (data.success) {
-        const groupsList = data.data.groups?.join(', ') || 'N/A'
-        alert(`✅ ${data.message}\n\nSent: ${data.data.sent}\nFailed: ${data.data.failed}\nTotal: ${data.data.total}\n\nGroups: ${groupsList}`)
+        const groupsList = data.data.groups?.map((g: any) => `${g.groupName} (${g.sent}/${g.total})`).join(', ') || 'N/A'
+        alert(`✅ ${data.message}\n\nSent: ${data.data.sent}\nFailed: ${data.data.failed}\n\nGroups: ${groupsList}`)
         fetchAdminData() // Refresh to see updated progress
       } else {
         alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
       }
     } catch (err: any) {
-      console.error('Error sending reminders:', err)
+      console.error('Error sending progress reminders:', err)
       let errorMessage = 'Failed to send reminders. Please try again.'
       
       if (err.name === 'AbortError') {
@@ -424,7 +429,7 @@ const Admin = () => {
       
       alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
     } finally {
-      setSendingReminders(false)
+      setSendingProgressReminders(false)
     }
   }
 
@@ -684,6 +689,7 @@ const Admin = () => {
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
+                 { id: 'email', label: 'Email', icon: Mail },
                  { id: 'password', label: 'Password', icon: Shield }
                ].map((tab) => (
                  <button
@@ -714,6 +720,7 @@ const Admin = () => {
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
+                 { id: 'email', label: 'Email', icon: Mail },
                  { id: 'password', label: 'Change Password', icon: Shield }
                ].map((tab) => (
                  <button
@@ -1269,10 +1276,10 @@ const Admin = () => {
                 <h2 className="text-xl font-semibold text-white">Member Progress by Group</h2>
                 <button
                   onClick={handleSendProgressReminders}
-                  disabled={sendingReminders}
+                  disabled={sendingProgressReminders}
                   className="bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  {sendingReminders ? (
+                  {sendingProgressReminders ? (
                     <>
                       <Loader className="h-4 w-4 animate-spin" />
                       <span>Sending...</span>
@@ -1425,6 +1432,118 @@ const Admin = () => {
           {activeTab === 'messages' && (
             <div>
               <AdminMessageManager />
+            </div>
+          )}
+
+          {activeTab === 'email' && (
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-6">Email Management</h2>
+              <p className="text-purple-300 mb-6">Manually send reminder emails to members. All emails are sent in batches to avoid timeouts.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Invitation Reminder */}
+                <div className="bg-purple-600/50 rounded-lg p-6 border border-purple-500/30">
+                  <div className="flex items-center mb-4">
+                    <Mail className="h-8 w-8 text-amber-500 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">Invitation Reminder</h3>
+                  </div>
+                  <p className="text-purple-200 text-sm mb-4">
+                    Send reminders to members who haven't accepted their invitation to join the reading group.
+                  </p>
+                  <p className="text-purple-300 text-xs mb-4">
+                    <strong>Target:</strong> Active members in active groups who haven't clicked "Join Reading Group"
+                  </p>
+                  <button
+                    onClick={handleSendInvitationReminders}
+                    disabled={sendingInvitationReminders}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {sendingInvitationReminders ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Send Invitation Reminders</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* WhatsApp/Invitation Reminder */}
+                <div className="bg-purple-600/50 rounded-lg p-6 border border-purple-500/30">
+                  <div className="flex items-center mb-4">
+                    <Mail className="h-8 w-8 text-amber-500 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">WhatsApp/Invitation Reminder</h3>
+                  </div>
+                  <p className="text-purple-200 text-sm mb-4">
+                    Send reminders to members who haven't joined WhatsApp OR accepted invitation.
+                  </p>
+                  <p className="text-purple-300 text-xs mb-4">
+                    <strong>Target:</strong> Members who joined within last 30 days and haven't completed registration
+                  </p>
+                  <button
+                    onClick={handleSendWhatsAppInvitationReminders}
+                    disabled={sendingWhatsAppReminders}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {sendingWhatsAppReminders ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Send WhatsApp/Invitation Reminders</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Progress Report Reminder */}
+                <div className="bg-purple-600/50 rounded-lg p-6 border border-purple-500/30">
+                  <div className="flex items-center mb-4">
+                    <Mail className="h-8 w-8 text-amber-500 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">Progress Report Reminder</h3>
+                  </div>
+                  <p className="text-purple-200 text-sm mb-4">
+                    Send reminders to members who haven't updated their milestone progress.
+                  </p>
+                  <p className="text-purple-300 text-xs mb-4">
+                    <strong>Target:</strong> Groups active 60+ days, members with stale progress (14+ days) or no progress
+                  </p>
+                  <button
+                    onClick={handleSendProgressReminders}
+                    disabled={sendingProgressReminders}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {sendingProgressReminders ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Send Progress Reminders</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 bg-purple-700/30 rounded-lg p-4 border border-purple-500/20">
+                <h4 className="text-white font-semibold mb-2">📧 Email Safety Features</h4>
+                <ul className="text-purple-200 text-sm space-y-1">
+                  <li>• Emails are automatically skipped for addresses with 3+ failed attempts</li>
+                  <li>• All emails are sent in batches of 5 to prevent timeouts</li>
+                  <li>• Failed sends are tracked and logged</li>
+                  <li>• Each email type has specific targeting criteria</li>
+                </ul>
+              </div>
             </div>
           )}
 
