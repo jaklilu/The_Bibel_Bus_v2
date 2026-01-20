@@ -379,6 +379,112 @@ const Admin = () => {
     }
   }
 
+  const handleSendInvitationReminders = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    if (!confirm('Send invitation reminder emails to members who haven\'t accepted their invitation? This will send emails to all eligible members in active groups.')) {
+      return
+    }
+
+    setSendingInvitationReminders(true)
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minute timeout
+      
+      const response = await fetch('/api/admin/send-invitation-reminders', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error')
+        throw new Error(`Server error (${response.status}): ${errorText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        const groupsList = data.data.groups?.map((g: any) => `${g.groupName} (${g.sent}/${g.total})`).join(', ') || 'N/A'
+        alert(`✅ ${data.message}\n\nSent: ${data.data.sent}\nFailed: ${data.data.failed}\n\nGroups: ${groupsList}`)
+      } else {
+        alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
+      }
+    } catch (err: any) {
+      console.error('Error sending invitation reminders:', err)
+      let errorMessage = 'Failed to send reminders. Please try again.'
+      
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timed out. The emails may still be sending in the background. Please check the server logs or try again later.'
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      
+      alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
+    } finally {
+      setSendingInvitationReminders(false)
+    }
+  }
+
+  const handleSendWhatsAppInvitationReminders = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    if (!confirm('Send WhatsApp/Invitation reminder emails? This will send to members who haven\'t joined WhatsApp OR accepted invitation (within first 30 days of joining).')) {
+      return
+    }
+
+    setSendingWhatsAppReminders(true)
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minute timeout
+      
+      const response = await fetch('/api/admin/send-whatsapp-invitation-reminders', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error')
+        throw new Error(`Server error (${response.status}): ${errorText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        const groupsList = data.data.groups?.map((g: any) => `${g.groupName} (${g.sent}/${g.total})`).join(', ') || 'N/A'
+        alert(`✅ ${data.message}\n\nSent: ${data.data.sent}\nFailed: ${data.data.failed}\n\nGroups: ${groupsList}`)
+      } else {
+        alert(`❌ Failed: ${data.error?.message || 'Unknown error'}`)
+      }
+    } catch (err: any) {
+      console.error('Error sending WhatsApp/Invitation reminders:', err)
+      let errorMessage = 'Failed to send reminders. Please try again.'
+      
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timed out. The emails may still be sending in the background. Please check the server logs or try again later.'
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      
+      alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
+    } finally {
+      setSendingWhatsAppReminders(false)
+    }
+  }
+
   const handleSendProgressReminders = async () => {
     const token = localStorage.getItem('adminToken')
     if (!token) return
