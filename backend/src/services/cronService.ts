@@ -68,9 +68,10 @@ export class CronService {
       await this.updateGroupStatuses()
       await this.ensureNextGroupExists()
       await postWelcomeMessagesForNewlyActiveGroups()
-      await sendInvitationReminders()
-      await sendWhatsAppInvitationReminders()
-      await sendProgressReportReminders()
+      // Email reminders moved to manual admin triggers
+      // await sendInvitationReminders()
+      // await sendWhatsAppInvitationReminders()
+      // await sendProgressReportReminders()
       
       console.log('✅ All cron jobs completed successfully')
     } catch (error) {

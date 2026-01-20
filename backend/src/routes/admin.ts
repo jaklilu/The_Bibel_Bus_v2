@@ -818,102 +818,361 @@ router.get('/progress-by-group', async (req: Request, res: Response) => {
   }
 })
 
-// Send progress reminders to users with no milestone progress (October 2025 and newer groups only)
-router.post('/send-progress-reminders', async (req: Request, res: Response) => {
-  // Set a longer timeout for this endpoint (5 minutes)
+// Send invitation reminder emails (manual trigger)
+router.post('/send-invitation-reminders', async (req: Request, res: Response) => {
   req.setTimeout(300000) // 5 minutes
   
   try {
-    // Find all users in active/closed groups who have no milestone progress
-    // Only include "Bible Bus October 2025 Travelers" and groups created after October 2025
-    const usersWithoutProgress = await getRows(`
-      SELECT DISTINCT
-        u.id as user_id,
-        u.name as user_name,
-        u.email as user_email,
-        bg.id as group_id,
-        bg.name as group_name,
-        bg.start_date
-      FROM users u
-      JOIN group_members gm ON u.id = gm.user_id
-      JOIN bible_groups bg ON gm.group_id = bg.id
-      LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND bg.id = mp.group_id
-      WHERE bg.status IN ('active', 'closed')
-        AND gm.status = 'active'
-        AND u.status = 'active'
-        AND mp.id IS NULL
-        AND (
-          bg.name = 'Bible Bus October 2025 Travelers'
-          OR bg.start_date >= '2025-10-01'
-        )
-      ORDER BY bg.start_date DESC, u.name ASC
-    `)
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Find active groups within their registration window
+    const groups = await getRows(`
+      SELECT id, name, start_date, registration_deadline 
+      FROM bible_groups 
+      WHERE status = 'active' 
+      AND start_date <= ?
+      AND registration_deadline >= ?
+    `, [today, today])
 
-    if (usersWithoutProgress.length === 0) {
-      return res.json({
-        success: true,
-        message: 'All members in October 2025+ groups have progress recorded',
-        data: { sent: 0, total: 0, groups: [] }
-      })
-    }
+    let totalSent = 0
+    let totalFailed = 0
+    const groupResults: any[] = []
 
-    const { sendProgressReminderEmail } = await import('../utils/emailService')
-    let sentCount = 0
-    let failedCount = 0
+    for (const group of groups) {
+      // Send emails only to members who haven't accepted invitation yet
+      const members = await getRows(`
+        SELECT u.id, u.name, u.email
+        FROM group_members gm
+        JOIN users u ON gm.user_id = u.id
+        WHERE gm.group_id = ? 
+          AND gm.status = 'active'
+          AND gm.invitation_accepted_at IS NULL
+      `, [group.id])
 
-    // Send emails in batches of 5 to avoid timeout
-    const batchSize = 5
-    const batches = []
-    for (let i = 0; i < usersWithoutProgress.length; i += batchSize) {
-      batches.push(usersWithoutProgress.slice(i, i + batchSize))
-    }
-
-    // Process each batch
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex]
-      
-      // Send all emails in the current batch in parallel
-      const batchPromises = batch.map(async (user: any) => {
-        try {
-          const emailSent = await sendProgressReminderEmail(
-            user.user_email,
-            user.user_name,
-            user.group_name
-          )
-          if (emailSent) {
-            sentCount++
-            console.log(`Progress reminder sent to: ${user.user_email} (${user.group_name})`)
-            return { success: true, email: user.user_email }
-          } else {
-            failedCount++
-            return { success: false, email: user.user_email }
-          }
-        } catch (error) {
-          failedCount++
-          console.error(`Failed to send to ${user.user_email}:`, error)
-          return { success: false, email: user.user_email, error }
-        }
-      })
-
-      // Wait for all emails in this batch to complete
-      await Promise.all(batchPromises)
-
-      // Add a delay between batches (except after the last batch) to avoid overwhelming the service
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between batches
+      if (members.length === 0) {
+        continue
       }
-    }
 
-    const groups = [...new Set(usersWithoutProgress.map((u: any) => u.group_name))]
+      const { sendInvitationReminderEmail } = await import('../utils/emailService')
+      let sentCount = 0
+      let failedCount = 0
+      
+      // Send in batches of 5
+      const batchSize = 5
+      for (let i = 0; i < members.length; i += batchSize) {
+        const batch = members.slice(i, i + batchSize)
+        const batchPromises = batch.map(async (member: any) => {
+          try {
+            const emailSent = await sendInvitationReminderEmail(
+              member.email,
+              member.name,
+              group.name,
+              group.registration_deadline
+            )
+            if (emailSent) {
+              sentCount++
+              return { success: true, email: member.email }
+            } else {
+              failedCount++
+              return { success: false, email: member.email }
+            }
+          } catch (emailError) {
+            failedCount++
+            console.error(`Failed to send reminder email to ${member.email}:`, emailError)
+            return { success: false, email: member.email }
+          }
+        })
+        await Promise.all(batchPromises)
+        if (i + batchSize < members.length) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+
+      totalSent += sentCount
+      totalFailed += failedCount
+      groupResults.push({
+        groupId: group.id,
+        groupName: group.name,
+        sent: sentCount,
+        failed: failedCount,
+        total: members.length
+      })
+    }
 
     res.json({
       success: true,
-      message: `Progress reminders sent to ${sentCount} member${sentCount !== 1 ? 's' : ''} in October 2025+ groups`,
+      message: `Invitation reminders sent to ${totalSent} member${totalSent !== 1 ? 's' : ''}`,
       data: {
+        sent: totalSent,
+        failed: totalFailed,
+        groups: groupResults
+      }
+    })
+  } catch (error) {
+    console.error('Error sending invitation reminders:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Internal server error' }
+    })
+  }
+})
+
+// Send WhatsApp/Invitation reminder emails (manual trigger)
+router.post('/send-whatsapp-invitation-reminders', async (req: Request, res: Response) => {
+  req.setTimeout(300000) // 5 minutes
+  
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const todayDate = new Date(today)
+    
+    // Find active groups
+    const groups = await getRows(`
+      SELECT id, name, start_date, registration_deadline 
+      FROM bible_groups 
+      WHERE status = 'active' 
+      AND start_date <= ?
+      AND registration_deadline >= ?
+    `, [today, today])
+
+    let totalSent = 0
+    let totalFailed = 0
+    const groupResults: any[] = []
+
+    for (const group of groups) {
+      // Find members who haven't joined WhatsApp OR haven't accepted invitation
+      // AND joined within the last 30 days
+      const members = await getRows(`
+        SELECT 
+          u.id, 
+          u.name, 
+          u.email,
+          gm.join_date,
+          gm.whatsapp_joined,
+          gm.invitation_accepted_at
+        FROM group_members gm
+        JOIN users u ON gm.user_id = u.id
+        WHERE gm.group_id = ? 
+          AND gm.status = 'active'
+          AND (
+            (gm.whatsapp_joined IS NULL OR gm.whatsapp_joined = 0)
+            OR gm.invitation_accepted_at IS NULL
+          )
+      `, [group.id])
+
+      if (members.length === 0) {
+        continue
+      }
+
+      // Filter members who joined within last 30 days
+      const eligibleMembers = members.filter((member: any) => {
+        if (!member.join_date) return false
+        const joinDate = new Date(member.join_date)
+        const daysSinceJoin = Math.floor((todayDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24))
+        return daysSinceJoin >= 0 && daysSinceJoin <= 30
+      })
+
+      if (eligibleMembers.length === 0) {
+        continue
+      }
+
+      const { sendWhatsAppInvitationReminderEmail } = await import('../utils/emailService')
+      let sentCount = 0
+      let failedCount = 0
+      
+      // Send in batches of 5
+      const batchSize = 5
+      for (let i = 0; i < eligibleMembers.length; i += batchSize) {
+        const batch = eligibleMembers.slice(i, i + batchSize)
+        const batchPromises = batch.map(async (member: any) => {
+          try {
+            const joinDate = new Date(member.join_date)
+            const daysSinceJoin = Math.floor((todayDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24))
+            
+            const emailSent = await sendWhatsAppInvitationReminderEmail(
+              member.email,
+              member.name,
+              group.name,
+              daysSinceJoin
+            )
+            if (emailSent) {
+              sentCount++
+              return { success: true, email: member.email }
+            } else {
+              failedCount++
+              return { success: false, email: member.email }
+            }
+          } catch (emailError) {
+            failedCount++
+            console.error(`Failed to send WhatsApp/Invitation reminder email to ${member.email}:`, emailError)
+            return { success: false, email: member.email }
+          }
+        })
+        await Promise.all(batchPromises)
+        if (i + batchSize < eligibleMembers.length) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+
+      totalSent += sentCount
+      totalFailed += failedCount
+      groupResults.push({
+        groupId: group.id,
+        groupName: group.name,
         sent: sentCount,
         failed: failedCount,
-        total: usersWithoutProgress.length,
-        groups: groups
+        total: eligibleMembers.length
+      })
+    }
+
+    res.json({
+      success: true,
+      message: `WhatsApp/Invitation reminders sent to ${totalSent} member${totalSent !== 1 ? 's' : ''}`,
+      data: {
+        sent: totalSent,
+        failed: totalFailed,
+        groups: groupResults
+      }
+    })
+  } catch (error) {
+    console.error('Error sending WhatsApp/Invitation reminders:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Internal server error' }
+    })
+  }
+})
+
+// Send progress reminders to users with no milestone progress (manual trigger)
+router.post('/send-progress-reminders', async (req: Request, res: Response) => {
+  req.setTimeout(300000) // 5 minutes
+  
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const todayDate = new Date(today)
+    
+    // Find active/closed groups
+    const groups = await getRows(`
+      SELECT id, name, start_date, end_date
+      FROM bible_groups 
+      WHERE status IN ('active', 'closed')
+      AND start_date <= ?
+    `, [today])
+
+    let totalSent = 0
+    let totalFailed = 0
+    const groupResults: any[] = []
+
+    for (const group of groups) {
+      const groupStartDate = new Date(group.start_date)
+      const daysSinceGroupStart = Math.floor((todayDate.getTime() - groupStartDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Only send progress reminders if group has been active for at least 60 days
+      if (daysSinceGroupStart < 60) {
+        continue
+      }
+
+      // Members with stale progress (last updated 14+ days ago)
+      const membersWithProgress = await getRows(`
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.email,
+          MAX(mp.updated_at) as last_updated
+        FROM users u
+        JOIN group_members gm ON u.id = gm.user_id
+        JOIN milestone_progress mp ON u.id = mp.user_id AND gm.group_id = mp.group_id
+        WHERE gm.group_id = ?
+          AND gm.status = 'active'
+          AND u.status = 'active'
+          AND mp.updated_at IS NOT NULL
+        GROUP BY u.id, u.name, u.email
+      `, [group.id])
+      
+      const fourteenDaysAgo = new Date(todayDate)
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+      const membersWithStaleProgress = membersWithProgress.filter((member: any) => {
+        if (!member.last_updated) return false
+        const lastUpdated = new Date(member.last_updated)
+        return lastUpdated < fourteenDaysAgo
+      })
+
+      // Members with no progress at all
+      const membersWithNoProgress = await getRows(`
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.email
+        FROM users u
+        JOIN group_members gm ON u.id = gm.user_id
+        LEFT JOIN milestone_progress mp ON u.id = mp.user_id AND gm.group_id = mp.group_id
+        WHERE gm.group_id = ?
+          AND gm.status = 'active'
+          AND u.status = 'active'
+          AND mp.id IS NULL
+      `, [group.id])
+
+      // Combine both lists, removing duplicates
+      const allMembers = [...membersWithStaleProgress, ...membersWithNoProgress]
+      const uniqueMembers = Array.from(
+        new Map(allMembers.map((m: any) => [m.id, m])).values()
+      )
+
+      if (uniqueMembers.length === 0) {
+        continue
+      }
+
+      const { sendProgressReminderEmail } = await import('../utils/emailService')
+      let sentCount = 0
+      let failedCount = 0
+      
+      // Send in batches of 5
+      const batchSize = 5
+      for (let i = 0; i < uniqueMembers.length; i += batchSize) {
+        const batch = uniqueMembers.slice(i, i + batchSize)
+        const batchPromises = batch.map(async (member: any) => {
+          try {
+            const emailSent = await sendProgressReminderEmail(
+              member.email,
+              member.name,
+              group.name
+            )
+            if (emailSent) {
+              sentCount++
+              return { success: true, email: member.email }
+            } else {
+              failedCount++
+              return { success: false, email: member.email }
+            }
+          } catch (error) {
+            failedCount++
+            console.error(`Failed to send progress reminder to ${member.email}:`, error)
+            return { success: false, email: member.email }
+          }
+        })
+        await Promise.all(batchPromises)
+        if (i + batchSize < uniqueMembers.length) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+
+      totalSent += sentCount
+      totalFailed += failedCount
+      groupResults.push({
+        groupId: group.id,
+        groupName: group.name,
+        sent: sentCount,
+        failed: failedCount,
+        total: uniqueMembers.length
+      })
+    }
+
+    res.json({
+      success: true,
+      message: `Progress reminders sent to ${totalSent} member${totalSent !== 1 ? 's' : ''}`,
+      data: {
+        sent: totalSent,
+        failed: totalFailed,
+        groups: groupResults
       }
     })
   } catch (error) {
