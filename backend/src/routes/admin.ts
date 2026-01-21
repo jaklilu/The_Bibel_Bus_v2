@@ -1186,6 +1186,44 @@ router.post('/send-progress-reminders', async (req: Request, res: Response) => {
   }
 })
 
+// Mark email as unreachable (manual admin action)
+router.post('/mark-email-unreachable', [
+  body('email').isEmail().withMessage('Valid email address required')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: { message: errors.array()[0].msg }
+      })
+    }
+
+    const { email } = req.body
+
+    // Import email service functions
+    const { recordEmailFailure } = await import('../utils/emailService')
+    
+    // Mark as unreachable by recording a permanent failure
+    await recordEmailFailure(email, { 
+      message: 'Manually marked as unreachable by admin',
+      code: '550',
+      permanent: true 
+    })
+
+    res.json({
+      success: true,
+      message: `Email ${email} has been marked as unreachable and will no longer receive emails`
+    })
+  } catch (error) {
+    console.error('Error marking email as unreachable:', error)
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to mark email as unreachable' }
+    })
+  }
+})
+
 // Create admin message/announcement
 router.post('/messages', [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),

@@ -41,9 +41,57 @@ export const shouldSkipEmail = async (email: string): Promise<boolean> => {
   }
 }
 
+// Check if error indicates permanent failure (should immediately mark as unreachable)
+const isPermanentFailure = (error: any): boolean => {
+  if (!error) return false
+  
+  const errorMessage = (error.message || error.toString() || '').toLowerCase()
+  const errorCode = error.code || error.responseCode || ''
+  
+  // Check for permanent failure indicators
+  const permanentFailurePatterns = [
+    'inbox full',
+    'out of storage',
+    'overquota',
+    'quota exceeded',
+    'mailbox full',
+    '550', // Permanent failure SMTP code
+    '551', // User not local
+    '553', // Mailbox name not allowed
+    'invalid address',
+    'address not found',
+    'user unknown',
+    'no such user',
+    'recipient address rejected',
+    'mailbox unavailable',
+    'does not exist',
+    'not found',
+    'bounced',
+    'permanent failure'
+  ]
+  
+  // Check error code (like 452 for inbox full, 4.2.2 for over quota)
+  const permanentFailureCodes = ['452', '550', '551', '553', '554', '5.2.2', '4.2.2']
+  if (errorCode && permanentFailureCodes.some(code => String(errorCode).includes(code))) {
+    return true
+  }
+  
+  // Check error message
+  for (const pattern of permanentFailurePatterns) {
+    if (errorMessage.includes(pattern)) {
+      return true
+    }
+  }
+  
+  return false
+}
+
 // Record email failure
-export const recordEmailFailure = async (email: string): Promise<void> => {
+export const recordEmailFailure = async (email: string, error?: any): Promise<void> => {
   try {
+    const isPermanent = isPermanentFailure(error)
+    const failureIncrement = isPermanent ? 3 : 1 // Immediately mark as unreachable for permanent failures
+    
     const existing = await getRow(`
       SELECT id, failure_count 
       FROM email_failures 
@@ -51,22 +99,38 @@ export const recordEmailFailure = async (email: string): Promise<void> => {
     `, [email])
     
     if (existing) {
-      // Update existing record
+      // Update existing record - if permanent failure, set to 3+ immediately
+      const newFailureCount = isPermanent 
+        ? Math.max(existing.failure_count, 3) // Set to at least 3 for permanent failures
+        : existing.failure_count + 1
+      
       await runQuery(`
         UPDATE email_failures 
-        SET failure_count = failure_count + 1,
+        SET failure_count = ?,
             last_failure_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE email = ?
-      `, [email])
-      console.log(`📧 Recorded email failure for ${email} (total: ${existing.failure_count + 1})`)
+      `, [newFailureCount, email])
+      
+      if (isPermanent) {
+        console.log(`🚫 Marked ${email} as UNREACHABLE (permanent failure detected: ${error?.message || 'unknown error'})`)
+      } else {
+        console.log(`📧 Recorded email failure for ${email} (total: ${newFailureCount})`)
+      }
     } else {
-      // Create new record
+      // Create new record - if permanent failure, start at 3
+      const initialFailureCount = isPermanent ? 3 : 1
+      
       await runQuery(`
         INSERT INTO email_failures (email, failure_count, last_failure_at)
-        VALUES (?, 1, CURRENT_TIMESTAMP)
-      `, [email])
-      console.log(`📧 Recorded first email failure for ${email}`)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+      `, [email, initialFailureCount])
+      
+      if (isPermanent) {
+        console.log(`🚫 Marked ${email} as UNREACHABLE immediately (permanent failure: ${error?.message || 'unknown error'})`)
+      } else {
+        console.log(`📧 Recorded first email failure for ${email}`)
+      }
     }
   } catch (error) {
     console.error('Error recording email failure:', error)
@@ -179,7 +243,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
     return true
   } catch (error) {
     console.error('Error sending password reset email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -295,7 +359,7 @@ export const sendAccountRecoveryEmail = async (
     return true
   } catch (error) {
     console.error('Error sending account recovery email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -380,7 +444,7 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
     return true
   } catch (error) {
     console.error('Error sending donation confirmation email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -468,7 +532,7 @@ export const sendInvitationReminderEmail = async (
     return true
   } catch (error) {
     console.error('Error sending invitation reminder email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -560,7 +624,7 @@ export const sendWelcomeEmail = async (
     return true
   } catch (error) {
     console.error('Error sending welcome email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -659,7 +723,7 @@ export const sendWhatsAppInvitationReminderEmail = async (
     return true
   } catch (error) {
     console.error('Error sending WhatsApp/Invitation reminder email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
@@ -751,7 +815,7 @@ export const sendProgressReminderEmail = async (
     return true
   } catch (error) {
     console.error('Error sending progress reminder email:', error)
-    await recordEmailFailure(email)
+    await recordEmailFailure(email, error)
     return false
   }
 }
