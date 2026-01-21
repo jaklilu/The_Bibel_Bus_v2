@@ -121,6 +121,9 @@ const Admin = () => {
   const [sendingInvitationReminders, setSendingInvitationReminders] = useState(false)
   const [sendingWhatsAppReminders, setSendingWhatsAppReminders] = useState(false)
   const [sendingProgressReminders, setSendingProgressReminders] = useState(false)
+  const [unreachableEmail, setUnreachableEmail] = useState('')
+  const [markingUnreachable, setMarkingUnreachable] = useState(false)
+  const [unreachableMessage, setUnreachableMessage] = useState('')
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -536,6 +539,49 @@ const Admin = () => {
       alert(`❌ ${errorMessage}\n\nCheck the browser console for more details.`)
     } finally {
       setSendingProgressReminders(false)
+    }
+  }
+
+  const handleMarkEmailUnreachable = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUnreachableMessage('')
+
+    if (!unreachableEmail || !unreachableEmail.includes('@')) {
+      setUnreachableMessage('Please enter a valid email address')
+      return
+    }
+
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    if (!confirm(`Mark ${unreachableEmail} as unreachable? This will prevent all future emails from being sent to this address.`)) {
+      return
+    }
+
+    setMarkingUnreachable(true)
+    try {
+      const response = await fetch('/api/admin/mark-email-unreachable', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: unreachableEmail })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setUnreachableMessage(`✅ ${data.message}`)
+        setUnreachableEmail('')
+      } else {
+        setUnreachableMessage(`❌ ${data.error?.message || 'Failed to mark email as unreachable'}`)
+      }
+    } catch (err: any) {
+      console.error('Error marking email as unreachable:', err)
+      setUnreachableMessage('❌ Failed to mark email as unreachable. Please try again.')
+    } finally {
+      setMarkingUnreachable(false)
     }
   }
 
@@ -1641,10 +1687,69 @@ const Admin = () => {
                 </div>
               </div>
 
+              {/* Mark Email as Unreachable */}
+              <div className="mt-6 bg-red-600/20 rounded-lg p-6 border border-red-500/30">
+                <div className="flex items-center mb-4">
+                  <Mail className="h-6 w-6 text-red-400 mr-3" />
+                  <h3 className="text-lg font-semibold text-white">Mark Email as Unreachable</h3>
+                </div>
+                <p className="text-purple-200 text-sm mb-4">
+                  If you receive a bounce message (like "inbox full" or "invalid address"), mark the email as unreachable to stop all future emails.
+                </p>
+                <form onSubmit={handleMarkEmailUnreachable} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={unreachableEmail}
+                      onChange={(e) => {
+                        setUnreachableEmail(e.target.value)
+                        setUnreachableMessage('')
+                      }}
+                      placeholder="e.g., mahletdesta@gmail.com"
+                      className="w-full px-4 py-2 border border-purple-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
+                      required
+                    />
+                  </div>
+                  {unreachableMessage && (
+                    <div className={`p-3 rounded-lg text-sm ${
+                      unreachableMessage.startsWith('✅') 
+                        ? 'bg-green-600/20 text-green-300 border border-green-500/30' 
+                        : 'bg-red-600/20 text-red-300 border border-red-500/30'
+                    }`}>
+                      {unreachableMessage}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={markingUnreachable || !unreachableEmail}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {markingUnreachable ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Marking...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-5 w-5" />
+                        <span>Mark as Unreachable</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+                <p className="text-purple-300 text-xs mt-4">
+                  <strong>Note:</strong> This will immediately set the failure count to 3+, preventing all future emails to this address.
+                </p>
+              </div>
+
               <div className="mt-6 bg-purple-700/30 rounded-lg p-4 border border-purple-500/20">
                 <h4 className="text-white font-semibold mb-2">📧 Email Safety Features</h4>
                 <ul className="text-purple-200 text-sm space-y-1">
                   <li>• Emails are automatically skipped for addresses with 3+ failed attempts</li>
+                  <li>• Permanent failures (inbox full, invalid address) are immediately marked as unreachable</li>
                   <li>• All emails are sent in batches of 5 to prevent timeouts</li>
                   <li>• Failed sends are tracked and logged</li>
                   <li>• Each email type has specific targeting criteria</li>
