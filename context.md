@@ -64,28 +64,26 @@ cd backend && npm run db:reset
 **Status**: ✅ **COMPLETED**
 
 ### **What Was Done**
-- **Fixed Status Updates Persistence**: Resolved issue where WhatsApp/Invitation status toggles weren't persisting - added auto-refresh, verification logging, and data type normalization
-- **Email Reminder System**: Implemented automated email reminders:
-  - WhatsApp/Invitation reminders for first 30 days only (stops after 30 days)
-  - Progress report reminders based on milestone_progress.updated_at (sends if no update in 14+ days for groups active 60+ days)
-- **Email Failure Tracking**: Implemented system to stop sending emails after 3 failed attempts - tracks failures in database, skips unreachable addresses automatically
-- **Status Page Improvements**: 
-  - Sorted groups by most recent first (created_at DESC)
-  - Excluded October 2024 and January 2025 groups from status tracking
-  - Explicitly included October 2025 group
-- **Admin Groups Tab**: Sorted groups by most recent first for better organization
-- **Email Links Fixed**: Updated all email links to point to production domain `https://thebiblebus.net/dashboard` instead of localhost
+- **Converted Email Reminders to Manual**: Removed automated daily email reminders from cron jobs - all three reminder types (Invitation, WhatsApp/Invitation, Progress Report) are now manual triggers from Admin Email tab
+- **Email Tab in Admin Console**: Created new "Email" tab with three manual send buttons for each email reminder type, includes descriptions, target criteria, and batch processing feedback
+- **Improved Email Failure Detection**: Enhanced failure detection to immediately mark emails as unreachable for permanent failures (inbox full, invalid addresses, etc.) - no longer waits for 3 attempts
+- **Manual Email Unreachable Marking**: Added UI in Email tab to manually mark emails as unreachable when receiving bounce messages - includes form, validation, and confirmation
+- **Admin Endpoints**: Created three new admin endpoints for manual email sending:
+  - `POST /api/admin/send-invitation-reminders`
+  - `POST /api/admin/send-whatsapp-invitation-reminders`
+  - `POST /api/admin/mark-email-unreachable`
+- **Permanent Failure Detection**: Added intelligent error detection that recognizes permanent failures (error codes 452, 550, 4.2.2, etc.) and immediately blocks future emails
 
 ### **Current State**
-- ✅ All email reminder systems working and integrated into cron jobs
-- ✅ Email failure tracking prevents sending to unreachable addresses
-- ✅ Status page shows most recent groups first with proper exclusions
-- ✅ All email links point to correct production dashboard URL
-- ✅ All changes tested, committed, and pushed to production
+- ✅ All email reminders are now manual - admin has full control over when to send
+- ✅ Email tab provides easy access to all email management functions
+- ✅ Permanent failures (inbox full, invalid addresses) are immediately blocked
+- ✅ Manual marking UI allows quick response to bounce messages
+- ✅ All changes tested, built successfully, and pushed to production
 
 ### **Next Priorities** (if any)
-- Monitor email reminder effectiveness and adjust timing if needed
-- Review email failure logs to identify common failure patterns
+- Monitor manual email sending usage and effectiveness
+- Consider adding email failure statistics/reporting in Email tab
 
 ---
 
@@ -378,7 +376,94 @@ CREATE TABLE password_reset_tokens (
 
 ## 🔄 **Recent Major Updates**
 
-### **Email Reminder & Failure Tracking System** (January 2026) ✨ **LATEST UPDATE!**
+### **Manual Email Management System** (January 2026) ✨ **LATEST UPDATE!**
+
+#### **Problem Identified** 🎯
+- Automated daily email reminders were sending emails without admin control
+- Emails were being sent to unreachable addresses (inbox full, invalid addresses) repeatedly
+- No way to manually mark emails as unreachable when receiving bounce messages
+- Admin had no control over when reminder emails were sent
+
+#### **Solutions Implemented** ✅
+
+**1. Converted Email Reminders to Manual Triggers** (`backend/src/services/cronService.ts`, `backend/src/routes/admin.ts`)
+- **Change**: Removed three email reminder functions from automated cron jobs
+- **New Endpoints**: Created three admin endpoints for manual email sending:
+  - `POST /api/admin/send-invitation-reminders` - Sends to members who haven't accepted invitation
+  - `POST /api/admin/send-whatsapp-invitation-reminders` - Sends to members who haven't joined WhatsApp OR accepted invitation (30-day window)
+  - `POST /api/admin/send-progress-reminders` - Sends to members with stale/no progress (60+ day groups)
+- **Batch Processing**: All endpoints send emails in batches of 5 to prevent timeouts
+- **Feedback**: Returns detailed results with sent/failed counts and group breakdowns
+- **Files Modified**:
+  - `backend/src/services/cronService.ts` (commented out automated reminders)
+  - `backend/src/routes/admin.ts` (added three new endpoints)
+
+**2. Email Tab in Admin Console** (`frontend/src/pages/Admin.tsx`)
+- **Feature**: Added new "Email" tab to admin navigation (mobile and desktop)
+- **UI Components**: Three cards, one for each email reminder type:
+  - Invitation Reminder card
+  - WhatsApp/Invitation Reminder card
+  - Progress Report Reminder card
+- **Each Card Includes**:
+  - Description of what the email does
+  - Target criteria explanation
+  - Send button with loading state
+  - Confirmation dialogs before sending
+- **Safety Features Section**: Info box explaining email safety features
+- **Files Modified**: `frontend/src/pages/Admin.tsx`
+
+**3. Enhanced Email Failure Detection** (`backend/src/utils/emailService.ts`)
+- **Permanent Failure Detection**: Added `isPermanentFailure()` function that detects:
+  - Error codes: 452 (inbox full), 550, 551, 553, 554, 4.2.2, 5.2.2
+  - Error messages: "inbox full", "out of storage", "overquota", "invalid address", "user unknown", etc.
+- **Immediate Blocking**: Permanent failures immediately set failure_count to 3+ (no waiting for 3 attempts)
+- **Improved Error Handling**: All `recordEmailFailure()` calls now pass error object for analysis
+- **Logging**: Enhanced logging shows when emails are marked as unreachable immediately
+- **Files Modified**: `backend/src/utils/emailService.ts`
+
+**4. Manual Email Unreachable Marking** (`backend/src/routes/admin.ts`, `frontend/src/pages/Admin.tsx`)
+- **Backend Endpoint**: `POST /api/admin/mark-email-unreachable` - Allows admin to manually mark emails as unreachable
+- **Frontend UI**: Added form in Email tab with:
+  - Email input field with validation
+  - "Mark as Unreachable" button
+  - Confirmation dialog
+  - Success/error message display
+  - Auto-clear on success
+- **Use Case**: When admin receives bounce messages (like "inbox full"), can immediately mark email as unreachable
+- **Files Modified**:
+  - `backend/src/routes/admin.ts` (new endpoint)
+  - `frontend/src/pages/Admin.tsx` (new UI section)
+
+#### **Technical Implementation** 🔧
+
+**Manual Email Sending**:
+- All three endpoints use 5-minute timeout
+- Batch processing (5 emails at a time) with 500ms delays between batches
+- Comprehensive error handling with detailed feedback
+- Returns group-level breakdowns for transparency
+
+**Permanent Failure Detection**:
+- Checks both error codes and error messages
+- Pattern matching for common bounce message formats
+- Immediately sets failure_count to 3+ for permanent failures
+- Regular failures still increment by 1 (up to 3 attempts)
+
+**Email Tab UI**:
+- Responsive design (mobile and desktop)
+- Loading states for all buttons
+- Confirmation dialogs to prevent accidental sends
+- Clear visual hierarchy with card-based layout
+
+#### **Benefits** ✅
+- ✅ Full admin control over when emails are sent
+- ✅ Immediate blocking of unreachable addresses (no wasted attempts)
+- ✅ Easy manual marking of unreachable emails from bounce messages
+- ✅ Better resource management (no automatic daily sends)
+- ✅ Clear visibility into email sending operations
+
+---
+
+### **Email Reminder & Failure Tracking System** (Previous) ✨ **MAJOR UPDATE!**
 
 #### **Problem Identified** 🎯
 - Members who hadn't joined WhatsApp or accepted invitations were not receiving targeted reminders
@@ -2233,7 +2318,7 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 ## 📅 **DOCUMENT METADATA**
 
 **Last Updated**: 01-16-26  
-**Last Session**: Email reminder system fully implemented (WhatsApp/Invitation reminders for 30 days, progress report reminders), email failure tracking system (stops after 3 failures), fixed status update persistence issues, improved Status page sorting and exclusions, fixed all email links to point to production dashboard (https://thebiblebus.net/dashboard) - all tested, committed, and ready for production use
+**Last Session**: Converted email reminders from automated to manual - removed three email reminder functions from cron jobs, created admin endpoints and Email tab UI for manual sending, enhanced email failure detection to immediately block permanent failures (inbox full, invalid addresses), added manual email unreachable marking UI in Email tab - all tested, built successfully, and ready for production use
 
 **Format Version**: 2.0 (Agent-Optimized)  
 **Maintained By**: AI Agents (follow format guidelines above)
