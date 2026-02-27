@@ -18,7 +18,7 @@ const parseDateSafe = (raw: string): Date => {
   if (textParts) {
     const [, month, day, year] = textParts;
     // Only use fallback when year is missing; use parsed year otherwise (don't default to current year)
-    const fixedYear = year || "2026";
+    const fixedYear = year || "2025";
     const d = new Date(`${month} ${day}, ${fixedYear}`);
     if (!isNaN(d.getTime())) return d;
   }
@@ -67,10 +67,13 @@ const Reflections: React.FC = () => {
           .map((line) => {
             const cols = line.split(",");
             let [name, date, ...rest] = cols;
-            // CSV split breaks "December 31, 2025" into date="December 31", rest[0]=" 2025" - merge year back
-            if (rest.length > 0 && !/\d{4}/.test(date) && /^\s*\d{4}\s*$/.test(rest[0])) {
-              date = `${date},${rest[0]}`.trim();
-              rest = rest.slice(1);
+            // CSV split breaks "Month Day, Year" into date="Month Day", rest[0]=" Year" (or " Year") - merge year back
+            if (rest.length > 0 && !/\d{4}/.test(date)) {
+              const possibleYear = rest[0].trim().replace(/^["']|["']$/g, "");
+              if (/^\d{4}$/.test(possibleYear)) {
+                date = `${date}, ${possibleYear}`.trim();
+                rest = rest.slice(1);
+              }
             }
             let combined = rest.join(",").trim();
 
