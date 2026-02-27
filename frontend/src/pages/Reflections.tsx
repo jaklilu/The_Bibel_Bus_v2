@@ -18,7 +18,7 @@ const parseDateSafe = (raw: string): Date => {
   if (textParts) {
     const [, month, day, year] = textParts;
     // Only use fallback when year is missing; use parsed year otherwise (don't default to current year)
-    const fixedYear = year || "2025";
+    const fixedYear = year || "2026";
     const d = new Date(`${month} ${day}, ${fixedYear}`);
     if (!isNaN(d.getTime())) return d;
   }
