@@ -11,11 +11,32 @@ interface ReflectionEntry {
 
 const parseDateSafe = (raw: string): Date => {
   const cleaned = raw?.trim().replace(/"/g, "") || "";
-  const parts = cleaned.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
-  if (!parts) return new Date("1900-01-01");
-  const [, month, day, year] = parts;
-  const fixedYear = year || "2025";
-  return new Date(`${month} ${day}, ${fixedYear}`);
+  if (!cleaned) return new Date("1900-01-01");
+
+  // "Month Day, Year" or "Month Day" (e.g. December 31, 2025, January 1, 2026)
+  const textParts = cleaned.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
+  if (textParts) {
+    const [, month, day, year] = textParts;
+    const fixedYear = year || String(new Date().getFullYear());
+    const d = new Date(`${month} ${day}, ${fixedYear}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // ISO (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    const d = new Date(cleaned);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // US numeric M/D/YYYY or MM/DD/YYYY
+  const numericMatch = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (numericMatch) {
+    const [, month, day, year] = numericMatch;
+    const d = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return new Date("1900-01-01");
 };
 
 const formatDate = (dateString: string): string => {
@@ -37,7 +58,7 @@ const Reflections: React.FC = () => {
         const SHEET_URL =
           "https://docs.google.com/spreadsheets/d/e/2PACX-1vT7U9IR3YSKWJXKKLROXUw3e4ciw_PeLVevtD1ykxsE9mkk05r_G547ufITJW_idnNSo0tpX9MfZgqs/pub?output=csv";
 
-        const res = await fetch(SHEET_URL);
+        const res = await fetch(`${SHEET_URL}&_=${Date.now()}`);
         const text = await res.text();
         const rows = text.split("\n").slice(1);
 
