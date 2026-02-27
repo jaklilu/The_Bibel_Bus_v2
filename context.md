@@ -60,29 +60,25 @@ cd backend && npm run db:reset
 
 ## 📋 **LAST SESSION SUMMARY**
 
-**Date**: 01-16-26  
+**Date**: 02-27-26  
 **Status**: ✅ **COMPLETED**
 
 ### **What Was Done**
-- **Converted Email Reminders to Manual**: Removed automated daily email reminders from cron jobs - all three reminder types (Invitation, WhatsApp/Invitation, Progress Report) are now manual triggers from Admin Email tab
-- **Email Tab in Admin Console**: Created new "Email" tab with three manual send buttons for each email reminder type, includes descriptions, target criteria, and batch processing feedback
-- **Improved Email Failure Detection**: Enhanced failure detection to immediately mark emails as unreachable for permanent failures (inbox full, invalid addresses, etc.) - no longer waits for 3 attempts
-- **Manual Email Unreachable Marking**: Added UI in Email tab to manually mark emails as unreachable when receiving bounce messages - includes form, validation, and confirmation
-- **Admin Endpoints**: Created three new admin endpoints for manual email sending:
-  - `POST /api/admin/send-invitation-reminders`
-  - `POST /api/admin/send-whatsapp-invitation-reminders`
-  - `POST /api/admin/mark-email-unreachable`
-- **Permanent Failure Detection**: Added intelligent error detection that recognizes permanent failures (error codes 452, 550, 4.2.2, etc.) and immediately blocks future emails
+- **Reflections Page Date Parsing Fix**: Public Reflections page (Google Sheet CSV) had stopped showing entries after Dec 31, 2025; 2026 entries were missing and some 2025 dates showed as 2026
+- **Root Cause**: (1) Hardcoded year fallback `"2025"` was later changed to current year, turning 2025-only dates into 2026; (2) CSV `split(",")` breaks date column when it contains a comma (e.g. "December 31, 2025" → date="December 31", next column=" 2025"); (3) When the year column was quoted (e.g. `' 2026"'`), the merge logic didn't strip quotes so the year wasn't reattached
+- **Fixes in `frontend/src/pages/Reflections.tsx`**:
+  - **Year merge**: After splitting CSV by comma, if `date` has no 4-digit year and `rest[0]` is a 4-digit year (trimmed and quote-stripped), merge it back so the full date is parsed (e.g. "February 27, 2026")
+  - **parseDateSafe**: Kept fallback year `"2025"` when year is missing (no current-year default that would mis-label 2025 entries); added support for ISO (YYYY-MM-DD) and US numeric (M/D/YYYY) dates
+  - **Cache-busting**: Added `&_=${Date.now()}` to the CSV fetch URL so the browser doesn't serve a stale cached response
+- **Result**: Newest entry (e.g. Feb 27, 2026) shows first; oldest (Jan 1, 2025) at bottom; 2025 and 2026 dates display correctly
 
 ### **Current State**
-- ✅ All email reminders are now manual - admin has full control over when to send
-- ✅ Email tab provides easy access to all email management functions
-- ✅ Permanent failures (inbox full, invalid addresses) are immediately blocked
-- ✅ Manual marking UI allows quick response to bounce messages
-- ✅ All changes tested, built successfully, and pushed to production
+- ✅ Reflections page loads from published Google Sheet CSV and shows all entries in correct date order (newest first)
+- ✅ 2026 entries visible at top; 2025 entries retain correct year
+- ✅ Changes committed and pushed to `main`
 
 ### **Next Priorities** (if any)
-- Monitor manual email sending usage and effectiveness
+- Monitor manual email sending usage and effectiveness (from previous session)
 - Consider adding email failure statistics/reporting in Email tab
 
 ---
@@ -376,7 +372,29 @@ CREATE TABLE password_reset_tokens (
 
 ## 🔄 **Recent Major Updates**
 
-### **Manual Email Management System** (January 2026) ✨ **LATEST UPDATE!**
+### **Reflections Page Date Parsing Fix** (February 2026) ✨ **LATEST UPDATE!**
+
+#### **Problem Identified** 🎯
+- Reflections page (Google Sheet CSV) stopped showing new entries after Dec 31, 2025
+- 2026 entries (e.g. Feb 27, 2026) did not appear; first visible entry was Dec 31, 2025
+- Some 2025 dates had incorrectly displayed as 2026 after an earlier fix
+
+#### **Root Cause** 🔍
+- **CSV comma split**: Date column values like "December 31, 2025" or "February 27, 2026" were split by `line.split(",")`, so `date` became "December 31" or "February 27" and the year landed in the next column (`rest[0]`).
+- **Year not reattached**: Logic to merge the year back only matched unquoted 4-digit strings; when CSV had quoted year (e.g. `' 2026"'`), the merge failed and `parseDateSafe` saw no year.
+- **Fallback year**: Using current year when year was missing turned 2025-only dates into 2026.
+
+#### **Solutions Implemented** ✅
+- **Year merge** (`frontend/src/pages/Reflections.tsx`): After splitting by comma, if `date` has no 4-digit year and `rest[0]` (trimmed and quote-stripped) is a 4-digit year, merge it back so the full date string is passed to the parser.
+- **parseDateSafe**: Use fallback year `"2025"` only when year is missing (no current-year default); support ISO (YYYY-MM-DD) and US numeric (M/D/YYYY) formats in addition to "Month Day, Year".
+- **Cache-busting**: Append `&_=${Date.now()}` to the CSV fetch URL so the browser does not serve a stale cached response.
+
+#### **Result** 🎯
+- Newest entry (e.g. Feb 27, 2026) appears first; oldest (Jan 1, 2025) at bottom; 2025 and 2026 dates display correctly. Changes pushed to `main`.
+
+---
+
+### **Manual Email Management System** (January 2026)
 
 #### **Problem Identified** 🎯
 - Automated daily email reminders were sending emails without admin control
@@ -2317,8 +2335,8 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ## 📅 **DOCUMENT METADATA**
 
-**Last Updated**: 01-16-26  
-**Last Session**: Converted email reminders from automated to manual - removed three email reminder functions from cron jobs, created admin endpoints and Email tab UI for manual sending, enhanced email failure detection to immediately block permanent failures (inbox full, invalid addresses), added manual email unreachable marking UI in Email tab - all tested, built successfully, and ready for production use
+**Last Updated**: 02-27-26  
+**Last Session**: Fixed Reflections page date parsing - reattach year when CSV comma splits "Month Day, Year", handle quoted year in merge, keep 2025 fallback and support ISO/numeric dates; added cache-busting to CSV fetch. 2026 entries (e.g. Feb 27) now show at top, 2025 entries display correctly; changes pushed to main.
 
 **Format Version**: 2.0 (Agent-Optimized)  
 **Maintained By**: AI Agents (follow format guidelines above)
