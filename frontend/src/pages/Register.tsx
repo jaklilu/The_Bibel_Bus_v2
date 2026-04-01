@@ -254,9 +254,9 @@ const Register = () => {
                   When you join, please introduce yourself using the format below:
                 </p>
                 <div className="pl-1 border-l-2 border-purple-500/50 space-y-1 text-purple-200 text-sm">
-                  <p>Name: Jay Aklilu</p>
-                  <p>City you live in: Los Angeles</p>
-                  <p>Who referred you: I am your host</p>
+                  <p><strong className="text-white">Name:</strong> Jay Aklilu</p>
+                  <p><strong className="text-white">City you live in:</strong> Los Angeles</p>
+                  <p><strong className="text-white">Who referred you:</strong> I am your host</p>
                 </div>
               </div>
               <p className="text-purple-300 text-sm">
