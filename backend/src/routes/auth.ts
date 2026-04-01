@@ -14,6 +14,100 @@ import crypto from 'crypto'
 
 const router = Router()
 
+/** JWT + groupStatus for members — same shape as login-email-only (used after register too). */
+async function buildMemberSessionData(userId: number): Promise<{
+  token: string
+  user: { id: number; name: string; email: string; phone: any; role: any; trophies_count: number }
+  groupStatus: Record<string, unknown>
+} | null> {
+  const user = await getRow(
+    'SELECT id, name, email, phone, password_hash, status, role, trophies_count FROM users WHERE id = ?',
+    [userId]
+  )
+  if (!user || user.status !== 'active') {
+    return null
+  }
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    process.env.JWT_SECRET || 'your-secret-key',
+    { expiresIn: '24h' }
+  )
+  const userGroups = await getRows(`
+      SELECT 
+        bg.id,
+        bg.name,
+        bg.start_date,
+        bg.end_date,
+        bg.registration_deadline,
+        bg.status as group_status,
+        bg.max_members,
+        gm.join_date,
+        gm.whatsapp_joined
+      FROM group_members gm
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      WHERE gm.user_id = ? AND gm.status = 'active'
+      ORDER BY bg.start_date DESC
+    `, [user.id])
+
+  const currentActiveGroup = await GroupService.getCurrentActiveGroup()
+  const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
+
+  const inCurrentGroup = userGroups.some((g: any) =>
+    currentActiveGroup && g.id === currentActiveGroup.id
+  )
+
+  const today = new Date().toISOString().split('T')[0]
+  const canJoinCurrent = currentActiveGroup &&
+    currentActiveGroup.registration_deadline >= today &&
+    !userGroups.some((g: any) => g.id === currentActiveGroup.id)
+
+  const canJoinNext = nextUpcomingGroup &&
+    nextUpcomingGroup.registration_deadline >= today &&
+    !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+
+  const groupStatus = {
+    inCurrentGroup,
+    userGroups: userGroups.map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      start_date: g.start_date,
+      end_date: g.end_date,
+      group_status: g.group_status,
+      join_date: g.join_date,
+      whatsapp_joined: g.whatsapp_joined || false
+    })),
+    currentGroup: currentActiveGroup ? {
+      id: currentActiveGroup.id,
+      name: currentActiveGroup.name,
+      start_date: currentActiveGroup.start_date,
+      registration_deadline: currentActiveGroup.registration_deadline,
+      max_members: currentActiveGroup.max_members
+    } : null,
+    nextGroup: nextUpcomingGroup ? {
+      id: nextUpcomingGroup.id,
+      name: nextUpcomingGroup.name,
+      start_date: nextUpcomingGroup.start_date,
+      registration_deadline: nextUpcomingGroup.registration_deadline,
+      max_members: nextUpcomingGroup.max_members
+    } : null,
+    canJoinCurrent,
+    canJoinNext
+  }
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      trophies_count: user.trophies_count || 0
+    },
+    groupStatus
+  }
+}
+
 // Helper to convert trophy count to tier
 const getTrophyTier = (count: number): 'diamond' | 'platinum' | 'gold' | 'silver' | 'bronze' => {
   if (count >= 10) return 'diamond'
@@ -329,12 +423,16 @@ router.post('/register', [
         // Don't fail registration if email fails
       }
     }
-    
-    res.status(201).json({
-      success: true,
-      message: groupAssignment.success ? 'User registered successfully and assigned to group' : 'User registered successfully. We will place you into a group soon.',
-      data: {
-        user: {
+
+    const session = await buildMemberSessionData(result.id)
+    const userPayload = session
+      ? {
+          ...session.user,
+          city,
+          mailing_address,
+          referral
+        }
+      : {
           id: result.id,
           name,
           email,
@@ -343,7 +441,15 @@ router.post('/register', [
           mailing_address,
           referral,
           trophies_count: 0
-        },
+        }
+
+    res.status(201).json({
+      success: true,
+      message: groupAssignment.success ? 'User registered successfully and assigned to group' : 'User registered successfully. We will place you into a group soon.',
+      data: {
+        user: userPayload,
+        token: session?.token ?? null,
+        groupStatus: session?.groupStatus ?? null,
         group: group ? {
           id: group?.id,
           name: group?.name,
@@ -602,88 +708,21 @@ router.post('/login-email-only', [
       })
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    )
-
-    // Get user's group memberships and status (same as regular login)
-    const userGroups = await getRows(`
-      SELECT 
-        bg.id,
-        bg.name,
-        bg.start_date,
-        bg.end_date,
-        bg.registration_deadline,
-        bg.status as group_status,
-        bg.max_members,
-        gm.join_date,
-        gm.whatsapp_joined
-      FROM group_members gm
-      JOIN bible_groups bg ON gm.group_id = bg.id
-      WHERE gm.user_id = ? AND gm.status = 'active'
-      ORDER BY bg.start_date DESC
-    `, [user.id])
-
-    const currentActiveGroup = await GroupService.getCurrentActiveGroup()
-    const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
-
-    const inCurrentGroup = userGroups.some((g: any) => 
-      currentActiveGroup && g.id === currentActiveGroup.id
-    )
-    
-    const today = new Date().toISOString().split('T')[0]
-    const canJoinCurrent = currentActiveGroup && 
-      currentActiveGroup.registration_deadline >= today &&
-      !userGroups.some((g: any) => g.id === currentActiveGroup.id)
-    
-    const canJoinNext = nextUpcomingGroup && 
-      nextUpcomingGroup.registration_deadline >= today &&
-      !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+    const session = await buildMemberSessionData(user.id)
+    if (!session) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Could not start session' }
+      })
+    }
 
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          trophies_count: user.trophies_count || 0
-        },
-        token,
-        groupStatus: {
-          inCurrentGroup,
-          userGroups: userGroups.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            start_date: g.start_date,
-            end_date: g.end_date,
-            group_status: g.group_status,
-            join_date: g.join_date,
-            whatsapp_joined: g.whatsapp_joined || false
-          })),
-          currentGroup: currentActiveGroup ? {
-            id: currentActiveGroup.id,
-            name: currentActiveGroup.name,
-            start_date: currentActiveGroup.start_date,
-            registration_deadline: currentActiveGroup.registration_deadline,
-            max_members: currentActiveGroup.max_members
-          } : null,
-          nextGroup: nextUpcomingGroup ? {
-            id: nextUpcomingGroup.id,
-            name: nextUpcomingGroup.name,
-            start_date: nextUpcomingGroup.start_date,
-            registration_deadline: nextUpcomingGroup.registration_deadline,
-            max_members: nextUpcomingGroup.max_members
-          } : null,
-          canJoinCurrent,
-          canJoinNext
-        }
+        user: session.user,
+        token: session.token,
+        groupStatus: session.groupStatus
       }
     })
   } catch (error) {

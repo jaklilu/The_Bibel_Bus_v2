@@ -173,12 +173,15 @@ const Register = () => {
         localStorage.removeItem('groupStatus')
         localStorage.removeItem('adminToken')
         
-        // Store token if provided
+        // Logged in immediately — same session as email-only login (JWT + group status)
         if (data.data?.token) {
           localStorage.setItem('userToken', data.data.token)
           localStorage.setItem('userData', JSON.stringify(data.data.user))
         }
-        
+        if (data.data?.groupStatus) {
+          localStorage.setItem('groupStatus', JSON.stringify(data.data.groupStatus))
+        }
+
         setTimeout(() => {
           navigate('/dashboard')
         }, 2000)
