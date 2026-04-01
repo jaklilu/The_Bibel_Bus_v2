@@ -572,10 +572,15 @@ const Dashboard = () => {
                 onClick={async () => {
                   if (!inviteAvailable) return
                   
+                  // Mobile browsers often block window.open if it's not directly tied to the click event.
+                  // Open a blank tab synchronously, then navigate it after async work completes.
+                  const opened = window.open('about:blank', '_blank')
+
                   try {
                     const token = localStorage.getItem('userToken')
                     if (!token) {
-                      window.open(inviteLink, '_blank')
+                      if (opened) opened.location.href = inviteLink
+                      else window.location.href = inviteLink
                       return
                     }
                     
@@ -586,16 +591,20 @@ const Dashboard = () => {
                     
                     const data = await response.json()
                     
+                    const targetUrl =
+                      (data?.success && data?.data?.youversion_url) ? data.data.youversion_url : inviteLink
+
                     if (data.success && data.data.youversion_url) {
-                      window.open(data.data.youversion_url, '_blank')
-                    } else if (data.success) {
-                      window.open(inviteLink, '_blank')
+                      if (opened) opened.location.href = targetUrl
+                      else window.location.href = targetUrl
                     } else {
-                      window.open(inviteLink, '_blank')
+                      if (opened) opened.location.href = targetUrl
+                      else window.location.href = targetUrl
                     }
                   } catch (error) {
                     console.error('Error accepting invitation:', error)
-                    window.open(inviteLink, '_blank')
+                    if (opened) opened.location.href = inviteLink
+                    else window.location.href = inviteLink
                   }
                 }}
                 disabled={!inviteAvailable}
