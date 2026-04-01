@@ -474,7 +474,7 @@ const Dashboard = () => {
                   : 'text-purple-100 hover:bg-purple-700/40'
               }`}
             >
-              Getting Started
+              Resources
             </button>
           </div>
         </div>
