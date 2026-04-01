@@ -3,10 +3,11 @@ import { motion } from 'framer-motion'
 import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, Loader } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-/** Hard link to skip WhatsApp step and start at email (same as old “I’ve Joined – Continue”): `/register?step=email` */
+/** Skip WhatsApp and start at email: `/register?sign-up=1` (legacy: `?step=email`) */
 const getStepFromSearch = (params: URLSearchParams): 'whatsapp' | 'email' | 'form' | 'returning' => {
-  const s = params.get('step')
-  if (s === 'email') return 'email'
+  const signUp = params.get('sign-up')
+  if (signUp === '1' || signUp === 'true' || signUp === '') return 'email'
+  if (params.get('step') === 'email') return 'email'
   return 'whatsapp'
 }
 
