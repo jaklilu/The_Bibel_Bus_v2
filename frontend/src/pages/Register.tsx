@@ -1,24 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, Loader } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-
-/** Skip WhatsApp and start at email: `/register?sign-up=1` (legacy: `?step=email`) */
-const getStepFromSearch = (params: URLSearchParams): 'whatsapp' | 'email' | 'form' | 'returning' => {
-  const signUp = params.get('sign-up')
-  if (signUp === '1' || signUp === 'true' || signUp === '') return 'email'
-  if (params.get('step') === 'email') return 'email'
-  return 'whatsapp'
-}
+import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
 
   // Flow states: 'whatsapp' | 'email' | 'form' | 'returning'
-  const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>(() =>
-    getStepFromSearch(searchParams)
-  )
+  const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>('whatsapp')
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
   const [loadingGroup, setLoadingGroup] = useState(true)
   const [checkingEmail, setCheckingEmail] = useState(false)
@@ -62,6 +51,11 @@ const Register = () => {
     } else {
       setError('WhatsApp group link is not available. Please contact the administrator.')
     }
+  }
+
+  const handleWhatsAppConfirmed = () => {
+    setCurrentStep('email')
+    setError('')
   }
 
   // Check if email exists when user enters email
@@ -276,6 +270,14 @@ const Register = () => {
                 >
                   <MessageCircle className="h-6 w-6" />
                   <span>Join WhatsApp Group</span>
+                </button>
+
+                <button
+                  onClick={handleWhatsAppConfirmed}
+                  className="w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3"
+                >
+                  <CheckCircle className="h-5 w-5" />
+                  <span>I've Joined - Continue</span>
                 </button>
               </div>
             )}
