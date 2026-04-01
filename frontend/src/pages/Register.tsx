@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { User, Mail, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const Register = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   // Flow states: 'whatsapp' | 'email' | 'form' | 'returning'
   const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>('whatsapp')
@@ -23,6 +24,17 @@ const Register = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [groupInfo, setGroupInfo] = useState<any>(null)
+
+  // Allow direct links to skip WhatsApp and start at Step 2 (email)
+  useEffect(() => {
+    const signUp = searchParams.get('sign-up')
+    const step = searchParams.get('step')
+    if (signUp === '1' || step === 'email') {
+      setCurrentStep('email')
+      setError('')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch current group's WhatsApp URL
   useEffect(() => {
@@ -309,15 +321,6 @@ const Register = () => {
             </h1>
             <p className="text-lg text-purple-200">
               We'll check if you're a returning member
-            </p>
-            <p className="text-sm text-purple-300 mt-3">
-              Direct link:{' '}
-              <a
-                href="https://thebiblebus.net/register?sign-up=1"
-                className="text-amber-400 hover:text-amber-300 underline underline-offset-2"
-              >
-                thebiblebus.net/register?sign-up=1
-              </a>
             </p>
           </motion.div>
 
