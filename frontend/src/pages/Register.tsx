@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
+import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, Loader } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
@@ -48,17 +48,9 @@ const Register = () => {
   const handleJoinWhatsApp = () => {
     if (whatsappUrl) {
       window.open(whatsappUrl, '_blank')
-      // After opening WhatsApp, allow them to proceed
-      // They can confirm they've joined
     } else {
       setError('WhatsApp group link is not available. Please contact the administrator.')
     }
-  }
-
-  // Handle WhatsApp confirmation
-  const handleWhatsAppConfirmed = () => {
-    setCurrentStep('email')
-    setError('')
   }
 
   // Check if email exists when user enters email
@@ -273,14 +265,6 @@ const Register = () => {
                 >
                   <MessageCircle className="h-6 w-6" />
                   <span>Join WhatsApp Group</span>
-                </button>
-
-                <button
-                  onClick={handleWhatsAppConfirmed}
-                  className="w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3"
-                >
-                  <CheckCircle className="h-5 w-5" />
-                  <span>I've Joined - Continue</span>
                 </button>
               </div>
             )}
