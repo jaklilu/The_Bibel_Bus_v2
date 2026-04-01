@@ -310,6 +310,15 @@ const Register = () => {
             <p className="text-lg text-purple-200">
               We'll check if you're a returning member
             </p>
+            <p className="text-sm text-purple-300 mt-3">
+              Direct link:{' '}
+              <a
+                href="https://thebiblebus.net/register?sign-up=1"
+                className="text-amber-400 hover:text-amber-300 underline underline-offset-2"
+              >
+                thebiblebus.net/register?sign-up=1
+              </a>
+            </p>
           </motion.div>
 
           <motion.div
