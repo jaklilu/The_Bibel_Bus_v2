@@ -40,6 +40,7 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'progress' | 'getting-started'>('progress')
   const [groupName, setGroupName] = useState<string>('Your Group')
   const [inviteLink, setInviteLink] = useState<string>('#')
   const [inviteAvailable, setInviteAvailable] = useState<boolean>(false)
@@ -450,266 +451,298 @@ const Dashboard = () => {
           </h1>
         </motion.div>
 
-        {/* Messages Card (link to Messages page) */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-heading text-white mb-1 flex items-center">
-                <MessageSquare className="h-6 w-6 text-amber-500 mr-2" />
-                Message Board
-              </h2>
-              {!inGroup && (
-                <p className="mt-1 text-sm text-amber-300">We'll place you into a group soon. You can still read messages when assigned.</p>
-              )}
-            </div>
-            <Link
-              to="/messages"
-              className="relative bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+        {/* Tabs */}
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex rounded-xl bg-purple-800/40 border border-purple-700/40 p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('progress')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === 'progress'
+                  ? 'bg-amber-500 text-purple-900'
+                  : 'text-purple-100 hover:bg-purple-700/40'
+              }`}
             >
-              Open
-              <UnreadBadge />
-            </Link>
+              Progress
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('getting-started')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === 'getting-started'
+                  ? 'bg-amber-500 text-purple-900'
+                  : 'text-purple-100 hover:bg-purple-700/40'
+              }`}
+            >
+              Getting Started
+            </button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Accept Your Invitation (moved to top) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          whileHover={{ scale: 1.02 }} 
-          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all mb-8"
-        >
-          <div className="flex items-center mb-4">
-            <Users className="h-12 w-12 text-orange-500 mr-3" />
-            <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">Accept Your Invitation</h3>
-          </div>
-          <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : ''}</p>
-          {!inviteAvailable && inviteStartAt && (
-            <div className="mb-4 flex justify-center">
-              <Countdown
-                date={inviteStartAt}
-                renderer={({ days, hours, minutes, seconds }) => (
-                  <div className="grid grid-cols-4 gap-3">
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                      <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
-                      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
-                    </div>
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
-                      <AnimatePresence initial={false}>
-                        <motion.div
-                          key={seconds}
-                          initial={{ rotateX: -90, opacity: 0 }}
-                          animate={{ rotateX: 0, opacity: 1 }}
-                          exit={{ rotateX: 90, opacity: 0 }}
-                          transition={{ duration: 0.35, ease: 'easeInOut' }}
-                          className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
-                          style={{ transformOrigin: 'top center' }}
-                        >
-                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                )}
-              />
-            </div>
-          )}
-          {!inviteAvailable && (
-            <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
-          )}
-          <button
-            onClick={async () => {
-              if (!inviteAvailable) return
-              
-              try {
-                const token = localStorage.getItem('userToken')
-                if (!token) {
-                  // Fallback to direct link if no token
-                  window.open(inviteLink, '_blank')
-                  return
-                }
-                
-                const response = await fetch('/api/auth/accept-invitation', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                
-                const data = await response.json()
-                
-                if (data.success && data.data.youversion_url) {
-                  // Track the click, then open YouVersion link
-                  window.open(data.data.youversion_url, '_blank')
-                } else if (data.success) {
-                  // Fallback to existing inviteLink if API doesn't return URL
-                  window.open(inviteLink, '_blank')
-                } else {
-                  // If API fails, still open the link
-                  window.open(inviteLink, '_blank')
-                }
-              } catch (error) {
-                console.error('Error accepting invitation:', error)
-                // Fallback to direct link on error
-                window.open(inviteLink, '_blank')
-              }
-            }}
-            disabled={!inviteAvailable}
-            className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50`}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Join Reading Group
-          </button>
-        </motion.div>
+        {activeTab === 'getting-started' && (
+          <>
+            {/* Message Board (link to Messages page) */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-heading text-white mb-1 flex items-center">
+                    <MessageSquare className="h-6 w-6 text-amber-500 mr-2" />
+                    Message Board
+                  </h2>
+                  {!inGroup && (
+                    <p className="mt-1 text-sm text-amber-300">We'll place you into a group soon. You can still read messages when assigned.</p>
+                  )}
+                </div>
+                <Link
+                  to="/messages"
+                  className="relative bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg"
+                >
+                  Open
+                  <UnreadBadge />
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {activeTab === 'progress' && (
+          <>
+            {/* Accept Your Invitation */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ scale: 1.02 }} 
+              className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all mb-8"
+            >
+              <div className="flex items-center mb-4">
+                <Users className="h-12 w-12 text-orange-500 mr-3" />
+                <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">Accept Your Invitation</h3>
+              </div>
+              <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : ''}</p>
+              {!inviteAvailable && inviteStartAt && (
+                <div className="mb-4 flex justify-center">
+                  <Countdown
+                    date={inviteStartAt}
+                    renderer={({ days, hours, minutes, seconds }) => (
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
+                        </div>
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
+                        </div>
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
+                        </div>
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
+                          <AnimatePresence initial={false}>
+                            <motion.div
+                              key={seconds}
+                              initial={{ rotateX: -90, opacity: 0 }}
+                              animate={{ rotateX: 0, opacity: 1 }}
+                              exit={{ rotateX: 90, opacity: 0 }}
+                              transition={{ duration: 0.35, ease: 'easeInOut' }}
+                              className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
+                              style={{ transformOrigin: 'top center' }}
+                            >
+                              <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
+                              <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    )}
+                  />
+                </div>
+              )}
+              {!inviteAvailable && (
+                <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
+              )}
+              <button
+                onClick={async () => {
+                  if (!inviteAvailable) return
+                  
+                  try {
+                    const token = localStorage.getItem('userToken')
+                    if (!token) {
+                      window.open(inviteLink, '_blank')
+                      return
+                    }
+                    
+                    const response = await fetch('/api/auth/accept-invitation', {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    
+                    const data = await response.json()
+                    
+                    if (data.success && data.data.youversion_url) {
+                      window.open(data.data.youversion_url, '_blank')
+                    } else if (data.success) {
+                      window.open(inviteLink, '_blank')
+                    } else {
+                      window.open(inviteLink, '_blank')
+                    }
+                  } catch (error) {
+                    console.error('Error accepting invitation:', error)
+                    window.open(inviteLink, '_blank')
+                  }
+                }}
+                disabled={!inviteAvailable}
+                className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50`}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Join Reading Group
+              </button>
+            </motion.div>
+          </>
+        )}
 
         
 
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
-        >
-          {/* Awards */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-6">
-            <div className="flex items-center mb-4">
-              <Award className="h-12 w-12 text-amber-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">Awards</h3>
-            </div>
-            <p className="text-purple-100 text-center">You have earned {userData?.trophies_count || 0} awards</p>
-            {recentAwards.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {recentAwards.map((a, idx) => (
-                  <div key={idx} className="text-sm text-purple-100/90 bg-purple-700/40 border border-purple-500/40 rounded-lg px-3 py-2 flex items-center justify-between">
-                    <span className="truncate">{a.name}</span>
-                    <span className="ml-3 text-amber-300 text-xs">{new Date(a.completed_at).toLocaleDateString('en-US')}</span>
-                  </div>
-                ))}
+        {activeTab === 'getting-started' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+          >
+            {/* Awards */}
+            <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center mb-4">
+                <Award className="h-12 w-12 text-amber-500 mr-3" />
+                <h3 className="text-lg font-heading text-amber-500">Awards</h3>
               </div>
-            )}
-            <button onClick={() => navigate('/awards')} className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors mt-4">View All</button>
-          </motion.div>
-          {/* WhatsApp Group */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-1">
-            <div className="flex items-center mb-4">
-              <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
-              <div className="flex-1">
-                <h3 className="text-lg font-heading text-amber-500">
-                  {groupName || (inGroup ? 'Your Group' : 'No Group Assigned')}
-                </h3>
-                {!inGroup && (
-                  <p className="text-sm text-purple-300 mt-1">
-                    <Link to="/welcome-back" className="text-amber-400 hover:text-amber-300 underline">Join a group</Link> to start your journey.
-                  </p>
-                )}
+              <p className="text-purple-100 text-center">You have earned {userData?.trophies_count || 0} awards</p>
+              {recentAwards.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {recentAwards.map((a, idx) => (
+                    <div key={idx} className="text-sm text-purple-100/90 bg-purple-700/40 border border-purple-500/40 rounded-lg px-3 py-2 flex items-center justify-between">
+                      <span className="truncate">{a.name}</span>
+                      <span className="ml-3 text-amber-300 text-xs">{new Date(a.completed_at).toLocaleDateString('en-US')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => navigate('/awards')} className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors mt-4">View All</button>
+            </motion.div>
+
+            {/* Download YouVersion */}
+            <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center mb-4">
+                <Download className="h-12 w-12 text-blue-500 mr-3" />
+                <h3 className="text-lg font-heading text-amber-500">Download YouVersion</h3>
               </div>
-            </div>
-            {inGroup ? (
-              <p className="text-purple-100 mb-4 text-center">Introduce yourself to your WhatsApp group</p>
-            ) : (
-              <p className="text-purple-100 mb-4 text-center">Join a group to access WhatsApp and start reading</p>
-            )}
-            <a
-              href="#"
-              id="join-whatsapp-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Join Your WhatsApp Group
-            </a>
-          </motion.div>
-
-          {/* Introduction Videos */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-4">
-            <div className="flex items-center mb-4">
-              <Play className="h-12 w-12 text-blue-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500 ml-15">Introduction Video</h3>
-            </div>
-            <p className="text-purple-100 mb-4 text-center">Continue watching your introduction video</p>
-            <div className="space-y-2">
-              <a href="https://www.youtube.com/watch?v=uR_zizeVWxY" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-                <span className="mr-2">▷</span>
-                Part 1
-              </a>
-              <a href="https://www.youtube.com/watch?v=TL5uilFhcS4" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-                <span className="mr-2">▷</span>
-                Part 2
-              </a>
-              <a href="https://www.youtube.com/watch?v=Q1kDno5zWS0" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-                <span className="mr-2">▷</span>
-                Part 3
-              </a>
-            </div>
-          </motion.div>
-
-          {/* Download YouVersion */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-2">
-            <div className="flex items-center mb-4">
-              <Download className="h-12 w-12 text-blue-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">Download YouVersion</h3>
-            </div>
-            <p className="text-purple-100 mb-4 text-center">Get the Bible app for your device</p>
-            <a
-              href="#"
-              id="youversion-plan-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
-            >
-              Download
-            </a>
-          </motion.div>
-
-          {/* Instructions */}
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all order-5">
-            <div className="flex items-center mb-4">
-              <BookOpen className="h-12 w-12 text-blue-500 mr-3" />
-              <h3 className="text-lg font-heading text-amber-500">Instructions</h3>
-            </div>
-            <p className="text-purple-100 mb-4">Get started with YouVersion and customize your experience</p>
-            <div className="space-y-2">
+              <p className="text-purple-100 mb-4 text-center">Get the Bible app for your device</p>
               <a
-                href="https://photos.google.com/share/AF1QipMQWrNWApLaRlkDfVSFx5PNgsAAbYMsOTPwcTImNJOD2kT52w7WfPqmLTnVf0dV6A/photo/AF1QipOjRpF3E0I6J-A5G2rWKfsx9RQjTZ59b8K6J4-5?key=RHdGa2NFeEowSk5LZ0VWQ0owYV9EUjBDTlBQYWp3"
+                href="#"
+                id="youversion-plan-link"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
               >
-                <BookOpen className="h-4 w-4 mr-2" />
-                How to Start Using YouVersion
+                Download
               </a>
+            </motion.div>
+
+            {/* WhatsApp Group */}
+            <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center mb-4">
+                <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-heading text-amber-500">
+                    {groupName || (inGroup ? 'Your Group' : 'No Group Assigned')}
+                  </h3>
+                  {!inGroup && (
+                    <p className="text-sm text-purple-300 mt-1">
+                      <Link to="/welcome-back" className="text-amber-400 hover:text-amber-300 underline">Join a group</Link> to start your journey.
+                    </p>
+                  )}
+                </div>
+              </div>
+              {inGroup ? (
+                <p className="text-purple-100 mb-4 text-center">Introduce yourself to your WhatsApp group</p>
+              ) : (
+                <p className="text-purple-100 mb-4 text-center">Join a group to access WhatsApp and start reading</p>
+              )}
               <a
-                href="https://photos.google.com/share/AF1QipOEWdEdjjdAiLM8CG5Pv0sz6voqhNLt7x9hGAJssC0tnSZNxhCpu7iHMV7kd7uuEg?key=Z3ctZzFPWXN0ZllDbE1zNjJLM1hRNTRUZVhJalB3"
+                href="#"
+                id="join-whatsapp-link"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
               >
-                <BookOpen className="h-4 w-4 mr-2" />
-                How to change to different language
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Join Your WhatsApp Group
               </a>
-            </div>
-          </motion.div>
+            </motion.div>
 
-        </motion.div>
+            {/* Introduction Videos */}
+            <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center mb-4">
+                <Play className="h-12 w-12 text-blue-500 mr-3" />
+                <h3 className="text-lg font-heading text-amber-500">Introduction Video</h3>
+              </div>
+              <p className="text-purple-100 mb-4 text-center">Continue watching your introduction video</p>
+              <div className="space-y-2">
+                <a href="https://www.youtube.com/watch?v=uR_zizeVWxY" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                  <span className="mr-2">▷</span>
+                  Part 1
+                </a>
+                <a href="https://www.youtube.com/watch?v=TL5uilFhcS4" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                  <span className="mr-2">▷</span>
+                  Part 2
+                </a>
+                <a href="https://www.youtube.com/watch?v=Q1kDno5zWS0" target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                  <span className="mr-2">▷</span>
+                  Part 3
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Instructions */}
+            <motion.div whileHover={{ scale: 1.05 }} className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center mb-4">
+                <BookOpen className="h-12 w-12 text-blue-500 mr-3" />
+                <h3 className="text-lg font-heading text-amber-500">Instructions</h3>
+              </div>
+              <p className="text-purple-100 mb-4">Get started with YouVersion and customize your experience</p>
+              <div className="space-y-2">
+                <a
+                  href="https://photos.google.com/share/AF1QipMQWrNWApLaRlkDfVSFx5PNgsAAbYMsOTPwcTImNJOD2kT52w7WfPqmLTnVf0dV6A/photo/AF1QipOjRpF3E0I6J-A5G2rWKfsx9RQjTZ59b8K6J4-5?key=RHdGa2NFeEowSk5LZ0VWQ0owYV9EUjBDTlBQYWp3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  How to Start Using YouVersion
+                </a>
+                <a
+                  href="https://photos.google.com/share/AF1QipOEWdEdjjdAiLM8CG5Pv0sz6voqhNLt7x9hGAJssC0tnSZNxhCpu7iHMV7kd7uuEg?key=Z3ctZzFPWXN0ZllDbE1zNjJLM1hRNTRUZVhJalB3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  How to change to different language
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
 
         {/* Journey Completion Celebration */}
-        {checkJourneyCompletion(milestones) && (
+        {activeTab === 'progress' && checkJourneyCompletion(milestones) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -729,88 +762,89 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Milestone Progress Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
-        >
-          <h2 className="text-2xl font-heading text-white mb-6 flex items-center">
-            <Award className="h-6 w-6 text-amber-500 mr-2" />
-            Milestone Progress
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {milestones.map((milestone) => (
-              <div
-                key={milestone.id}
-                className={`bg-purple-700/50 rounded-xl p-4 border ${
-                  milestone.completed 
-                    ? 'border-green-500/50 bg-green-900/20' 
-                    : 'border-purple-600/30'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">
-                    {milestone.completed && <CheckCircle className="h-5 w-5 text-green-400 inline mr-2" />}
-                    {milestone.name}
-                  </h3>
-                  <span className="text-sm text-purple-300">Day {milestone.dayNumber}</span>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-purple-200">Days Completed:</span>
-                    <span className="text-white font-medium">
-                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'Enter missing days' : `${milestone.daysCompleted}/${milestone.dayNumber}`}
-                    </span>
+        {activeTab === 'progress' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
+          >
+            <h2 className="text-2xl font-heading text-white mb-6 flex items-center">
+              <Award className="h-6 w-6 text-amber-500 mr-2" />
+              Milestone Progress
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {milestones.map((milestone) => (
+                <div
+                  key={milestone.id}
+                  className={`bg-purple-700/50 rounded-xl p-4 border ${
+                    milestone.completed 
+                      ? 'border-green-500/50 bg-green-900/20' 
+                      : 'border-purple-600/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-white">
+                      {milestone.completed && <CheckCircle className="h-5 w-5 text-green-400 inline mr-2" />}
+                      {milestone.name}
+                    </h3>
+                    <span className="text-sm text-purple-300">Day {milestone.dayNumber}</span>
                   </div>
                   
-                  <div className="flex justify-between text-sm">
-                    <span className="text-purple-200">Percentage:</span>
-                    <span className="text-white font-medium">
-                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : `${milestone.percentage}%`}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span className="text-purple-200">Grade:</span>
-                    <span className={`font-bold ${
-                      milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'text-purple-300' :
-                      milestone.grade === 'A' ? 'text-green-400' :
-                      milestone.grade === 'B' ? 'text-blue-400' :
-                      milestone.grade === 'C' ? 'text-yellow-400' :
-                      'text-red-400'
-                    }`}>
-                      {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : milestone.grade}
-                    </span>
-                  </div>
-                  
-                  {!milestone.completed && (
-                    <div className="mt-3">
-                      <label className="block text-xs text-purple-200 mb-1">
-                        Cumulative Missing Days (from YouVersion):
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={milestone.dayNumber}
-                        value={milestone.missingDays || ''}
-                        onChange={(e) => handleMissingDaysChange(milestone.id, e.target.value)}
-                        className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                        placeholder="Enter cumulative missing days"
-                      />
-                      <p className="text-xs text-purple-300 mt-1 italic">
-                        To tell the truth, God is watching.
-                      </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-200">Days Completed:</span>
+                      <span className="text-white font-medium">
+                        {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'Enter missing days' : `${milestone.daysCompleted}/${milestone.dayNumber}`}
+                      </span>
                     </div>
-                  )}
+                    
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-200">Percentage:</span>
+                      <span className="text-white font-medium">
+                        {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : `${milestone.percentage}%`}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-200">Grade:</span>
+                      <span className={`font-bold ${
+                        milestone.missingDays === 0 && milestone.daysCompleted === 0 ? 'text-purple-300' :
+                        milestone.grade === 'A' ? 'text-green-400' :
+                        milestone.grade === 'B' ? 'text-blue-400' :
+                        milestone.grade === 'C' ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        {milestone.missingDays === 0 && milestone.daysCompleted === 0 ? '--' : milestone.grade}
+                      </span>
+                    </div>
+                    
+                    {!milestone.completed && (
+                      <div className="mt-3">
+                        <label className="block text-xs text-purple-200 mb-1">
+                          Cumulative Missing Days (from YouVersion):
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={milestone.dayNumber}
+                          value={milestone.missingDays || ''}
+                          onChange={(e) => handleMissingDaysChange(milestone.id, e.target.value)}
+                          className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                          placeholder="Enter cumulative missing days"
+                        />
+                        <p className="text-xs text-purple-300 mt-1 italic">
+                          To tell the truth, God is watching.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Next Group Banner (moved to very end) */}
         {nextGroup && (

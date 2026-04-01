@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
+import { User, Mail, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
@@ -192,7 +192,7 @@ const Register = () => {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -439,13 +439,20 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-amber-500 mb-2">Mailing Address</label>
-                <input
-                  type="text"
+                <label className="block text-sm font-medium text-amber-500 mb-2">Mailing address</label>
+                <p className="text-sm text-purple-300 mb-2">
+                  Use the format that works where you live (any country).
+                </p>
+                <textarea
+                  rows={4}
                   value={formData.mailingAddress}
                   onChange={handleChange}
                   name="mailingAddress"
-                  className="w-full px-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white"
+                  maxLength={2000}
+                  autoComplete="street-address"
+                  dir="auto"
+                  className="w-full px-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-y min-h-[100px]"
+                  placeholder="Street, city or town, postal/ZIP code, region, country"
                 />
               </div>
             </div>
@@ -577,26 +584,29 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Mailing Address */}
+            {/* Mailing address (international — multi-line) */}
             <div>
               <label htmlFor="mailingAddress" className="block text-sm font-medium text-amber-500 mb-2">
-                Mailing Address *
+                Mailing address *
               </label>
-              <div className="relative">
-                <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
-                <input
-                  type="text"
-                  id="mailingAddress"
-                  name="mailingAddress"
-                  required
-                  value={formData.mailingAddress}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                  placeholder="Full address for reward delivery"
-                />
-              </div>
+              <p className="text-sm text-purple-300 mb-2">
+                Use the format that works where you live. Include street, city or town, postal or ZIP code, region, and country.
+              </p>
+              <textarea
+                id="mailingAddress"
+                name="mailingAddress"
+                rows={4}
+                required
+                maxLength={2000}
+                autoComplete="street-address"
+                dir="auto"
+                value={formData.mailingAddress}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-y min-h-[100px]"
+                placeholder={'Example:\n12 Rue de la Paix\n75002 Paris\nFrance'}
+              />
               <p className="text-sm text-purple-300 mt-1">
-                We'll send your completion reward to this address
+                We use this to send your completion reward — any country is fine.
               </p>
             </div>
 
