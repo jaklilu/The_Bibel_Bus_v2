@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
+import { User, Mail, Home, ArrowRight, AlertCircle, MessageCircle, CheckCircle, Loader } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Register = () => {
@@ -16,9 +16,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    city: '',
     mailingAddress: '',
-    referral: ''
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,9 +74,7 @@ const Register = () => {
         setFormData({
           fullName: data.data.name || '',
           email: data.data.email || '',
-          city: data.data.city || '',
           mailingAddress: data.data.mailing_address || '',
-          referral: data.data.referral || ''
         })
         setCurrentStep('returning')
       } else {
@@ -155,9 +151,10 @@ const Register = () => {
         body: JSON.stringify({
           name: formData.fullName.trim(),
           email: formData.email.trim(),
-          city: formData.city.trim(),
           mailing_address: formData.mailingAddress.trim(),
-          referral: formData.referral.trim()
+          // Kept for backward compatibility with older backend deployments
+          city: '',
+          referral: ''
         })
       })
 
@@ -239,9 +236,7 @@ const Register = () => {
                   To continue with registration, you must first join our WhatsApp group and introduce yourself to the group.
                 </p>
                 <div className="space-y-2 text-purple-300 text-sm">
-                  <p><strong className="text-white">Your Name:</strong></p>
-                  <p><strong className="text-white">Which city you live in:</strong></p>
-                  <p><strong className="text-white">Who referred you?</strong></p>
+                  <p><strong className="text-white">Introduce yourself with your name.</strong></p>
                 </div>
               </div>
               <p className="text-purple-300 text-sm">
@@ -444,17 +439,6 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-amber-500 mb-2">City</label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={handleChange}
-                  name="city"
-                  className="w-full px-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-amber-500 mb-2">Mailing Address</label>
                 <input
                   type="text"
@@ -589,46 +573,6 @@ const Register = () => {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                   placeholder="your.email@example.com"
-                />
-              </div>
-            </div>
-
-            {/* City */}
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-amber-500 mb-2">
-                City You Live In *
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  required
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                  placeholder="Your city"
-                />
-              </div>
-            </div>
-
-            {/* Referral */}
-            <div>
-              <label htmlFor="referral" className="block text-sm font-medium text-amber-500 mb-2">
-                Who Referred You? *
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
-                <input
-                  type="text"
-                  id="referral"
-                  name="referral"
-                  required
-                  value={formData.referral}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-purple-700/50 border border-purple-600 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                  placeholder="Name of person who referred you"
                 />
               </div>
             </div>

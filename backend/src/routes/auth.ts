@@ -361,9 +361,9 @@ router.get('/my-awards', userAuth, async (req: Request, res: Response) => {
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Must be a valid email'),
-  body('city').trim().notEmpty().withMessage('City is required'),
+  body('city').optional().trim(),
   body('mailing_address').trim().notEmpty().withMessage('Mailing address is required'),
-  body('referral').trim().notEmpty().withMessage('Referral is required'),
+  body('referral').optional().trim(),
   body('phone').optional().isMobilePhone('any').withMessage('Must be a valid phone number')
 ], async (req: Request, res: Response) => {
   try {
@@ -379,7 +379,9 @@ router.post('/register', [
       })
     }
 
-    const { name, email, phone, city, mailing_address, referral } = req.body
+    const { name, email, phone, mailing_address } = req.body
+    const city = (req.body.city ?? '').toString().trim()
+    const referral = (req.body.referral ?? '').toString().trim()
 
     // Check if user already exists (case-insensitive)
     const existingUser = await getRow('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email])
