@@ -226,7 +226,7 @@ const Register = () => {
               Welcome to The Bible Bus! 🚌
             </h1>
             <p className="text-lg text-purple-200">
-              Step 1: Join our WhatsApp group
+              Step 1: Join Our WhatsApp Group
             </p>
           </motion.div>
 
