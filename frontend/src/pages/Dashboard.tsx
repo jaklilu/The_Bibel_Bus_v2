@@ -525,7 +525,6 @@ const Dashboard = () => {
                   Accept Your Invitation
                   {!inviteAvailable && inviteStartAt && (
                     <span className="ml-2 text-amber-300 tabular-nums">
-                      @{' '}
                       <Countdown
                         date={inviteStartAt}
                         renderer={({ days, hours, minutes, seconds }) => (
