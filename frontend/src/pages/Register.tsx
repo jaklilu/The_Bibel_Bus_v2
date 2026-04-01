@@ -247,8 +247,16 @@ const Register = () => {
                 <p className="text-purple-200 mb-4">
                   To continue with registration, you must first join our WhatsApp group and introduce yourself to the group.
                 </p>
+                <p className="text-purple-200 mb-4">
+                  Since all our communication is through WhatsApp, please join.
+                </p>
                 <div className="space-y-2 text-purple-300 text-sm">
                   <p><strong className="text-white">Introduce yourself with your name.</strong></p>
+                  <div className="mt-3 pl-1 border-l-2 border-purple-500/50 space-y-1 text-purple-200">
+                    <p>Name: Jay Aklilu</p>
+                    <p>City you live in: Los Angeles</p>
+                    <p>Who referred you: I am your host</p>
+                  </div>
                 </div>
               </div>
               <p className="text-purple-300 text-sm">
@@ -279,7 +287,7 @@ const Register = () => {
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3 text-lg shadow-lg"
                 >
                   <MessageCircle className="h-6 w-6" />
-                  <span>Join WhatsApp Group</span>
+                  <span>Join Our WhatsApp Group</span>
                 </button>
 
                 <button
