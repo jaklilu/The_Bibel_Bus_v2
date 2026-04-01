@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { User, Mail, MapPin, Users, Home, ArrowRight, AlertCircle, MessageCircle, Loader } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
+/** Hard link to skip WhatsApp step and start at email (same as old “I’ve Joined – Continue”): `/register?step=email` */
+const getStepFromSearch = (params: URLSearchParams): 'whatsapp' | 'email' | 'form' | 'returning' => {
+  const s = params.get('step')
+  if (s === 'email') return 'email'
+  return 'whatsapp'
+}
 
 const Register = () => {
   const navigate = useNavigate()
-  
+  const [searchParams] = useSearchParams()
+
   // Flow states: 'whatsapp' | 'email' | 'form' | 'returning'
-  const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>('whatsapp')
+  const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>(() =>
+    getStepFromSearch(searchParams)
+  )
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
   const [loadingGroup, setLoadingGroup] = useState(true)
   const [checkingEmail, setCheckingEmail] = useState(false)
