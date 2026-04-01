@@ -1144,8 +1144,22 @@ const Admin = () => {
                 {/* Group Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(() => {
-                    // Use groups as provided by backend (already ordered)
-                    const currentOrder = adminData.groups
+                    // Always show Active first, Upcoming second, then the rest.
+                    // Preserve backend order within each status bucket.
+                    const statusPriority = (status: string | null | undefined) => {
+                      if (status === 'active') return 0
+                      if (status === 'upcoming') return 1
+                      return 2
+                    }
+
+                    const baseGroups = adminData.groups || []
+                    const currentOrder = [...baseGroups].sort((a: any, b: any) => {
+                      const pa = statusPriority(a?.status)
+                      const pb = statusPriority(b?.status)
+                      if (pa !== pb) return pa - pb
+                      // stable within bucket: fallback to original backend order
+                      return baseGroups.indexOf(a) - baseGroups.indexOf(b)
+                    })
                     
                     const moveGroup = async (id: number, direction: 'up' | 'down') => {
                       const token = localStorage.getItem('adminToken')
@@ -1155,6 +1169,12 @@ const Admin = () => {
                       if (idx === -1) return
                       const swapWith = direction === 'up' ? idx - 1 : idx + 1
                       if (swapWith < 0 || swapWith >= ids.length) return
+
+                      // Keep Active pinned above Upcoming pinned above all others.
+                      const curr = currentOrder[idx]
+                      const next = currentOrder[swapWith]
+                      if (statusPriority(curr?.status) !== statusPriority(next?.status)) return
+
                       const newOrder = [...ids]
                       const tmp = newOrder[idx]
                       newOrder[idx] = newOrder[swapWith]
@@ -1171,7 +1191,26 @@ const Admin = () => {
                       }
                     }
 
-                    return currentOrder.map((group: any, idx: number) => (
+                    const bucketStartIndex = (idx: number) => {
+                      const p = statusPriority(currentOrder[idx]?.status)
+                      return currentOrder.findIndex((g: any) => statusPriority(g?.status) === p)
+                    }
+                    const bucketEndIndex = (idx: number) => {
+                      const p = statusPriority(currentOrder[idx]?.status)
+                      let last = -1
+                      currentOrder.forEach((g: any, i: number) => {
+                        if (statusPriority(g?.status) === p) last = i
+                      })
+                      return last
+                    }
+
+                    return currentOrder.map((group: any, idx: number) => {
+                      const start = bucketStartIndex(idx)
+                      const end = bucketEndIndex(idx)
+                      const canMoveUp = idx > start
+                      const canMoveDown = idx < end
+
+                      return (
                       <motion.div
                         key={group.id}
                         whileHover={{ scale: 1.02 }}
@@ -1217,15 +1256,15 @@ const Admin = () => {
                         <div className="flex items-center space-x-2 mb-3">
                           <button
                             onClick={() => moveGroup(group.id, 'up')}
-                            disabled={idx === 0}
-                            className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${idx === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
+                            disabled={!canMoveUp}
+                            className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${!canMoveUp ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
                           >
                             Move Up
                           </button>
                           <button
                             onClick={() => moveGroup(group.id, 'down')}
-                            disabled={idx === currentOrder.length - 1}
-                            className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${idx === currentOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
+                            disabled={!canMoveDown}
+                            className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${!canMoveDown ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
                           >
                             Move Down
                           </button>
@@ -1248,7 +1287,8 @@ const Admin = () => {
                           </div>
                         </div>
                       </motion.div>
-                    ));
+                      )
+                    })
                   })()}
                 </div>
                 
