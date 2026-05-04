@@ -10,6 +10,7 @@
 Mobile-first React web application for managing Bible reading groups, user dashboards, milestone notifications, and community engagement.
 
 ### **Deployment URLs**
+- **Frontend (public domain)**: `https://thebiblebus.net` (primary URL shared with members)
 - **Frontend (Netlify)**: `https://stalwart-sunflower-596007.netlify.app`
 - **Backend (Render)**: `https://the-bibel-bus-v2.onrender.com` ⚠️ **NOTE**: URL contains typo "bibel" (should be "bible") - **DO NOT CHANGE** as it's the actual production URL
 - **Local Frontend**: `http://localhost:3000`
@@ -60,26 +61,26 @@ cd backend && npm run db:reset
 
 ## 📋 **LAST SESSION SUMMARY**
 
-**Date**: 02-27-26  
+**Date**: 04-01-26  
 **Status**: ✅ **COMPLETED**
 
 ### **What Was Done**
-- **Reflections Page Date Parsing Fix**: Public Reflections page (Google Sheet CSV) had stopped showing entries after Dec 31, 2025; 2026 entries were missing and some 2025 dates showed as 2026
-- **Root Cause**: (1) Hardcoded year fallback `"2025"` was later changed to current year, turning 2025-only dates into 2026; (2) CSV `split(",")` breaks date column when it contains a comma (e.g. "December 31, 2025" → date="December 31", next column=" 2025"); (3) When the year column was quoted (e.g. `' 2026"'`), the merge logic didn't strip quotes so the year wasn't reattached
-- **Fixes in `frontend/src/pages/Reflections.tsx`**:
-  - **Year merge**: After splitting CSV by comma, if `date` has no 4-digit year and `rest[0]` is a 4-digit year (trimmed and quote-stripped), merge it back so the full date is parsed (e.g. "February 27, 2026")
-  - **parseDateSafe**: Kept fallback year `"2025"` when year is missing (no current-year default that would mis-label 2025 entries); added support for ISO (YYYY-MM-DD) and US numeric (M/D/YYYY) dates
-  - **Cache-busting**: Added `&_=${Date.now()}` to the CSV fetch URL so the browser doesn't serve a stale cached response
-- **Result**: Newest entry (e.g. Feb 27, 2026) shows first; oldest (Jan 1, 2025) at bottom; 2025 and 2026 dates display correctly
+- **International mailing address**: Registration forms use multi-line address fields with `autoComplete="street-address"` and `dir="auto"`; backend validates `mailing_address` required + max **2000** characters on `/register` and `/register-existing` (`backend/src/routes/auth.ts`, `frontend/src/pages/Register.tsx`, `RegisterExisting.tsx`).
+- **Dashboard cleanup**: Added **Progress** vs **Resources** tabs (`frontend/src/pages/Dashboard.tsx`). Moved onboarding items into **Resources**: message board link, awards summary, WhatsApp, intro videos, instructions, YouVersion download. **Progress** keeps invitation + milestone progress.
+- **Invitation UX**: While invite is locked, card title shows static **“Accept Your Invitation @ 00 00 00 00”**; the **live** countdown remains in the card body (not in the title).
+- **Mobile — Join Reading Group**: Popup blockers on iOS/Safari often block `window.open()` after `await fetch`. Fix: open `about:blank` synchronously on tap, then set `location.href` after `/api/auth/accept-invitation` returns (`Dashboard.tsx`).
+- **Admin — Bible Reading Groups grid**: Cards always display **Active** first, **Upcoming** second; remaining statuses follow. **Move Up/Down** cannot swap across those status buckets (`frontend/src/pages/Admin.tsx`).
+- **Register deep link**: Visiting `/register?sign-up=1` (or `?step=email`) **skips WhatsApp** and starts at **Step 2 — Enter Your Email** (`Register.tsx`).
+- **Register Step 1 (WhatsApp)**: Updated instructional copy; bold example labels; subtitle **“Step 1: Join Our WhatsApp Group”**; green button **“Join Our WhatsApp Group”**.
 
 ### **Current State**
-- ✅ Reflections page loads from published Google Sheet CSV and shows all entries in correct date order (newest first)
-- ✅ 2026 entries visible at top; 2025 entries retain correct year
-- ✅ Changes committed and pushed to `main`
+- ✅ Above changes built (`npm run build` frontend) and pushed to `main`
+- ✅ Reflections page CSV/date fixes from **02-27-26** remain in place (`Reflections.tsx`)
 
 ### **Next Priorities** (if any)
-- Monitor manual email sending usage and effectiveness (from previous session)
+- Monitor manual email sending usage and effectiveness (from earlier sessions)
 - Consider adding email failure statistics/reporting in Email tab
+- After deploy, verify **Resources** tab + invitation button on real mobile browsers (Safari/Chrome)
 
 ---
 
@@ -183,22 +184,24 @@ After each session, update the "Last Session Summary" section with:
 - **Color Scheme**: Deep purple, golden yellow/amber, light purple
 
 ### **2. User Registration System**
-- **Simplified Registration**: Email + Name only (no password required)
-- **Automatic Group Assignment**: Users automatically assigned to current active group
+- **Passwordless member login**: Email-based session (JWT); optional WhatsApp gate then email check
+- **Profile fields**: Full name, email, **mailing address** (international, multi-line, validated server-side)
+- **Automatic Group Assignment**: Users automatically assigned to current active group when applicable
 - **Group Information Display**: Shows current group details, start date, registration deadline
 - **Dynamic Group Fetching**: Real-time group information from API
+- **Deep links**: `/register?sign-up=1` or `/register?step=email` starts at **Enter Your Email** (skips WhatsApp step)
 
 ### **3. User Dashboard**
 - **Progress Tracking**: Bible reading progress visualization
 - **Group Information**: Current group details and next milestones
-- **Action Cards**: WhatsApp group, YouVersion app, Instructions, Invitations
-- **Message Board Integration**: Group messages display with filtering
+- **Tabs**: **Progress** (invitation + milestones) vs **Resources** (WhatsApp, YouVersion, intro videos, instructions, awards link, message board link)
+- **Message Board Integration**: Link from dashboard to `/messages`
 - **Responsive Layout**: Beautiful cards with hover effects and animations
 
 ### **4. Admin System**
 - **Role-Based Access Control**: Admin vs regular user roles
 - **Admin Dashboard**: Overview, Groups, Users, Progress, Messages, Donations, Password Management
-- **Group Management**: View all groups with member counts and status
+- **Group Management**: View all groups with member counts and status; **Groups grid** displays **Active** first, **Upcoming** second (manual reorder only within the same status bucket)
 - **User Management**: View all users with roles and status
 - **Message Management**: Create, edit, delete group messages
 
@@ -372,7 +375,26 @@ CREATE TABLE password_reset_tokens (
 
 ## 🔄 **Recent Major Updates**
 
-### **Reflections Page Date Parsing Fix** (February 2026) ✨ **LATEST UPDATE!**
+### **Dashboard, Registration & Admin polish** (April 2026) ✨ **LATEST UPDATE!**
+
+#### **Problem / Goal** 🎯
+- Dashboard was crowded; onboarding blocks (WhatsApp, videos, instructions, awards, etc.) mixed with day-to-day progress.
+- Mailing address needed to support international, multi-line addresses.
+- Admin group cards needed predictable order (Active / Upcoming first).
+- Mobile users reported **Join Reading Group** appearing to do nothing (popup blocked after async API).
+
+#### **Solutions Implemented** ✅
+- **`frontend/src/pages/Dashboard.tsx`**: Tab switcher **Progress** | **Resources**; grouped onboarding cards under **Resources**; invitation header static label vs live body countdown; mobile-safe invitation open.
+- **`frontend/src/pages/Register.tsx` / `RegisterExisting.tsx`**: Textarea mailing address + intl-friendly UX; WhatsApp step copy and labels; `?sign-up=1` / `?step=email` lands on email step.
+- **`backend/src/routes/auth.ts`**: `mailing_address` max length **2000** on register endpoints.
+- **`frontend/src/pages/Admin.tsx`**: Client-side sort Active → Upcoming → rest; reorder buttons constrained within status bucket.
+
+#### **Result** 🎯
+- Cleaner dashboard; predictable admin ordering; better mobile invitation behavior; registration links and addresses aligned with global users.
+
+---
+
+### **Reflections Page Date Parsing Fix** (February 2026)
 
 #### **Problem Identified** 🎯
 - Reflections page (Google Sheet CSV) stopped showing new entries after Dec 31, 2025
@@ -617,15 +639,17 @@ CREATE TABLE password_reset_tokens (
 - Tier cards redesigned with gradients, icons, glow, and member tiles
 - Tiers: Diamond (10+), Platinum (7–9), Gold (4–6), Silver (2–3), Bronze (0–1)
 
-### **Dashboard UX Improvements** ✨ NEW
-- “Accept Your Invitation” countdown centered with four tiles; seconds tile flips smoothly
-- Quick Actions reordered: WhatsApp, YouVersion, Accept Invitation, Intro Video, Instructions, Awards
-- Logout moved to header next to welcome text
+### **Dashboard UX Improvements** ✨ UPDATED (Apr 2026)
+- **Tabs**: **Progress** (invitation + milestones) vs **Resources** (WhatsApp, YouVersion download, intro videos, instructions, awards teaser, message board link)
+- **Invitation card**: Static title text **“Accept Your Invitation @ 00 00 00 00”** while locked; **live** countdown remains in the card body
+- **Mobile**: **Join Reading Group** opens a blank tab synchronously on tap, then navigates after `/api/auth/accept-invitation` (avoids popup blockers)
+- Earlier: countdown tiles with flip animation; logout in header
 
 ### **Registration Page Adjustments** ✨ NEW
 - Removed “Registration Window” section
 - Moved Mailing Address below “Who Referred You?”
 - Renamed “City” to “City You Live In”
+- **Intl mailing address**: textarea + backend max 2000 chars; `?sign-up=1` skips to email step
 
 ### **Admin Modal Positioning** ✨ NEW
 - Raised “View Members” and “Add Members” modals to open near top
@@ -2325,6 +2349,7 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 - Backend CORS is permissive by suffix (`ALLOWED_ORIGIN_SUFFIXES=stalwart-sunflower-596007.netlify.app`). Add any new domains to `ALLOWED_ORIGINS`.
 - Registration assignment failures: see `GroupService.assignUserToGroup`. It returns detailed messages when group is full/closed. If October 2025 is Active with capacity, registration should succeed; otherwise, check `registration_deadline` and capacity in DB.
 - Mobile polish: hero paddings, countdown grid, and CTA paddings adjusted in `Home.tsx`. Seconds tile animation is controlled by a 2s looping fade — easy to tweak.
+- **Dashboard “Join Reading Group” on mobile**: Must open a tab/window **synchronously** inside the click handler; do not call `window.open(url)` only after `await fetch(...)` or Safari/iOS may block it. Current pattern: `const w = window.open('about:blank')` then `w.location.href = ...` after the API returns (`frontend/src/pages/Dashboard.tsx`).
 
 ### **Deployment URLs**
 - **Netlify (Primary)**: `stalwart-sunflower-596007.netlify.app` (use this one)
@@ -2335,8 +2360,8 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ## 📅 **DOCUMENT METADATA**
 
-**Last Updated**: 02-27-26  
-**Last Session**: Fixed Reflections page date parsing - reattach year when CSV comma splits "Month Day, Year", handle quoted year in merge, keep 2025 fallback and support ISO/numeric dates; added cache-busting to CSV fetch. 2026 entries (e.g. Feb 27) now show at top, 2025 entries display correctly; changes pushed to main.
+**Last Updated**: 04-01-26  
+**Last Session**: Updated dashboard (Progress/Resources tabs, invitation UX, mobile Join Reading Group), international mailing address validation/UI, admin group card ordering (Active/Upcoming first), registration deep link `?sign-up=1`, and WhatsApp Step 1 copy; documented in Recent Major Updates and Last Session Summary. Prior Reflections CSV fixes (02-27-26) unchanged.
 
 **Format Version**: 2.0 (Agent-Optimized)  
 **Maintained By**: AI Agents (follow format guidelines above)
