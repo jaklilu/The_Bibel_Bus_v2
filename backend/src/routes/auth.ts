@@ -153,9 +153,16 @@ const getTrophyTier = (count: number): 'diamond' | 'platinum' | 'gold' | 'silver
 // Public: Get current active group for landing page
 router.get('/public/current-group', async (req: Request, res: Response) => {
   try {
-    const currentGroup = await GroupService.getCurrentActiveGroup()
-    
-    if (!currentGroup) {
+    // Prefer the open-registration "current" group; if none, show the next upcoming
+    // so the home page countdown never goes blank between quarters.
+    let displayGroup = await GroupService.getCurrentActiveGroup()
+    let source: 'current' | 'next' = 'current'
+    if (!displayGroup) {
+      displayGroup = await GroupService.getNextUpcomingGroup()
+      source = 'next'
+    }
+
+    if (!displayGroup) {
       return res.json({
         success: false,
         message: 'No active group found'
@@ -165,20 +172,21 @@ router.get('/public/current-group', async (req: Request, res: Response) => {
     // Get member count
     const memberCount = await getRow(`
       SELECT COUNT(*) as count FROM group_members WHERE group_id = ? AND status = 'active'
-    `, [currentGroup.id])
+    `, [displayGroup.id])
 
     res.json({
       success: true,
       data: {
-        id: currentGroup.id,
-        name: currentGroup.name,
-        start_date: currentGroup.start_date,
-        end_date: currentGroup.end_date,
-        registration_deadline: currentGroup.registration_deadline,
-        max_members: currentGroup.max_members,
+        id: displayGroup.id,
+        name: displayGroup.name,
+        start_date: displayGroup.start_date,
+        end_date: displayGroup.end_date,
+        registration_deadline: displayGroup.registration_deadline,
+        max_members: displayGroup.max_members,
         member_count: memberCount?.count || 0,
-        status: currentGroup.status,
-        whatsapp_invite_url: currentGroup.whatsapp_invite_url || null
+        status: displayGroup.status,
+        whatsapp_invite_url: displayGroup.whatsapp_invite_url || null,
+        displaySource: source
       }
     })
   } catch (error) {
