@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, BookOpen, Award, MessageSquare, ArrowRight, CheckCircle } from 'lucide-react'
+import { Users, BookOpen, Award, MessageSquare, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const WelcomeBack = () => {
@@ -9,7 +9,6 @@ const WelcomeBack = () => {
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
   const [joinError, setJoinError] = useState('')
-  const [joinSuccess, setJoinSuccess] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('userToken')
@@ -61,13 +60,29 @@ const WelcomeBack = () => {
     })()
   }, [])
 
+  const refreshGroupStatusInStorage = async (token: string) => {
+    try {
+      const res = await fetch('/api/auth/group-status', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success && data.data?.groupStatus) {
+        const gs = data.data.groupStatus
+        setGroupStatus(gs)
+        localStorage.setItem('groupStatus', JSON.stringify(gs))
+      }
+    } catch (e) {
+      console.error('Failed to refresh group status', e)
+    }
+  }
+
   const handleJoinCurrentGroup = async () => {
     setJoining(true)
     setJoinError('')
-    setJoinSuccess('')
 
     try {
       const token = localStorage.getItem('userToken')
+      if (!token) return
       const response = await fetch('/api/auth/join-current-group', {
         method: 'POST',
         headers: {
@@ -78,11 +93,8 @@ const WelcomeBack = () => {
       const data = await response.json()
 
       if (data.success) {
-        setJoinSuccess(`Successfully joined ${data.data.groupName}!`)
-        // Refresh group status
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 2000)
+        await refreshGroupStatusInStorage(token)
+        navigate('/dashboard')
       } else {
         setJoinError(data.error?.message || 'Failed to join group')
       }
@@ -96,10 +108,10 @@ const WelcomeBack = () => {
   const handleJoinNextGroup = async (groupId: number) => {
     setJoining(true)
     setJoinError('')
-    setJoinSuccess('')
 
     try {
       const token = localStorage.getItem('userToken')
+      if (!token) return
       const response = await fetch(`/api/auth/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
@@ -110,12 +122,8 @@ const WelcomeBack = () => {
       const data = await response.json()
 
       if (data.success) {
-        const gn = data.data?.groupName || groupStatus?.nextGroup?.name
-        setJoinSuccess(gn ? `Successfully registered for ${gn}!` : 'Successfully registered for the next group!')
-        // Refresh group status
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 2000)
+        await refreshGroupStatusInStorage(token)
+        navigate('/dashboard')
       } else {
         setJoinError(data.error?.message || 'Failed to join group')
       }
@@ -233,13 +241,6 @@ const WelcomeBack = () => {
             {joinError && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
                 <p className="text-red-200 text-sm">{joinError}</p>
-              </div>
-            )}
-
-            {joinSuccess && (
-              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3 mb-4 flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-                <p className="text-green-200 text-sm">{joinSuccess}</p>
               </div>
             )}
 

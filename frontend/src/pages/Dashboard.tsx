@@ -258,39 +258,73 @@ const Dashboard = () => {
   }
 
   useEffect(() => {
-    console.log('Dashboard useEffect running') // Debug log
-    // Check if user is logged in
     const token = localStorage.getItem('userToken')
-    console.log('Dashboard token check:', !!token) // Debug log
     if (!token) {
-      console.log('Dashboard: No token, redirecting to login') // Debug log
       navigate('/login')
       return
     }
 
-    // Check group status from localStorage (set by login)
-    const storedGroupStatus = localStorage.getItem('groupStatus')
-    if (storedGroupStatus) {
+    let cancelled = false
+
+    ;(async () => {
+      // Fresh group status so we do not send users back to /welcome-back with stale
+      // localStorage right after they joined a group on that page.
       try {
-        const groupStatus = JSON.parse(storedGroupStatus)
-        // If user has no groups, redirect to welcome back page
-        if (!groupStatus.userGroups || groupStatus.userGroups.length === 0) {
-          if (!groupStatus.inCurrentGroup) {
-            navigate('/welcome-back')
-            return
+        const res = await fetch('/api/auth/group-status', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const payload = await res.json()
+        if (cancelled) return
+        if (payload.success && payload.data?.groupStatus) {
+          const groupStatus = payload.data.groupStatus
+          localStorage.setItem('groupStatus', JSON.stringify(groupStatus))
+          if (!groupStatus.userGroups || groupStatus.userGroups.length === 0) {
+            if (!groupStatus.inCurrentGroup) {
+              navigate('/welcome-back')
+              return
+            }
+          }
+        } else {
+          const storedGroupStatus = localStorage.getItem('groupStatus')
+          if (storedGroupStatus) {
+            try {
+              const groupStatus = JSON.parse(storedGroupStatus)
+              if (!groupStatus.userGroups || groupStatus.userGroups.length === 0) {
+                if (!groupStatus.inCurrentGroup) {
+                  navigate('/welcome-back')
+                  return
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing group status:', error)
+            }
           }
         }
-      } catch (error) {
-        console.error('Error parsing group status:', error)
+      } catch (e) {
+        console.error('Dashboard group-status:', e)
+        const storedGroupStatus = localStorage.getItem('groupStatus')
+        if (storedGroupStatus) {
+          try {
+            const groupStatus = JSON.parse(storedGroupStatus)
+            if (!groupStatus.userGroups || groupStatus.userGroups.length === 0) {
+              if (!groupStatus.inCurrentGroup) {
+                navigate('/welcome-back')
+                return
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing group status:', error)
+          }
+        }
       }
-    }
 
-    // Always fetch fresh data from API to prevent showing wrong user's dashboard
-    // Never trust localStorage userData - it could be from a deleted user
-    fetchUserData()
+      if (cancelled) return
 
-    // Fetch current group links for Quick Actions
-    ;(async () => {
+      // Always fetch fresh data from API to prevent showing wrong user's dashboard
+      fetchUserData()
+
+      // Fetch current group links for Quick Actions
+      ;(async () => {
       try {
         const res = await fetch('/api/auth/my-group', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -364,6 +398,11 @@ const Dashboard = () => {
 
     // Load existing milestone progress
     loadMilestoneProgress()
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [navigate])
   const UnreadBadge = () => {
     if (!unreadCount || unreadCount <= 0) return null
