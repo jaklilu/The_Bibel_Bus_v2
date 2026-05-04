@@ -127,6 +127,27 @@ export class GroupService {
   }
 
   /**
+   * A group that is currently in its reading window but no longer accepts new members
+   * (registration deadline has passed). Used to explain why only "next" join is offered.
+   */
+  static async getReadingGroupWithClosedRegistration(): Promise<BibleGroup | null> {
+    const today = new Date().toISOString().split('T')[0]
+    return await getRow(
+      `
+      SELECT * FROM bible_groups
+      WHERE status IN ('active', 'closed')
+        AND start_date <= ?
+        AND end_date >= ?
+        AND registration_deadline < ?
+        AND start_date >= '2024-01-01'
+      ORDER BY start_date DESC
+      LIMIT 1
+    `,
+      [today, today, today]
+    )
+  }
+
+  /**
    * Create the next quarterly group automatically
    */
   static async createNextQuarterlyGroup(): Promise<BibleGroup | null> {

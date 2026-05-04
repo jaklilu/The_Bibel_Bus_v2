@@ -14,6 +14,99 @@ import crypto from 'crypto'
 
 const router = Router()
 
+/** Single source of truth for Welcome Back / login group join flags (prevents duplicate Current vs Next for same group). */
+async function getGroupStatusForUser(userId: number): Promise<Record<string, unknown>> {
+  const userGroups = await getRows(
+    `
+      SELECT 
+        bg.id,
+        bg.name,
+        bg.start_date,
+        bg.end_date,
+        bg.registration_deadline,
+        bg.status as group_status,
+        bg.max_members,
+        gm.join_date,
+        gm.whatsapp_joined
+      FROM group_members gm
+      JOIN bible_groups bg ON gm.group_id = bg.id
+      WHERE gm.user_id = ? AND gm.status = 'active'
+      ORDER BY bg.start_date DESC
+    `,
+    [userId]
+  )
+
+  const currentActiveGroup = await GroupService.getCurrentActiveGroup()
+  const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
+  const closedRegGroup = await GroupService.getReadingGroupWithClosedRegistration()
+
+  const inCurrentGroup = userGroups.some(
+    (g: any) => currentActiveGroup && g.id === currentActiveGroup.id
+  )
+
+  const today = new Date().toISOString().split('T')[0]
+  let canJoinCurrent = !!(
+    currentActiveGroup &&
+    currentActiveGroup.registration_deadline >= today &&
+    !userGroups.some((g: any) => g.id === currentActiveGroup.id)
+  )
+
+  const canJoinNext = !!(
+    nextUpcomingGroup &&
+    nextUpcomingGroup.registration_deadline >= today &&
+    !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+  )
+
+  const joinOptionsMerged = !!(
+    currentActiveGroup &&
+    nextUpcomingGroup &&
+    currentActiveGroup.id === nextUpcomingGroup.id
+  )
+  if (joinOptionsMerged) {
+    canJoinCurrent = false
+  }
+
+  const registrationClosedForGroup =
+    closedRegGroup && !userGroups.some((g: any) => g.id === closedRegGroup.id)
+      ? { id: closedRegGroup.id, name: closedRegGroup.name }
+      : null
+
+  return {
+    inCurrentGroup,
+    userGroups: userGroups.map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      start_date: g.start_date,
+      end_date: g.end_date,
+      group_status: g.group_status,
+      join_date: g.join_date,
+      whatsapp_joined: g.whatsapp_joined || false
+    })),
+    currentGroup: currentActiveGroup
+      ? {
+          id: currentActiveGroup.id,
+          name: currentActiveGroup.name,
+          start_date: currentActiveGroup.start_date,
+          registration_deadline: currentActiveGroup.registration_deadline,
+          max_members: currentActiveGroup.max_members
+        }
+      : null,
+    nextGroup: nextUpcomingGroup
+      ? {
+          id: nextUpcomingGroup.id,
+          name: nextUpcomingGroup.name,
+          start_date: nextUpcomingGroup.start_date,
+          registration_deadline: nextUpcomingGroup.registration_deadline,
+          max_members: nextUpcomingGroup.max_members
+        }
+      : null,
+    canJoinCurrent,
+    canJoinNext,
+    joinOptionsMerged,
+    registrationClosedForGroup
+  }
+}
+
 /** JWT + groupStatus for members — same shape as login-email-only (used after register too). */
 async function buildMemberSessionData(userId: number): Promise<{
   token: string
@@ -32,67 +125,8 @@ async function buildMemberSessionData(userId: number): Promise<{
     process.env.JWT_SECRET || 'your-secret-key',
     { expiresIn: '24h' }
   )
-  const userGroups = await getRows(`
-      SELECT 
-        bg.id,
-        bg.name,
-        bg.start_date,
-        bg.end_date,
-        bg.registration_deadline,
-        bg.status as group_status,
-        bg.max_members,
-        gm.join_date,
-        gm.whatsapp_joined
-      FROM group_members gm
-      JOIN bible_groups bg ON gm.group_id = bg.id
-      WHERE gm.user_id = ? AND gm.status = 'active'
-      ORDER BY bg.start_date DESC
-    `, [user.id])
 
-  const currentActiveGroup = await GroupService.getCurrentActiveGroup()
-  const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
-
-  const inCurrentGroup = userGroups.some((g: any) =>
-    currentActiveGroup && g.id === currentActiveGroup.id
-  )
-
-  const today = new Date().toISOString().split('T')[0]
-  const canJoinCurrent = currentActiveGroup &&
-    currentActiveGroup.registration_deadline >= today &&
-    !userGroups.some((g: any) => g.id === currentActiveGroup.id)
-
-  const canJoinNext = nextUpcomingGroup &&
-    nextUpcomingGroup.registration_deadline >= today &&
-    !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
-
-  const groupStatus = {
-    inCurrentGroup,
-    userGroups: userGroups.map((g: any) => ({
-      id: g.id,
-      name: g.name,
-      start_date: g.start_date,
-      end_date: g.end_date,
-      group_status: g.group_status,
-      join_date: g.join_date,
-      whatsapp_joined: g.whatsapp_joined || false
-    })),
-    currentGroup: currentActiveGroup ? {
-      id: currentActiveGroup.id,
-      name: currentActiveGroup.name,
-      start_date: currentActiveGroup.start_date,
-      registration_deadline: currentActiveGroup.registration_deadline,
-      max_members: currentActiveGroup.max_members
-    } : null,
-    nextGroup: nextUpcomingGroup ? {
-      id: nextUpcomingGroup.id,
-      name: nextUpcomingGroup.name,
-      start_date: nextUpcomingGroup.start_date,
-      registration_deadline: nextUpcomingGroup.registration_deadline,
-      max_members: nextUpcomingGroup.max_members
-    } : null,
-    canJoinCurrent,
-    canJoinNext
-  }
+  const groupStatus = await getGroupStatusForUser(user.id)
 
   return {
     token,
@@ -748,6 +782,18 @@ router.post('/login-email-only', [
   }
 })
 
+// Refresh join flags for Welcome Back (same payload shape as login groupStatus)
+router.get('/group-status', userAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id
+    const groupStatus = await getGroupStatusForUser(userId)
+    res.json({ success: true, data: { groupStatus } })
+  } catch (error) {
+    console.error('group-status error:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to load group status' } })
+  }
+})
+
 // Login user
 router.post('/login', [
   body('email').isEmail().withMessage('Must be a valid email'),
@@ -810,43 +856,7 @@ router.post('/login', [
       { expiresIn: '24h' }
     )
 
-    // Get user's group memberships and status
-    const userGroups = await getRows(`
-      SELECT 
-        bg.id,
-        bg.name,
-        bg.start_date,
-        bg.end_date,
-        bg.registration_deadline,
-        bg.status as group_status,
-        bg.max_members,
-        gm.join_date,
-        gm.whatsapp_joined
-      FROM group_members gm
-      JOIN bible_groups bg ON gm.group_id = bg.id
-      WHERE gm.user_id = ? AND gm.status = 'active'
-      ORDER BY bg.start_date DESC
-    `, [user.id])
-
-    // Get current active group (registration open)
-    const currentActiveGroup = await GroupService.getCurrentActiveGroup()
-    
-    // Get next upcoming group
-    const nextUpcomingGroup = await GroupService.getNextUpcomingGroup()
-
-    // Determine group status
-    const inCurrentGroup = userGroups.some((g: any) => 
-      currentActiveGroup && g.id === currentActiveGroup.id
-    )
-    
-    const today = new Date().toISOString().split('T')[0]
-    const canJoinCurrent = currentActiveGroup && 
-      currentActiveGroup.registration_deadline >= today &&
-      !userGroups.some((g: any) => g.id === currentActiveGroup.id)
-    
-    const canJoinNext = nextUpcomingGroup && 
-      nextUpcomingGroup.registration_deadline >= today &&
-      !userGroups.some((g: any) => g.id === nextUpcomingGroup.id)
+    const groupStatus = await getGroupStatusForUser(user.id)
 
     res.json({
       success: true,
@@ -861,34 +871,7 @@ router.post('/login', [
           trophies_count: user.trophies_count || 0
         },
         token,
-        groupStatus: {
-          inCurrentGroup,
-          userGroups: userGroups.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            start_date: g.start_date,
-            end_date: g.end_date,
-            group_status: g.group_status,
-            join_date: g.join_date,
-            whatsapp_joined: g.whatsapp_joined || false
-          })),
-          currentGroup: currentActiveGroup ? {
-            id: currentActiveGroup.id,
-            name: currentActiveGroup.name,
-            start_date: currentActiveGroup.start_date,
-            registration_deadline: currentActiveGroup.registration_deadline,
-            max_members: currentActiveGroup.max_members
-          } : null,
-          nextGroup: nextUpcomingGroup ? {
-            id: nextUpcomingGroup.id,
-            name: nextUpcomingGroup.name,
-            start_date: nextUpcomingGroup.start_date,
-            registration_deadline: nextUpcomingGroup.registration_deadline,
-            max_members: nextUpcomingGroup.max_members
-          } : null,
-          canJoinCurrent,
-          canJoinNext
-        }
+        groupStatus
       }
     })
   } catch (error) {
@@ -1652,7 +1635,11 @@ router.post('/groups/:id/join', userAuth, async (req: Request, res: Response) =>
       [groupId, userId, todayIso]
     )
 
-    res.json({ success: true, message: 'Joined next group', data: { group_id: groupId } })
+    res.json({
+      success: true,
+      message: 'Joined next group',
+      data: { group_id: groupId, groupName: group.name }
+    })
   } catch (error) {
     console.error('Error joining group:', error)
     res.status(500).json({ success: false, error: { message: 'Failed to join group' } })

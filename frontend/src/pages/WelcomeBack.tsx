@@ -12,16 +12,53 @@ const WelcomeBack = () => {
   const [joinSuccess, setJoinSuccess] = useState('')
 
   useEffect(() => {
-    // Get group status from localStorage (set by login)
-    const stored = localStorage.getItem('groupStatus')
-    if (stored) {
-      try {
-        setGroupStatus(JSON.parse(stored))
-      } catch (err) {
-        console.error('Error parsing group status:', err)
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      const stored = localStorage.getItem('groupStatus')
+      if (stored) {
+        try {
+          setGroupStatus(JSON.parse(stored))
+        } catch (err) {
+          console.error('Error parsing group status:', err)
+        }
       }
+      setLoading(false)
+      return
     }
-    setLoading(false)
+
+    ;(async () => {
+      try {
+        const response = await fetch('/api/auth/group-status', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data.success && data.data?.groupStatus) {
+          setGroupStatus(data.data.groupStatus)
+          localStorage.setItem('groupStatus', JSON.stringify(data.data.groupStatus))
+        } else {
+          const stored = localStorage.getItem('groupStatus')
+          if (stored) {
+            try {
+              setGroupStatus(JSON.parse(stored))
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error refreshing group status:', err)
+        const stored = localStorage.getItem('groupStatus')
+        if (stored) {
+          try {
+            setGroupStatus(JSON.parse(stored))
+          } catch {
+            /* ignore */
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
   const handleJoinCurrentGroup = async () => {
@@ -73,7 +110,8 @@ const WelcomeBack = () => {
       const data = await response.json()
 
       if (data.success) {
-        setJoinSuccess('Successfully registered for the next group!')
+        const gn = data.data?.groupName || groupStatus?.nextGroup?.name
+        setJoinSuccess(gn ? `Successfully registered for ${gn}!` : 'Successfully registered for the next group!')
         // Refresh group status
         setTimeout(() => {
           navigate('/dashboard')
@@ -173,6 +211,24 @@ const WelcomeBack = () => {
             <p className="text-purple-200 mb-4">
               Join a reading group to start or continue your Bible journey.
             </p>
+
+            {groupStatus?.registrationClosedForGroup && groupStatus?.canJoinNext && (
+              <div className="bg-amber-500/15 border border-amber-500/40 rounded-lg p-4 mb-4 text-left">
+                <p className="text-amber-100 text-sm leading-relaxed">
+                  Registration for{' '}
+                  <strong className="text-white">{groupStatus.registrationClosedForGroup.name}</strong>{' '}
+                  has closed. Join the next Bible Bus group below.
+                </p>
+              </div>
+            )}
+
+            {groupStatus?.joinOptionsMerged && groupStatus?.canJoinNext && !groupStatus?.registrationClosedForGroup && (
+              <div className="bg-purple-700/40 border border-purple-500/30 rounded-lg p-4 mb-4 text-left">
+                <p className="text-purple-100 text-sm leading-relaxed">
+                  Use the button below to register for the next Bible Bus group that is open for signup.
+                </p>
+              </div>
+            )}
 
             {joinError && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
