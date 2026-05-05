@@ -90,8 +90,9 @@ export class StripeService {
         payment_behavior: 'default_incomplete',
         payment_settings: {
           save_default_payment_method: 'on_subscription',
+          payment_method_types: ['card'],
         },
-        expand: ['latest_invoice'],
+        expand: ['latest_invoice.payment_intent'],
       })
 
       let latestInv = subscription.latest_invoice
@@ -104,12 +105,38 @@ export class StripeService {
         }
       }
 
-      const invoice = await stripe.invoices.retrieve(invoiceId, {
-        expand: ['payment_intent'],
-      })
+      // Draft invoices have no PaymentIntent yet — finalize so Stripe creates one for card confirmation.
+      let invoice =
+        typeof latestInv === 'object' && latestInv !== null
+          ? (latestInv as Stripe.Invoice)
+          : await stripe.invoices.retrieve(invoiceId, { expand: ['payment_intent'] })
 
-      const piRef = (invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent })
+      const stableInvoiceId = invoice.id || invoiceId
+
+      if (invoice.status === 'draft') {
+        try {
+          invoice = await stripe.invoices.finalizeInvoice(stableInvoiceId, {
+            expand: ['payment_intent'],
+          })
+        } catch (finalizeErr) {
+          console.warn('finalizeInvoice failed, retrieving invoice:', finalizeErr)
+          invoice = await stripe.invoices.retrieve(stableInvoiceId, { expand: ['payment_intent'] })
+        }
+      } else if (!(invoice as Stripe.Invoice & { payment_intent?: unknown }).payment_intent) {
+        invoice = await stripe.invoices.retrieve(stableInvoiceId, { expand: ['payment_intent'] })
+      }
+
+      let piRef = (invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent })
         .payment_intent
+
+      if (!piRef) {
+        const again = await stripe.invoices.retrieve(stableInvoiceId, {
+          expand: ['payment_intent'],
+        })
+        piRef = (again as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent })
+          .payment_intent
+      }
+
       if (!piRef) {
         return {
           success: false,
