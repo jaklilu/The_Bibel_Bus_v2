@@ -905,8 +905,8 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Next Group Banner (moved to very end) */}
-        {nextGroup && (
+        {/* Next Group Banner — Resources tab only (not Progress) */}
+        {activeTab === 'getting-started' && nextGroup && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
