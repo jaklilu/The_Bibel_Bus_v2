@@ -226,7 +226,7 @@ const Register = () => {
               Welcome to The Bible Bus! 🚌
             </h1>
             <p className="text-lg text-purple-200">
-              Step 1: Join Our WhatsApp Group
+              Step 1: Join Your WhatsApp Group
             </p>
           </motion.div>
 
@@ -241,7 +241,7 @@ const Register = () => {
                 <MessageCircle className="h-12 w-12 text-green-400" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-4">
-                Join Our WhatsApp Group
+                Join Your WhatsApp Group
               </h2>
               <div className="bg-purple-700/30 border border-purple-600/30 rounded-lg p-6 mb-4 text-left space-y-4 text-purple-200">
                 <p>
@@ -284,7 +284,7 @@ const Register = () => {
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3 text-lg shadow-lg"
                 >
                   <MessageCircle className="h-6 w-6" />
-                  <span>Join Our WhatsApp Group</span>
+                  <span>Join Your WhatsApp Group</span>
                 </button>
 
                 <button

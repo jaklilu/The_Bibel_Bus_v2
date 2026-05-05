@@ -710,8 +710,11 @@ const Dashboard = () => {
                 <MessageSquare className="h-12 w-12 text-green-400 mr-3" />
                 <div className="flex-1">
                   <h3 className="text-lg font-heading text-amber-500">
-                    {groupName || (inGroup ? 'Your Group' : 'No Group Assigned')}
+                    Join Your WhatsApp Group
                   </h3>
+                  {inGroup && (
+                    <p className="text-sm text-purple-300 mt-1">{groupName || 'Your Group'}</p>
+                  )}
                   {!inGroup && (
                     <p className="text-sm text-purple-300 mt-1">
                       <Link to="/welcome-back" className="text-amber-400 hover:text-amber-300 underline">Join a group</Link> to start your journey.
