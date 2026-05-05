@@ -168,6 +168,12 @@ export class StripeService {
           }
         }
 
+        // One-time PI: metadata should be set at creation, but Link/wallets/receipts sometimes omit copies;
+        // receipt_email is populated when Stripe collects it at confirmation.
+        if (!metadata.donor_email && paymentIntent.receipt_email) {
+          metadata = { ...metadata, donor_email: paymentIntent.receipt_email }
+        }
+
         return {
           success: true,
           eventType: 'payment_intent.succeeded',

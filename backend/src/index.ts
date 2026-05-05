@@ -169,58 +169,85 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
 
     if (result.eventType === 'payment_intent.succeeded' && result.paymentIntentId) {
       // Monthly gifts use Checkout webhook above; PI.succeeded on subscription invoices would duplicate email.
-      const meta = result.metadata as { donation_type?: string } | undefined
+      const meta = result.metadata as {
+        donation_type?: string
+        donation_id?: string
+        donor_email?: string
+        donor_name?: string
+        amount?: string
+      }
       if (meta?.donation_type === 'monthly') {
         console.log('Skipping PI handler side-effects for monthly (Checkout confirms subscription)')
       } else {
-      // Update donation status to completed (prefer donation_id from metadata for correct row)
-      const { runQuery } = await import('./database/database')
-      const donationId = result.metadata?.donation_id
-      if (donationId) {
-        await runQuery('UPDATE donations SET status = ? WHERE id = ? AND status = ?', [
-          'completed',
-          donationId,
-          'pending'
-        ])
-      } else if (result.metadata?.donor_email) {
-        await runQuery(
-          'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
-          ['completed', result.metadata.donor_email, 'pending']
-        )
-      }
-
-      // Send donation confirmation email
-      console.log('Payment succeeded, checking for email sending...')
-      console.log('Metadata:', result.metadata)
-      
-      if (result.metadata?.donor_email && result.metadata?.donor_name) {
-        console.log('Sending donation confirmation email to:', result.metadata.donor_email)
-        const { sendDonationConfirmationEmail } = await import('./utils/emailService')
-        const amount = result.metadata?.amount ? parseFloat(result.metadata.amount) : 0
-        const donationType = result.metadata?.donation_type || 'one-time'
-        
-        console.log('Email details:', {
-          email: result.metadata.donor_email,
-          name: result.metadata.donor_name,
-          amount,
-          type: donationType
-        })
-        
-        try {
-          const emailResult = await sendDonationConfirmationEmail(
-            result.metadata.donor_email,
-            result.metadata.donor_name,
-            amount,
-            donationType
+        const { runQuery, getRow } = await import('./database/database')
+        const donationId = meta?.donation_id
+        if (donationId) {
+          await runQuery('UPDATE donations SET status = ? WHERE id = ? AND status = ?', [
+            'completed',
+            donationId,
+            'pending'
+          ])
+        } else if (meta?.donor_email) {
+          await runQuery(
+            'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
+            ['completed', meta.donor_email, 'pending']
           )
-          console.log('Donation confirmation email result:', emailResult)
-        } catch (emailError) {
-          console.error('Error sending donation confirmation email:', emailError)
-          // Don't fail the webhook if email fails
         }
-      } else {
-        console.log('Missing email metadata, cannot send email')
-      }
+
+        console.log('Payment succeeded (one-time), resolving thank-you email...')
+        console.log('Metadata:', result.metadata)
+
+        const row = donationId
+          ? ((await getRow(
+              'SELECT donor_email, donor_name, amount, type FROM donations WHERE id = ?',
+              [donationId]
+            )) as
+              | { donor_email?: string; donor_name?: string; amount?: number | string; type?: string }
+              | undefined)
+          : undefined
+
+        const email =
+          (meta?.donor_email && String(meta.donor_email).trim()) ||
+          (row?.donor_email && String(row.donor_email).trim()) ||
+          ''
+        const name =
+          (meta?.donor_name && String(meta.donor_name).trim()) ||
+          (row?.donor_name && String(row.donor_name).trim()) ||
+          'Friend'
+
+        let amount = 0
+        if (meta?.amount) {
+          amount = parseFloat(String(meta.amount))
+        } else if (row?.amount != null) {
+          amount = parseFloat(String(row.amount))
+        } else {
+          const cents = (result as { amount?: number }).amount
+          if (cents != null && cents > 0) {
+            amount = cents / 100
+          }
+        }
+
+        const donationType = meta?.donation_type || row?.type || 'one-time'
+
+        if (email) {
+          try {
+            const { sendDonationConfirmationEmail } = await import('./utils/emailService')
+            const emailResult = await sendDonationConfirmationEmail(
+              email,
+              name,
+              amount,
+              donationType
+            )
+            console.log('One-time donation thank-you email sent to:', email, 'result:', emailResult)
+          } catch (emailError) {
+            console.error('Error sending donation confirmation email:', emailError)
+          }
+        } else {
+          console.warn(
+            'payment_intent.succeeded: no donor email (metadata + DB empty); PI:',
+            result.paymentIntentId
+          )
+        }
       }
     }
 
