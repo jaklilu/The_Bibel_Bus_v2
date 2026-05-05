@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { DollarSign, Heart, Shield, Lock } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
@@ -6,16 +6,87 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-// Payment form component
-const PaymentForm = ({ 
-  donationAmount, 
-  donationType, 
-  donorInfo, 
-  onSuccess, 
-  onError 
+/** Monthly gifts: Stripe Checkout (hosted) — reliably attaches payment method to the subscription. */
+const MonthlyCheckoutForm = ({
+  donationAmount,
+  donorInfo,
+  onError
 }: {
   donationAmount: number | string
-  donationType: 'one-time' | 'monthly'
+  donorInfo: { fullName: string; email: string; anonymous: boolean }
+  onError: (message: string) => void
+}) => {
+  const [isRedirecting, setIsRedirecting] = useState(false)
+
+  const handleStartCheckout = async () => {
+    setIsRedirecting(true)
+    try {
+      const amount = typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)
+      const response = await fetch('/api/auth/donations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_name: donorInfo.fullName,
+          donor_email: donorInfo.email,
+          amount,
+          type: 'monthly',
+          anonymous: donorInfo.anonymous
+        })
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Could not start checkout')
+      }
+      const url = data.data?.url as string | undefined
+      if (!url) {
+        throw new Error('No checkout URL returned')
+      }
+      window.location.href = url
+    } catch (error) {
+      console.error('Checkout error:', error)
+      onError(error instanceof Error ? error.message : 'Could not start checkout')
+      setIsRedirecting(false)
+    }
+  }
+
+  const isFormComplete = donationAmount && donorInfo.fullName && donorInfo.email
+
+  if (!isFormComplete) {
+    return (
+      <div className="bg-yellow-800/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-700/30 text-center">
+        <p className="text-yellow-300">Please fill in the donation amount and donor information above to continue.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30">
+        <p className="text-purple-100 text-center mb-4">
+          You will complete your card details on <strong className="text-white">Stripe&apos;s secure checkout page</strong>.
+          That activates your monthly subscription in one step.
+        </p>
+        <button
+          type="button"
+          onClick={handleStartCheckout}
+          disabled={isRedirecting}
+          className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-purple-900 font-semibold py-4 px-8 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+        >
+          {isRedirecting ? 'Redirecting to secure checkout…' : `Continue — $${(typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)}/month`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// One-time: PaymentIntent + card elements on this page
+const OneTimePaymentForm = ({
+  donationAmount,
+  donorInfo,
+  onSuccess,
+  onError
+}: {
+  donationAmount: number | string
   donorInfo: { fullName: string; email: string; anonymous: boolean }
   onSuccess: (message: string) => void
   onError: (message: string) => void
@@ -35,7 +106,6 @@ const PaymentForm = ({
     setIsProcessing(true)
 
     try {
-      // Create payment intent
       const response = await fetch('/api/auth/donations', {
         method: 'POST',
         headers: {
@@ -45,7 +115,7 @@ const PaymentForm = ({
           donor_name: donorInfo.fullName,
           donor_email: donorInfo.email,
           amount: typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string),
-          type: donationType,
+          type: 'one-time',
           anonymous: donorInfo.anonymous
         })
       })
@@ -56,10 +126,14 @@ const PaymentForm = ({
         throw new Error(data.error?.message || 'Failed to create payment intent')
       }
 
-      // Confirm payment
+      const cardEl = elements.getElement(CardNumberElement)
+      if (!cardEl) {
+        throw new Error('Card field not ready. Please refresh the page.')
+      }
+
       const { error, paymentIntent } = await stripe.confirmCardPayment(data.data.clientSecret, {
         payment_method: {
-          card: elements.getElement(CardNumberElement)!,
+          card: cardEl,
           billing_details: {
             name: donorInfo.fullName,
             email: donorInfo.email,
@@ -69,13 +143,11 @@ const PaymentForm = ({
 
       if (error) {
         onError(error.message || 'Payment failed')
-      } else if (paymentIntent.status === 'succeeded') {
+      } else if (paymentIntent?.status === 'succeeded') {
         const amt = (typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)
-        onSuccess(
-          donationType === 'monthly'
-            ? `Thank you! Your monthly gift of $${amt} is set up. You will be charged each month until you cancel in your bank/card settings or by contacting us.`
-            : `Thank you for your donation of $${amt}! Your payment has been processed successfully.`
-        )
+        onSuccess(`Thank you for your donation of $${amt}! Your payment has been processed successfully.`)
+      } else {
+        onError('Payment was not completed. Please try again.')
       }
     } catch (error) {
       console.error('Payment error:', error)
@@ -100,6 +172,14 @@ const PaymentForm = ({
     return (
       <div className="bg-yellow-800/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-700/30 text-center">
         <p className="text-yellow-300">Please fill in the donation amount and donor information above to enable payment.</p>
+      </div>
+    )
+  }
+
+  if (!stripe) {
+    return (
+      <div className="bg-red-800/50 backdrop-blur-sm rounded-2xl p-6 border border-red-700/30 text-center">
+        <p className="text-red-300">Stripe is not loaded. Please check your connection and refresh the page.</p>
       </div>
     )
   }
@@ -191,6 +271,20 @@ const Donate = () => {
   })
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('donation') === 'success') {
+      setSuccessMessage(
+        'Thank you! Your monthly gift is active. You will receive a confirmation email shortly.'
+      )
+      window.history.replaceState({}, '', '/donate')
+    }
+    if (params.get('donation_canceled') === '1') {
+      setErrorMessage('Checkout was canceled. You can try again when you are ready.')
+      window.history.replaceState({}, '', '/donate')
+    }
+  }, [])
 
   const presetAmounts = [25, 50, 100, 250, 500, 1000]
 
@@ -382,15 +476,22 @@ const Donate = () => {
             className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30"
           >
             <h2 className="text-2xl font-bold text-white mb-6">Payment Information</h2>
-            <Elements stripe={stripePromise}>
-              <PaymentForm
+            {donationType === 'monthly' ? (
+              <MonthlyCheckoutForm
                 donationAmount={donationAmount}
-                donationType={donationType}
                 donorInfo={donorInfo}
-                onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
               />
-            </Elements>
+            ) : (
+              <Elements stripe={stripePromise}>
+                <OneTimePaymentForm
+                  donationAmount={donationAmount}
+                  donorInfo={donorInfo}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </Elements>
+            )}
           </motion.div>
 
           {/* Donation Summary */}

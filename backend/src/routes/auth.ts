@@ -1820,7 +1820,7 @@ router.post('/donations', [
     const { StripeService } = await import('../services/stripeService')
 
     if (type === 'monthly') {
-      const subResult = await StripeService.createMonthlySubscription(
+      const checkoutResult = await StripeService.createMonthlyCheckoutSession(
         amount,
         donor_email,
         donor_name,
@@ -1828,30 +1828,21 @@ router.post('/donations', [
         !!anonymous
       )
 
-      if (!subResult.success) {
+      if (!checkoutResult.success) {
         return res.status(500).json({
           success: false,
           error: {
-            message: subResult.error || 'Failed to create monthly subscription'
+            message: checkoutResult.error || 'Failed to start monthly checkout'
           }
         })
       }
 
-      await runQuery(
-        'UPDATE donations SET stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?',
-        [subResult.customerId, subResult.subscriptionId, donationId]
-      )
-
-      const donationUpdated = await getRow('SELECT * FROM donations WHERE id = ?', [donationId])
-
       return res.status(201).json({
         success: true,
-        message: 'Monthly subscription created; confirm payment to start recurring billing',
+        message: 'Redirect to Stripe Checkout to complete your monthly gift',
         data: {
-          donation: donationUpdated,
-          clientSecret: subResult.clientSecret,
-          paymentIntentId: subResult.paymentIntentId,
-          subscriptionId: subResult.subscriptionId
+          donation,
+          url: checkoutResult.url
         }
       })
     }

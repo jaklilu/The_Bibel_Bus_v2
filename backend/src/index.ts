@@ -115,7 +115,37 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
       })
     }
 
+    if (result.eventType === 'checkout.session.completed' && result.metadata?.donation_id) {
+      const { runQuery } = await import('./database/database')
+      const { sendDonationConfirmationEmail } = await import('./utils/emailService')
+      const donationId = result.metadata.donation_id
+      const cust = (result as { customerId?: string }).customerId
+      const sub = (result as { subscriptionId?: string }).subscriptionId
+      await runQuery(
+        'UPDATE donations SET status = ?, stripe_customer_id = COALESCE(?, stripe_customer_id), stripe_subscription_id = COALESCE(?, stripe_subscription_id) WHERE id = ? AND status = ?',
+        ['completed', cust || null, sub || null, donationId, 'pending']
+      )
+      if (result.metadata.donor_email && result.metadata.donor_name) {
+        const amount = result.metadata.amount ? parseFloat(String(result.metadata.amount)) : 0
+        try {
+          await sendDonationConfirmationEmail(
+            result.metadata.donor_email,
+            result.metadata.donor_name,
+            amount,
+            'monthly'
+          )
+        } catch (emailError) {
+          console.error('Error sending donation confirmation email:', emailError)
+        }
+      }
+    }
+
     if (result.eventType === 'payment_intent.succeeded' && result.paymentIntentId) {
+      // Monthly gifts use Checkout webhook above; PI.succeeded on subscription invoices would duplicate email.
+      const meta = result.metadata as { donation_type?: string } | undefined
+      if (meta?.donation_type === 'monthly') {
+        console.log('Skipping PI handler side-effects for monthly (Checkout confirms subscription)')
+      } else {
       // Update donation status to completed (prefer donation_id from metadata for correct row)
       const { runQuery } = await import('./database/database')
       const donationId = result.metadata?.donation_id
@@ -163,6 +193,7 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
         }
       } else {
         console.log('Missing email metadata, cannot send email')
+      }
       }
     }
 

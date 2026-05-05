@@ -44,41 +44,35 @@ export class StripeService {
   }
 
   /**
-   * Monthly recurring: Stripe Subscriptions bill every interval (PaymentIntent alone cannot recur).
-   * First invoice gets a PaymentIntent; confirmCardPayment works the same as one-time.
+   * Monthly recurring: host payment on Stripe Checkout so the card is collected and the
+   * subscription activates reliably (embedded Elements often left invoices "open" with no PM).
    */
-  static async createMonthlySubscription(
+  static async createMonthlyCheckoutSession(
     amount: number,
     donorEmail: string,
     donorName: string,
     donationId: number,
     anonymous: boolean
   ) {
+    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     try {
-      const customer = await stripe.customers.create({
-        email: donorEmail,
-        name: donorName,
-        metadata: {
-          donation_id: String(donationId),
-          donor_email: donorEmail,
-          donor_name: donorName,
-        },
-      })
-
-      const product = await stripe.products.create({
-        name: 'The Bible Bus Monthly Donation',
-      })
-
-      const price = await stripe.prices.create({
-        currency: 'usd',
-        unit_amount: Math.round(amount * 100),
-        recurring: { interval: 'month' },
-        product: product.id,
-      })
-
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{ price: price.id }],
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer_email: donorEmail,
+        client_reference_id: String(donationId),
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(amount * 100),
+              recurring: { interval: 'month' },
+              product_data: {
+                name: 'The Bible Bus Monthly Donation',
+              },
+            },
+            quantity: 1,
+          },
+        ],
         metadata: {
           donation_id: String(donationId),
           donor_email: donorEmail,
@@ -87,85 +81,36 @@ export class StripeService {
           amount: amount.toString(),
           anonymous: anonymous ? '1' : '0',
         },
-        payment_behavior: 'default_incomplete',
-        payment_settings: {
-          save_default_payment_method: 'on_subscription',
-          payment_method_types: ['card'],
+        subscription_data: {
+          metadata: {
+            donation_id: String(donationId),
+            donor_email: donorEmail,
+            donor_name: donorName,
+            donation_type: 'monthly',
+            amount: amount.toString(),
+          },
         },
-        expand: ['latest_invoice.payment_intent'],
+        success_url: `${baseUrl}/donate?donation=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/donate?donation_canceled=1`,
       })
 
-      let latestInv = subscription.latest_invoice
-      const invoiceId =
-        typeof latestInv === 'string' ? latestInv : (latestInv as Stripe.Invoice)?.id
-      if (!invoiceId) {
+      if (!session.url) {
         return {
           success: false,
-          error: 'Subscription missing invoice',
-        }
-      }
-
-      // Draft invoices have no PaymentIntent yet — finalize so Stripe creates one for card confirmation.
-      let invoice =
-        typeof latestInv === 'object' && latestInv !== null
-          ? (latestInv as Stripe.Invoice)
-          : await stripe.invoices.retrieve(invoiceId, { expand: ['payment_intent'] })
-
-      const stableInvoiceId = invoice.id || invoiceId
-
-      if (invoice.status === 'draft') {
-        try {
-          invoice = await stripe.invoices.finalizeInvoice(stableInvoiceId, {
-            expand: ['payment_intent'],
-          })
-        } catch (finalizeErr) {
-          console.warn('finalizeInvoice failed, retrieving invoice:', finalizeErr)
-          invoice = await stripe.invoices.retrieve(stableInvoiceId, { expand: ['payment_intent'] })
-        }
-      } else if (!(invoice as Stripe.Invoice & { payment_intent?: unknown }).payment_intent) {
-        invoice = await stripe.invoices.retrieve(stableInvoiceId, { expand: ['payment_intent'] })
-      }
-
-      let piRef = (invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent })
-        .payment_intent
-
-      if (!piRef) {
-        const again = await stripe.invoices.retrieve(stableInvoiceId, {
-          expand: ['payment_intent'],
-        })
-        piRef = (again as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent })
-          .payment_intent
-      }
-
-      if (!piRef) {
-        return {
-          success: false,
-          error: 'Invoice did not include a payment intent',
-        }
-      }
-
-      const paymentIntent =
-        typeof piRef === 'string' ? await stripe.paymentIntents.retrieve(piRef) : piRef
-
-      if (!paymentIntent.client_secret) {
-        return {
-          success: false,
-          error: 'Missing client secret for subscription payment',
+          error: 'Checkout session did not return a URL',
         }
       }
 
       return {
         success: true,
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
-        subscriptionId: subscription.id,
-        customerId: customer.id,
+        url: session.url,
+        sessionId: session.id,
       }
     } catch (error) {
-      console.error('Error creating monthly subscription:', error)
+      console.error('Error creating monthly Checkout session:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create subscription',
+        error: error instanceof Error ? error.message : 'Failed to start Checkout',
       }
     }
   }
@@ -229,6 +174,24 @@ export class StripeService {
           paymentIntentId: paymentIntent.id,
           amount: paymentIntent.amount,
           metadata,
+        }
+      }
+
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session
+        const meta = { ...(session.metadata || {}) } as Stripe.Metadata
+        if (!meta.donation_id && session.client_reference_id) {
+          meta.donation_id = session.client_reference_id
+        }
+        const cust = session.customer
+        const sub = session.subscription
+        return {
+          success: true,
+          eventType: 'checkout.session.completed',
+          metadata: meta,
+          customerId: typeof cust === 'string' ? cust : cust?.id,
+          subscriptionId: typeof sub === 'string' ? sub : sub?.id,
+          amountTotal: session.amount_total,
         }
       }
 
