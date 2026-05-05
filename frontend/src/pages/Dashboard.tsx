@@ -473,6 +473,39 @@ const Dashboard = () => {
     }
   }
 
+  const handleAcceptInvitation = async () => {
+    const opened = window.open('about:blank', '_blank')
+    try {
+      const token = localStorage.getItem('userToken')
+      if (!token) {
+        if (opened) opened.location.href = inviteLink
+        else window.location.href = inviteLink
+        return
+      }
+
+      const response = await fetch('/api/auth/accept-invitation', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      const data = await response.json()
+
+      const targetUrl =
+        (data?.success && data?.data?.youversion_url) ? data.data.youversion_url : inviteLink
+
+      if (data.success && data.data.youversion_url) {
+        if (opened) opened.location.href = targetUrl
+        else window.location.href = targetUrl
+      } else {
+        if (opened) opened.location.href = targetUrl
+        else window.location.href = targetUrl
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error)
+      if (opened) opened.location.href = inviteLink
+      else window.location.href = inviteLink
+    }
+  }
 
   if (loading) {
     return (
@@ -564,100 +597,111 @@ const Dashboard = () => {
               whileHover={{ scale: 1.02 }} 
               className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 shadow-lg hover:shadow-xl transition-all mb-8"
             >
-              <div className="flex items-center mb-4">
-                <Users className="h-12 w-12 text-orange-500 mr-3" />
-                <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">
-                  {inviteAvailable ? 'Accept Your Invitation' : 'Accept Your Invitation @ 00 00 00 00'}
-                </h3>
-              </div>
-              <p className="text-purple-100 mb-4 text-center">{inviteAvailable ? 'Click to join the reading group' : ''}</p>
-              {!inviteAvailable && inviteStartAt && (
-                <div className="mb-4 flex justify-center">
-                  <Countdown
-                    date={inviteStartAt}
-                    renderer={({ days, hours, minutes, seconds }) => (
-                      <div className="grid grid-cols-4 gap-3">
-                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
+              {inviteAvailable ? (
+                <>
+                  <div className="flex items-center mb-4">
+                    <Users className="h-12 w-12 text-orange-500 mr-3" />
+                    <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">
+                      Accept Your Invitation Now
+                    </h3>
+                  </div>
+                  <p className="text-purple-100 mb-4 text-center">Click to join the reading group</p>
+                  <button
+                    type="button"
+                    onClick={handleAcceptInvitation}
+                    className="w-full bg-orange-500 hover:bg-orange-600 cursor-pointer text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Reading Group
+                  </button>
+                </>
+              ) : inviteStartAt ? (
+                <Countdown
+                  date={inviteStartAt}
+                  renderer={({ days, hours, minutes, seconds, completed }) => {
+                    const ready = completed
+                    const heading = ready
+                      ? 'Accept Your Invitation Now'
+                      : days > 0
+                        ? `Accept Your Invitation in ${days} ${days === 1 ? 'day' : 'days'}`
+                        : 'Accept Your Invitation in less than a day'
+                    return (
+                      <>
+                        <div className="flex items-center mb-4">
+                          <Users className="h-12 w-12 text-orange-500 mr-3" />
+                          <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">{heading}</h3>
                         </div>
-                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
-                        </div>
-                        <div className="w-16 sm:w-20 h-16 sm:h-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
-                          <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
-                        </div>
-                        <div className="w-16 sm:w-20 h-16 sm:h-20 relative text-center" style={{ perspective: 800 }}>
-                          <AnimatePresence initial={false}>
-                            <motion.div
-                              key={seconds}
-                              initial={{ rotateX: -90, opacity: 0 }}
-                              animate={{ rotateX: 0, opacity: 1 }}
-                              exit={{ rotateX: 90, opacity: 0 }}
-                              transition={{ duration: 0.35, ease: 'easeInOut' }}
-                              className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
-                              style={{ transformOrigin: 'top center' }}
-                            >
-                              <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
-                              <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
-                            </motion.div>
-                          </AnimatePresence>
-                        </div>
-                      </div>
-                    )}
-                  />
-                </div>
+                        <p className="text-purple-100 mb-4 text-center">
+                          {ready ? 'Click to join the reading group' : ''}
+                        </p>
+                        {!ready && (
+                          <div className="mb-4 flex justify-center">
+                            <div className="grid grid-cols-4 gap-3">
+                              <div className="w-16 sm:w-20 h-16 sm:w-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                                <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(days).padStart(2, '0')}</div>
+                                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Days</div>
+                              </div>
+                              <div className="w-16 sm:w-20 h-16 sm:w-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                                <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(hours).padStart(2, '0')}</div>
+                                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Hours</div>
+                              </div>
+                              <div className="w-16 sm:w-20 h-16 sm:w-20 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 text-center flex flex-col justify-center">
+                                <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(minutes).padStart(2, '0')}</div>
+                                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Minutes</div>
+                              </div>
+                              <div className="w-16 sm:w-20 h-16 sm:w-20 relative text-center" style={{ perspective: 800 }}>
+                                <AnimatePresence initial={false}>
+                                  <motion.div
+                                    key={seconds}
+                                    initial={{ rotateX: -90, opacity: 0 }}
+                                    animate={{ rotateX: 0, opacity: 1 }}
+                                    exit={{ rotateX: 90, opacity: 0 }}
+                                    transition={{ duration: 0.35, ease: 'easeInOut' }}
+                                    className="absolute inset-0 bg-purple-700/60 border border-purple-500/50 rounded-lg p-2 flex flex-col justify-center"
+                                    style={{ transformOrigin: 'top center' }}
+                                  >
+                                    <div className="text-xl sm:text-2xl font-bold text-amber-400 tabular-nums">{String(seconds).padStart(2, '0')}</div>
+                                    <div className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">Seconds</div>
+                                  </motion.div>
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {!ready && (
+                          <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleAcceptInvitation}
+                          disabled={!ready}
+                          className={`w-full ${ready ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50`}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Join Reading Group
+                        </button>
+                      </>
+                    )
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="flex items-center mb-4">
+                    <Users className="h-12 w-12 text-orange-500 mr-3" />
+                    <h3 className="text-lg font-heading text-amber-500 flex-1 text-center -ml-12">
+                      Accept Your Invitation
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full mt-4 bg-orange-500/50 cursor-not-allowed pointer-events-none text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Reading Group
+                  </button>
+                </>
               )}
-              {!inviteAvailable && (
-                <p className="text-purple-100 mb-4 text-center">Available on {inviteDateLabel}</p>
-              )}
-              <button
-                onClick={async () => {
-                  if (!inviteAvailable) return
-                  
-                  // Mobile browsers often block window.open if it's not directly tied to the click event.
-                  // Open a blank tab synchronously, then navigate it after async work completes.
-                  const opened = window.open('about:blank', '_blank')
-
-                  try {
-                    const token = localStorage.getItem('userToken')
-                    if (!token) {
-                      if (opened) opened.location.href = inviteLink
-                      else window.location.href = inviteLink
-                      return
-                    }
-                    
-                    const response = await fetch('/api/auth/accept-invitation', {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                    
-                    const data = await response.json()
-                    
-                    const targetUrl =
-                      (data?.success && data?.data?.youversion_url) ? data.data.youversion_url : inviteLink
-
-                    if (data.success && data.data.youversion_url) {
-                      if (opened) opened.location.href = targetUrl
-                      else window.location.href = targetUrl
-                    } else {
-                      if (opened) opened.location.href = targetUrl
-                      else window.location.href = targetUrl
-                    }
-                  } catch (error) {
-                    console.error('Error accepting invitation:', error)
-                    if (opened) opened.location.href = inviteLink
-                    else window.location.href = inviteLink
-                  }
-                }}
-                disabled={!inviteAvailable}
-                className={`w-full ${inviteAvailable ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer' : 'bg-orange-500/50 cursor-not-allowed pointer-events-none'} text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50`}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Join Reading Group
-              </button>
             </motion.div>
           </>
         )}
