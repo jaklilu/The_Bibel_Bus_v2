@@ -116,7 +116,7 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
     }
 
     if (result.eventType === 'checkout.session.completed' && result.metadata?.donation_id) {
-      const { runQuery } = await import('./database/database')
+      const { runQuery, getRow } = await import('./database/database')
       const { sendDonationConfirmationEmail } = await import('./utils/emailService')
       const donationId = result.metadata.donation_id
       const cust = (result as { customerId?: string }).customerId
@@ -125,18 +125,45 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
         'UPDATE donations SET status = ?, stripe_customer_id = COALESCE(?, stripe_customer_id), stripe_subscription_id = COALESCE(?, stripe_subscription_id) WHERE id = ? AND status = ?',
         ['completed', cust || null, sub || null, donationId, 'pending']
       )
-      if (result.metadata.donor_email && result.metadata.donor_name) {
-        const amount = result.metadata.amount ? parseFloat(String(result.metadata.amount)) : 0
+
+      const row = (await getRow(
+        'SELECT donor_email, donor_name, amount FROM donations WHERE id = ?',
+        [donationId]
+      )) as { donor_email?: string; donor_name?: string; amount?: number | string } | undefined
+
+      const email =
+        (result.metadata.donor_email && String(result.metadata.donor_email).trim()) ||
+        (row?.donor_email && String(row.donor_email).trim()) ||
+        ''
+      const name =
+        (result.metadata.donor_name && String(result.metadata.donor_name).trim()) ||
+        (row?.donor_name && String(row.donor_name).trim()) ||
+        'Friend'
+
+      let amount = 0
+      if (result.metadata.amount) {
+        amount = parseFloat(String(result.metadata.amount))
+      } else if (row?.amount != null) {
+        amount = parseFloat(String(row.amount))
+      } else {
+        const cents = (result as { amountTotal?: number | null }).amountTotal
+        if (cents != null && cents > 0) {
+          amount = cents / 100
+        }
+      }
+
+      if (email) {
         try {
-          await sendDonationConfirmationEmail(
-            result.metadata.donor_email,
-            result.metadata.donor_name,
-            amount,
-            'monthly'
-          )
+          await sendDonationConfirmationEmail(email, name, amount, 'monthly')
+          console.log('Monthly donation thank-you email sent to:', email)
         } catch (emailError) {
           console.error('Error sending donation confirmation email:', emailError)
         }
+      } else {
+        console.warn(
+          'checkout.session.completed: no donor email (metadata + DB empty); donation_id:',
+          donationId
+        )
       }
     }
 

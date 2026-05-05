@@ -183,6 +183,20 @@ export class StripeService {
         if (!meta.donation_id && session.client_reference_id) {
           meta.donation_id = session.client_reference_id
         }
+        // Session.metadata is not always present on webhook payloads; Checkout fills customer_details.
+        const details = session.customer_details
+        if (!meta.donor_email && details?.email) {
+          meta.donor_email = details.email
+        }
+        if (!meta.donor_name && details?.name) {
+          meta.donor_name = details.name
+        }
+        if (!meta.donor_email && session.customer_email) {
+          meta.donor_email = session.customer_email
+        }
+        if (!meta.amount && session.amount_total != null) {
+          meta.amount = String(session.amount_total / 100)
+        }
         const cust = session.customer
         const sub = session.subscription
         return {
