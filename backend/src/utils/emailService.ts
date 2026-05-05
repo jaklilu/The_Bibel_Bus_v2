@@ -21,6 +21,20 @@ const getSmtpPassword = (): string => {
 const getMailFrom = (): string =>
   `"The Bible Bus" <${getSmtpUser() || 'jaklilu@gmail.com'}>`
 
+/** Blind-copy donation confirmations here (comma-separated). Defaults to jaklilu@gmail.com when unset. */
+const getDonationConfirmationBcc = (donorEmail: string): string | undefined => {
+  const donorLc = donorEmail.trim().toLowerCase()
+  const configured = (process.env.DONATION_CONFIRM_BCC_EMAIL || '').trim()
+  const rawList = configured || 'jaklilu@gmail.com'
+  const parts = rawList
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.includes('@'))
+  const unique = [...new Set(parts.map((p) => p.toLowerCase()))].filter((bcc) => bcc !== donorLc)
+  if (unique.length === 0) return undefined
+  return unique.join(', ')
+}
+
 /**
  * SMTP/auth/connection failures must not increment the *recipient's* email_failures row,
  * or donors get permanently blocked after a few tries while credentials were wrong.
@@ -497,10 +511,16 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
   try {
     const transporter = createTransporter()
     console.log('Transporter created successfully')
-    
+
+    const bcc = getDonationConfirmationBcc(email)
+    if (bcc) {
+      console.log('Donation confirmation BCC:', bcc)
+    }
+
     const mailOptions = {
       from: getMailFrom(),
       to: email,
+      ...(bcc ? { bcc } : {}),
       subject: 'Thank you for your generous donation! 🙏 - The Bible Bus',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
