@@ -6,14 +6,54 @@ const getFrontendUrl = () => {
   return process.env.FRONTEND_URL || 'https://thebiblebus.net'
 }
 
-// Create a transporter using Gmail SMTP
+const getSmtpUser = (): string => (process.env.EMAIL_USER || '').trim()
+
+/** Prefer EMAIL_APP_PASSWORD; allow common Render typos / alternate keys. */
+const getSmtpPassword = (): string => {
+  const raw =
+    process.env.EMAIL_APP_PASSWORD ||
+    process.env.GMAIL_APP_PASSWORD ||
+    process.env.EMAIL_PASSWORD ||
+    ''
+  return raw.trim()
+}
+
+const getMailFrom = (): string =>
+  `"The Bible Bus" <${getSmtpUser() || 'jaklilu@gmail.com'}>`
+
+/**
+ * SMTP/auth/connection failures must not increment the *recipient's* email_failures row,
+ * or donors get permanently blocked after a few tries while credentials were wrong.
+ */
+const isInfrastructureEmailError = (error: unknown): boolean => {
+  const e = error as { code?: string; response?: string; responseCode?: number }
+  const code = String(e?.code || '').toUpperCase()
+  if (['EAUTH', 'ECONNECTION', 'ETIMEDOUT', 'ESOCKET', 'ECONNRESET', 'CERT_HAS_EXPIRED'].includes(code)) {
+    return true
+  }
+  const msg = `${(error as Error)?.message || ''} ${String(e?.response || '')}`.toLowerCase()
+  return (
+    msg.includes('invalid login') ||
+    msg.includes('authentication failed') ||
+    msg.includes('535') ||
+    msg.includes('534') ||
+    msg.includes('bad credentials') ||
+    msg.includes('application-specific password')
+  )
+}
+
+// Gmail SMTP (explicit host works more reliably from cloud hosts than service: 'gmail')
 const createTransporter = () => {
+  const user = getSmtpUser()
+  const pass = getSmtpPassword()
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
-      user: process.env.EMAIL_USER || 'jaklilu@gmail.com',
-      pass: process.env.EMAIL_APP_PASSWORD || 'your-app-password-here'
-    }
+      user,
+      pass,
+    },
   })
 }
 
@@ -32,7 +72,10 @@ export const shouldSkipEmail = async (email: string): Promise<boolean> => {
     
     const shouldSkip = record.failure_count >= 3 // Skip if 3 or more failures
     if (shouldSkip) {
-      console.log(`⏭️ Skipping email to ${email} - has ${record.failure_count} failures (3+ threshold reached, will not send)`)
+      console.warn(
+        `⏭️ Skipping email to ${email}: email_failures.failure_count=${record.failure_count}. ` +
+          `If SMTP was fixed recently, delete this row or reset failure_count so mail can resume.`
+      )
     }
     return shouldSkip
   } catch (error) {
@@ -181,7 +224,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string, 
     const resetLink = `${getFrontendUrl()}/reset-password?token=${resetToken}`
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: 'Password Reset Request - The Bible Bus',
       html: `
@@ -306,7 +349,7 @@ export const sendAccountRecoveryEmail = async (
       `
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: subject,
       html: `
@@ -368,7 +411,16 @@ export const sendAccountRecoveryEmail = async (
 export const sendDonationConfirmationEmail = async (email: string, donorName: string, amount: number, donationType: string) => {
   // Check if email should be skipped
   if (await shouldSkipEmail(email)) {
-    console.log(`⏭️ Skipping email to ${email} (3+ failures)`)
+    console.log(`⏭️ Skipping donation thank-you to ${email} (3+ failures on this address — see email_failures table)`)
+    return false
+  }
+
+  const smtpUser = getSmtpUser()
+  const smtpPass = getSmtpPassword()
+  if (!smtpUser || !smtpPass) {
+    console.error(
+      '[email] Missing EMAIL_USER or EMAIL_APP_PASSWORD (after trim). Donation thank-you not sent. Check Render env names.'
+    )
     return false
   }
 
@@ -377,15 +429,15 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
   console.log('Donor Name:', donorName)
   console.log('Amount:', amount)
   console.log('Type:', donationType)
-  console.log('EMAIL_USER:', process.env.EMAIL_USER)
-  console.log('EMAIL_APP_PASSWORD exists:', !!process.env.EMAIL_APP_PASSWORD)
-  
+  console.log('SMTP user set:', !!smtpUser)
+  console.log('SMTP password set:', !!smtpPass)
+
   try {
     const transporter = createTransporter()
     console.log('Transporter created successfully')
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: 'Thank you for your generous donation! 🙏 - The Bible Bus',
       html: `
@@ -444,7 +496,13 @@ export const sendDonationConfirmationEmail = async (email: string, donorName: st
     return true
   } catch (error) {
     console.error('Error sending donation confirmation email:', error)
-    await recordEmailFailure(email, error)
+    if (isInfrastructureEmailError(error)) {
+      console.error(
+        '[email] SMTP/server/auth error — not incrementing email_failures for donor address (fix Gmail app password / EMAIL_USER match)'
+      )
+    } else {
+      await recordEmailFailure(email, error)
+    }
     return false
   }
 }
@@ -466,7 +524,7 @@ export const sendInvitationReminderEmail = async (
     const transporter = createTransporter()
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: 'Don\'t Miss Out on Your Bible Journey! - The Bible Bus',
       html: `
@@ -555,7 +613,7 @@ export const sendWelcomeEmail = async (
     const transporter = createTransporter()
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: `Welcome to ${groupName}! 🚌`,
       html: `
@@ -646,7 +704,7 @@ export const sendWhatsAppInvitationReminderEmail = async (
     const transporter = createTransporter()
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: 'Complete Your Registration - The Bible Bus',
       html: `
@@ -744,7 +802,7 @@ export const sendProgressReminderEmail = async (
     const transporter = createTransporter()
     
     const mailOptions = {
-      from: `"The Bible Bus" <${process.env.EMAIL_USER || 'jaklilu@gmail.com'}>`,
+      from: getMailFrom(),
       to: email,
       subject: 'Update Your Bible Reading Progress 📖 - The Bible Bus',
       html: `
