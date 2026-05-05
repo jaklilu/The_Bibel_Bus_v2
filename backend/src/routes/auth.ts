@@ -1815,14 +1815,53 @@ router.post('/donations', [
     )
 
     const donation = await getRow('SELECT * FROM donations WHERE id = ?', [result.id])
+    const donationId = donation?.id ?? result.id
 
-    // Create Stripe payment intent
     const { StripeService } = await import('../services/stripeService')
+
+    if (type === 'monthly') {
+      const subResult = await StripeService.createMonthlySubscription(
+        amount,
+        donor_email,
+        donor_name,
+        donationId,
+        !!anonymous
+      )
+
+      if (!subResult.success) {
+        return res.status(500).json({
+          success: false,
+          error: {
+            message: subResult.error || 'Failed to create monthly subscription'
+          }
+        })
+      }
+
+      await runQuery(
+        'UPDATE donations SET stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?',
+        [subResult.customerId, subResult.subscriptionId, donationId]
+      )
+
+      const donationUpdated = await getRow('SELECT * FROM donations WHERE id = ?', [donationId])
+
+      return res.status(201).json({
+        success: true,
+        message: 'Monthly subscription created; confirm payment to start recurring billing',
+        data: {
+          donation: donationUpdated,
+          clientSecret: subResult.clientSecret,
+          paymentIntentId: subResult.paymentIntentId,
+          subscriptionId: subResult.subscriptionId
+        }
+      })
+    }
+
     const paymentResult = await StripeService.createPaymentIntent(
       amount,
       donor_email,
       donor_name,
-      type
+      type,
+      donationId
     )
 
     if (!paymentResult.success) {

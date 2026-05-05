@@ -116,12 +116,21 @@ app.post('/api/auth/stripe-webhook', express.raw({type: 'application/json'}), as
     }
 
     if (result.eventType === 'payment_intent.succeeded' && result.paymentIntentId) {
-      // Update donation status to completed
-      const { getRow, runQuery } = await import('./database/database')
-      await runQuery(
-        'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
-        ['completed', result.metadata?.donor_email, 'pending']
-      )
+      // Update donation status to completed (prefer donation_id from metadata for correct row)
+      const { runQuery } = await import('./database/database')
+      const donationId = result.metadata?.donation_id
+      if (donationId) {
+        await runQuery('UPDATE donations SET status = ? WHERE id = ? AND status = ?', [
+          'completed',
+          donationId,
+          'pending'
+        ])
+      } else if (result.metadata?.donor_email) {
+        await runQuery(
+          'UPDATE donations SET status = ? WHERE donor_email = ? AND status = ?',
+          ['completed', result.metadata.donor_email, 'pending']
+        )
+      }
 
       // Send donation confirmation email
       console.log('Payment succeeded, checking for email sending...')

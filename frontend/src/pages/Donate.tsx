@@ -6,9 +6,6 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-// Debug: Log the Stripe key
-console.log('Stripe publishable key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
-
 // Payment form component
 const PaymentForm = ({ 
   donationAmount, 
@@ -73,7 +70,12 @@ const PaymentForm = ({
       if (error) {
         onError(error.message || 'Payment failed')
       } else if (paymentIntent.status === 'succeeded') {
-        onSuccess(`Thank you for your donation of $${(typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)}! Your payment has been processed successfully.`)
+        const amt = (typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)
+        onSuccess(
+          donationType === 'monthly'
+            ? `Thank you! Your monthly gift of $${amt} is set up. You will be charged each month until you cancel in your bank/card settings or by contacting us.`
+            : `Thank you for your donation of $${amt}! Your payment has been processed successfully.`
+        )
       }
     } catch (error) {
       console.error('Payment error:', error)

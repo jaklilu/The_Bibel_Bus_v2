@@ -208,6 +208,22 @@ const initializeTables = () => {
     }
   })
 
+  // Stripe linkage for recurring donations (optional columns)
+  db.run(`
+    ALTER TABLE donations ADD COLUMN stripe_customer_id TEXT
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding stripe_customer_id to donations:', err)
+    }
+  })
+  db.run(`
+    ALTER TABLE donations ADD COLUMN stripe_subscription_id TEXT
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding stripe_subscription_id to donations:', err)
+    }
+  })
+
   // Add the 'sort_index' column to bible_groups if it doesn't exist (for existing databases)
   db.run(`
     ALTER TABLE bible_groups ADD COLUMN sort_index INTEGER DEFAULT NULL
