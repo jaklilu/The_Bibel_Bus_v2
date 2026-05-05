@@ -46,6 +46,8 @@ const Dashboard = () => {
   const [inviteAvailable, setInviteAvailable] = useState<boolean>(false)
   const [inviteDateLabel, setInviteDateLabel] = useState<string>('')
   const [inviteStartAt, setInviteStartAt] = useState<number | null>(null)
+  /** null = not loaded yet; hide milestone until we know. true/false = show only after group start date (local midnight). */
+  const [milestoneProgressVisible, setMilestoneProgressVisible] = useState<boolean | null>(null)
   const [nextGroup, setNextGroup] = useState<{
     id: number
     name: string
@@ -345,14 +347,18 @@ const Dashboard = () => {
           setInviteDateLabel(`${month} ${day}, ${year}`)
           setInviteAvailable(now >= d)
           setInviteStartAt(d.getTime())
+          setMilestoneProgressVisible(now >= d)
         } else {
           setInviteAvailable(false)
+          setMilestoneProgressVisible(true)
         }
         const waEl = document.getElementById('join-whatsapp-link') as HTMLAnchorElement | null
         const planEl = document.getElementById('youversion-plan-link') as HTMLAnchorElement | null
         if (waEl) waEl.href = wa || waEl.href
         if (planEl) planEl.href = plan || 'https://www.bible.com/app'
-      } catch {}
+      } catch {
+        setMilestoneProgressVisible(true)
+      }
       // Fetch next group summary
       try {
         const ng = await fetch('/api/auth/next-group', {
@@ -815,7 +821,7 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {activeTab === 'progress' && (
+        {activeTab === 'progress' && milestoneProgressVisible === true && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
