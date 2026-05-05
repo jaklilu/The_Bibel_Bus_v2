@@ -1224,6 +1224,81 @@ router.post('/mark-email-unreachable', [
   }
 })
 
+// Send a one-off email to a specific address (admin-only)
+router.post(
+  '/send-individual-email',
+  [
+    body('to').isEmail().withMessage('Must be a valid recipient email address'),
+    body('subject').trim().isLength({ min: 1, max: 140 }).withMessage('Subject is required (max 140 chars)'),
+    body('message').trim().isLength({ min: 1, max: 5000 }).withMessage('Message is required (max 5000 chars)'),
+    body('forceSend').optional().isBoolean().withMessage('forceSend must be boolean'),
+  ],
+  async (req: Request, res: Response) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Validation failed',
+            details: errors.array(),
+          },
+        })
+      }
+
+      const { to, subject, message, forceSend } = req.body as {
+        to: string
+        subject: string
+        message: string
+        forceSend?: boolean
+      }
+
+      const { sendAdminCustomEmail } = await import('../utils/emailService')
+      const safeMessage = String(message)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 16px;">
+          <div style="background: #7c3aed; color: white; padding: 14px 16px; border-radius: 10px 10px 0 0;">
+            <div style="font-size: 18px; font-weight: 700;">The Bible Bus</div>
+            <div style="opacity: 0.9; margin-top: 4px;">Admin message</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-top: none; padding: 18px; border-radius: 0 0 10px 10px;">
+            <div style="white-space: pre-wrap; color: #111827; line-height: 1.5;">${safeMessage}</div>
+          </div>
+        </div>
+      `
+
+      const ok = await sendAdminCustomEmail({
+        to,
+        subject,
+        html,
+        forceSend: forceSend === true,
+      })
+
+      if (!ok) {
+        return res.status(500).json({
+          success: false,
+          error: { message: 'Failed to send email. Check server logs for SMTP/auth details.' },
+        })
+      }
+
+      res.json({
+        success: true,
+        message: `Email sent to ${to}`,
+      })
+    } catch (error) {
+      console.error('Error sending individual email:', error)
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to send email' },
+      })
+    }
+  }
+)
+
 // Create admin message/announcement
 router.post('/messages', [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),

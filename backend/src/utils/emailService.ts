@@ -57,6 +57,68 @@ const createTransporter = () => {
   })
 }
 
+const requireSmtpConfigured = (): { ok: true } | { ok: false; error: string } => {
+  const smtpUser = getSmtpUser()
+  const smtpPass = getSmtpPassword()
+  if (!smtpUser || !smtpPass) {
+    return {
+      ok: false,
+      error: 'Missing EMAIL_USER or EMAIL_APP_PASSWORD (after trim). Check Render env vars.',
+    }
+  }
+  return { ok: true }
+}
+
+export const sendAdminCustomEmail = async (opts: {
+  to: string
+  subject: string
+  html: string
+  /** If true, bypass the email_failures skip list (admin-only). */
+  forceSend?: boolean
+}): Promise<boolean> => {
+  const to = (opts.to || '').trim()
+  const subject = (opts.subject || '').trim()
+
+  if (!to || !to.includes('@')) {
+    console.error('[email] sendAdminCustomEmail: invalid recipient:', to)
+    return false
+  }
+  if (!subject) {
+    console.error('[email] sendAdminCustomEmail: missing subject')
+    return false
+  }
+
+  if (!opts.forceSend && (await shouldSkipEmail(to))) {
+    console.warn(`[email] sendAdminCustomEmail: skipping ${to} due to email_failures (forceSend=false)`)
+    return false
+  }
+
+  const cfg = requireSmtpConfigured()
+  if (!cfg.ok) {
+    console.error('[email] sendAdminCustomEmail:', cfg.error)
+    return false
+  }
+
+  try {
+    const transporter = createTransporter()
+    const info = await transporter.sendMail({
+      from: getMailFrom(),
+      to,
+      subject,
+      html: opts.html,
+    })
+    console.log('[email] Admin custom email sent:', info.messageId, 'to:', to)
+    await recordEmailSuccess(to)
+    return true
+  } catch (error) {
+    console.error('[email] Error sending admin custom email:', error)
+    if (!isInfrastructureEmailError(error)) {
+      await recordEmailFailure(to, error)
+    }
+    return false
+  }
+}
+
 // Check if email should be skipped due to too many failures (3+)
 export const shouldSkipEmail = async (email: string): Promise<boolean> => {
   try {

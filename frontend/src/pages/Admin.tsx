@@ -125,6 +125,13 @@ const Admin = () => {
   const [markingUnreachable, setMarkingUnreachable] = useState(false)
   const [unreachableMessage, setUnreachableMessage] = useState('')
 
+  const [individualEmailTo, setIndividualEmailTo] = useState('')
+  const [individualEmailSubject, setIndividualEmailSubject] = useState('Test email from The Bible Bus')
+  const [individualEmailMessage, setIndividualEmailMessage] = useState('Hello!\n\nThis is a test email from the Admin console.\n')
+  const [individualForceSend, setIndividualForceSend] = useState(true)
+  const [sendingIndividualEmail, setSendingIndividualEmail] = useState(false)
+  const [individualEmailStatus, setIndividualEmailStatus] = useState('')
+
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
   const [editStatus, setEditStatus] = useState<'upcoming' | 'active' | 'closed' | 'completed'>('upcoming')
@@ -582,6 +589,48 @@ const Admin = () => {
       setUnreachableMessage('❌ Failed to mark email as unreachable. Please try again.')
     } finally {
       setMarkingUnreachable(false)
+    }
+  }
+
+  const handleSendIndividualEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIndividualEmailStatus('')
+
+    if (!individualEmailTo || !individualEmailTo.includes('@')) {
+      setIndividualEmailStatus('❌ Please enter a valid email address')
+      return
+    }
+
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    setSendingIndividualEmail(true)
+    try {
+      const response = await fetch('/api/admin/send-individual-email', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: individualEmailTo,
+          subject: individualEmailSubject,
+          message: individualEmailMessage,
+          forceSend: individualForceSend,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setIndividualEmailStatus(`✅ ${data.message || 'Email sent!'}`)
+      } else {
+        setIndividualEmailStatus(`❌ ${data.error?.message || 'Failed to send email'}`)
+      }
+    } catch (err: any) {
+      console.error('Error sending individual email:', err)
+      setIndividualEmailStatus('❌ Failed to send email. Please try again.')
+    } finally {
+      setSendingIndividualEmail(false)
     }
   }
 
@@ -1633,6 +1682,97 @@ const Admin = () => {
               <p className="text-purple-300 mb-6">Manually send reminder emails to members. All emails are sent in batches to avoid timeouts.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Send Individual Email */}
+                <div className="bg-purple-600/50 rounded-lg p-6 border border-purple-500/30">
+                  <div className="flex items-center mb-4">
+                    <Mail className="h-8 w-8 text-amber-500 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">Send Individual Email</h3>
+                  </div>
+                  <p className="text-purple-200 text-sm mb-4">
+                    Send a one-off email to a specific address. Useful for SMTP testing.
+                  </p>
+                  <form onSubmit={handleSendIndividualEmail} className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">To</label>
+                      <input
+                        type="email"
+                        value={individualEmailTo}
+                        onChange={(e) => {
+                          setIndividualEmailTo(e.target.value)
+                          setIndividualEmailStatus('')
+                        }}
+                        placeholder="e.g., jaklilu@gmail.com"
+                        className="w-full px-4 py-2 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">Subject</label>
+                      <input
+                        type="text"
+                        value={individualEmailSubject}
+                        onChange={(e) => {
+                          setIndividualEmailSubject(e.target.value)
+                          setIndividualEmailStatus('')
+                        }}
+                        className="w-full px-4 py-2 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">Message</label>
+                      <textarea
+                        value={individualEmailMessage}
+                        onChange={(e) => {
+                          setIndividualEmailMessage(e.target.value)
+                          setIndividualEmailStatus('')
+                        }}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-purple-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-purple-700/50 text-white placeholder-purple-300"
+                        required
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-purple-200">
+                      <input
+                        type="checkbox"
+                        checked={individualForceSend}
+                        onChange={(e) => setIndividualForceSend(e.target.checked)}
+                      />
+                      Force send (ignore skip list)
+                    </label>
+
+                    {individualEmailStatus && (
+                      <div
+                        className={`p-3 rounded-lg text-sm ${
+                          individualEmailStatus.startsWith('✅')
+                            ? 'bg-green-600/20 text-green-300 border border-green-500/30'
+                            : 'bg-red-600/20 text-red-300 border border-red-500/30'
+                        }`}
+                      >
+                        {individualEmailStatus}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={sendingIndividualEmail}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {sendingIndividualEmail ? (
+                        <>
+                          <Loader className="h-5 w-5 animate-spin" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          <span>Send Email</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+
                 {/* Invitation Reminder */}
                 <div className="bg-purple-600/50 rounded-lg p-6 border border-purple-500/30">
                   <div className="flex items-center mb-4">
