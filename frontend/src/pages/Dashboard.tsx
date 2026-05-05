@@ -800,8 +800,8 @@ const Dashboard = () => {
         )}
 
 
-        {/* Journey Completion Celebration */}
-        {activeTab === 'progress' && checkJourneyCompletion(milestones) && (
+        {/* Journey Completion Celebration (same window as milestone progress — after group start date) */}
+        {activeTab === 'progress' && milestoneProgressVisible === true && checkJourneyCompletion(milestones) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
