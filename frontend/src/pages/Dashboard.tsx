@@ -553,6 +553,21 @@ const Dashboard = () => {
           <h1 className="text-2xl sm:text-3xl font-heading text-white mb-2 text-center">
             Welcome back, {userData?.name || 'Friend'}! 🚌
           </h1>
+          <div className="flex justify-center">
+            {inGroup ? (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-800/40 border border-purple-700/40 text-purple-100 text-sm">
+                <span className="text-purple-200">Your group:</span>
+                <span className="font-semibold text-white">{groupName || 'Your Group'}</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-100 text-sm">
+                <span className="font-semibold">No group assigned yet.</span>
+                <Link to="/welcome-back" className="underline text-amber-200 hover:text-amber-100">
+                  Join a group
+                </Link>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Tabs */}
