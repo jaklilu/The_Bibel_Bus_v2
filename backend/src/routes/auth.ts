@@ -317,7 +317,8 @@ router.post('/milestone-progress', userAuth, async (req: Request, res: Response)
         SELECT gm.group_id 
         FROM group_members gm 
         JOIN bible_groups bg ON gm.group_id = bg.id 
-        WHERE gm.user_id = ? AND bg.status = 'active' 
+        WHERE gm.user_id = ? AND gm.status = 'active'
+          AND bg.status IN ('active', 'closed', 'upcoming')
         ORDER BY bg.start_date DESC 
         LIMIT 1
       `, [userId])
@@ -413,7 +414,7 @@ router.post(
         JOIN bible_groups bg ON gm.group_id = bg.id
         WHERE gm.user_id = ?
           AND gm.status = 'active'
-          AND bg.status = 'active'
+          AND bg.status IN ('active', 'closed', 'upcoming')
         ORDER BY bg.start_date DESC
         LIMIT 1
       `,
@@ -501,7 +502,8 @@ router.get('/milestone-progress', userAuth, async (req: Request, res: Response) 
         SELECT gm.group_id 
         FROM group_members gm 
         JOIN bible_groups bg ON gm.group_id = bg.id 
-        WHERE gm.user_id = ? AND bg.status = 'active' 
+        WHERE gm.user_id = ? AND gm.status = 'active'
+          AND bg.status IN ('active', 'closed', 'upcoming')
         ORDER BY bg.start_date DESC 
         LIMIT 1
       `, [userId])
