@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -120,6 +120,46 @@ const Admin = () => {
   const [copiedMilestoneId, setCopiedMilestoneId] = useState<number | null>(null)
   /** Cohort for Milestone links tab — links include ?groupId= so check-ins save to the intended group */
   const [milestoneLinksGroupId, setMilestoneLinksGroupId] = useState<number | ''>('')
+
+  /** All groups except old completed ones — keeps only the single latest completed cohort (for post-wrap links). */
+  const milestoneLinkCohortOptions = useMemo(() => {
+    const list = Array.isArray(adminData.groups) ? adminData.groups : []
+    const nonCompleted = list.filter((g: any) => g && g.status !== 'completed')
+    const completed = list.filter((g: any) => g && g.status === 'completed')
+    let lastCompleted: any = null
+    if (completed.length) {
+      lastCompleted = completed.reduce((best: any, g: any) => {
+        if (!best) return g
+        const bs = String(best.start_date || '')
+        const gs = String(g.start_date || '')
+        if (gs > bs) return g
+        if (gs < bs) return best
+        return (Number(g.id) || 0) > (Number(best.id) || 0) ? g : best
+      }, null)
+    }
+    const merged = lastCompleted ? [...nonCompleted, lastCompleted] : nonCompleted
+    const priority = (s: string) => {
+      if (s === 'active') return 0
+      if (s === 'upcoming') return 1
+      if (s === 'closed') return 2
+      return 3
+    }
+    return [...merged].sort((a: any, b: any) => {
+      const pa = priority(String(a.status || ''))
+      const pb = priority(String(b.status || ''))
+      if (pa !== pb) return pa - pb
+      const sa = String(a.start_date || '')
+      const sb = String(b.start_date || '')
+      if (sa !== sb) return sb.localeCompare(sa)
+      return (Number(b.id) || 0) - (Number(a.id) || 0)
+    })
+  }, [adminData.groups])
+
+  useEffect(() => {
+    if (milestoneLinksGroupId === '') return
+    const ok = milestoneLinkCohortOptions.some((g: any) => g.id === milestoneLinksGroupId)
+    if (!ok) setMilestoneLinksGroupId('')
+  }, [milestoneLinkCohortOptions, milestoneLinksGroupId])
 
   const copyMilestoneCheckinLink = async (milestoneId: number) => {
     if (milestoneLinksGroupId === '') {
@@ -1867,14 +1907,17 @@ const Admin = () => {
                   className="w-full max-w-xl px-3 py-2 rounded-lg bg-purple-900/60 border border-purple-600 text-white text-sm"
                 >
                   <option value="">Select a group…</option>
-                  {(adminData.groups || []).map((g: any) => (
+                  {milestoneLinkCohortOptions.map((g: any) => (
                     <option key={g.id} value={g.id}>
                       {g.name} (id {g.id}) · {g.status}
+                      {g.status === 'completed' ? ' · latest completed' : ''}
                     </option>
                   ))}
                 </select>
                 <p className="text-purple-400 text-xs mt-2">
-                  Pick the group you are messaging (e.g. January 2026). Links look like{' '}
+                  Lists active / upcoming / closed cohorts, plus{' '}
+                  <strong className="text-purple-200">only the most recently completed</strong> group (so you can send links after a cohort wraps). Older completed groups are hidden.
+                  Links look like{' '}
                   <span className="font-mono text-purple-200">/milestone-checkin?m=3&amp;groupId=…</span>
                 </p>
               </div>
