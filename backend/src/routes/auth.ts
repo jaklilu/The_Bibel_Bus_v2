@@ -11,6 +11,8 @@ import { MessageService } from '../services/messageService'
 import { UserInteractionService } from '../services/userInteractionService'
 import { userAuth } from '../middleware/userAuth'
 import crypto from 'crypto'
+import { computeProgressFromMissingDays, getMilestoneDefinition } from '../constants/milestones'
+import { upsertMilestoneProgressRow } from '../services/milestoneProgressUpsert'
 
 const router = Router()
 
@@ -302,16 +304,6 @@ router.post('/request-trophy-approval', userAuth, async (req: Request, res: Resp
   }
 })
 
-const MILESTONE_EDIT_LOCK_MS = 24 * 60 * 60 * 1000
-
-function parseMilestoneEnteredAt(raw: string | null | undefined): number | null {
-  if (!raw || typeof raw !== 'string') return null
-  const s = raw.trim()
-  const iso = s.includes('T') ? s : s.replace(' ', 'T')
-  const ms = new Date(iso.endsWith('Z') ? iso : `${iso}Z`).getTime()
-  return Number.isNaN(ms) ? null : ms
-}
-
 // Save milestone progress
 router.post('/milestone-progress', userAuth, async (req: Request, res: Response) => {
   try {
@@ -335,74 +327,20 @@ router.post('/milestone-progress', userAuth, async (req: Request, res: Response)
       currentGroupId = userGroup.group_id
     }
 
-    const existing = await getRow(
-      `SELECT missing_days_entered_at FROM milestone_progress
-       WHERE user_id = ? AND group_id = ? AND milestone_id = ?`,
-      [userId, currentGroupId, milestoneId]
-    ) as { missing_days_entered_at?: string | null } | undefined
+    const result = await upsertMilestoneProgressRow(userId, currentGroupId, {
+      milestoneId,
+      milestoneName,
+      dayNumber,
+      totalDays,
+      missingDays,
+      daysCompleted,
+      percentage,
+      grade,
+      completed,
+    })
 
-    const enteredMs = parseMilestoneEnteredAt(existing?.missing_days_entered_at ?? undefined)
-    if (enteredMs != null && Date.now() - enteredMs >= MILESTONE_EDIT_LOCK_MS) {
-      return res.status(403).json({
-        success: false,
-        error: {
-          message:
-            'This milestone number can no longer be changed (24 hours have passed). Contact an admin if you need a correction.',
-        },
-      })
-    }
-
-    if (existing) {
-      await runQuery(
-        `
-        UPDATE milestone_progress SET
-          milestone_name = ?,
-          day_number = ?,
-          total_days = ?,
-          missing_days = ?,
-          days_completed = ?,
-          percentage = ?,
-          grade = ?,
-          completed = ?,
-          updated_at = CURRENT_TIMESTAMP,
-          missing_days_entered_at = COALESCE(missing_days_entered_at, CURRENT_TIMESTAMP)
-        WHERE user_id = ? AND group_id = ? AND milestone_id = ?
-      `,
-        [
-          milestoneName,
-          dayNumber,
-          totalDays,
-          missingDays,
-          daysCompleted,
-          percentage,
-          grade,
-          completed ? 1 : 0,
-          userId,
-          currentGroupId,
-          milestoneId,
-        ]
-      )
-    } else {
-      await runQuery(
-        `
-        INSERT INTO milestone_progress
-        (user_id, group_id, milestone_id, milestone_name, day_number, total_days, missing_days, days_completed, percentage, grade, completed, updated_at, missing_days_entered_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `,
-        [
-          userId,
-          currentGroupId,
-          milestoneId,
-          milestoneName,
-          dayNumber,
-          totalDays,
-          missingDays,
-          daysCompleted,
-          percentage,
-          grade,
-          completed ? 1 : 0,
-        ]
-      )
+    if (!result.ok) {
+      return res.status(result.status).json({ success: false, error: { message: result.message } })
     }
 
     res.json({ success: true, message: 'Milestone progress saved successfully' })
@@ -411,6 +349,136 @@ router.post('/milestone-progress', userAuth, async (req: Request, res: Response)
     res.status(500).json({ success: false, error: { message: 'Failed to save milestone progress' } })
   }
 })
+
+/** Public meta for WhatsApp deep links — no auth */
+router.get('/milestone-checkin-meta', async (req: Request, res: Response) => {
+  try {
+    const raw = req.query.m
+    const id = typeof raw === 'string' ? parseInt(raw, 10) : NaN
+    const def = getMilestoneDefinition(id)
+    if (!def) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid milestone. Use ?m=1 through ?m=8 in the link.' },
+      })
+    }
+    res.json({ success: true, data: def })
+  } catch (error) {
+    console.error('Error milestone-checkin-meta:', error)
+    res.status(500).json({ success: false, error: { message: 'Failed to load milestone' } })
+  }
+})
+
+/** Quick milestone update from WhatsApp — email must match a user in an active reading group */
+router.post(
+  '/milestone-checkin',
+  [
+    body('email').trim().isEmail().withMessage('Valid email required'),
+    body('milestoneId').isInt({ min: 1, max: 8 }).withMessage('milestoneId must be 1–8'),
+    body('missingDays').isInt({ min: 0 }).withMessage('missingDays must be a non-negative integer'),
+  ],
+  async (req: Request, res: Response) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          error: { message: errors.array()[0]?.msg || 'Validation failed', details: errors.array() },
+        })
+      }
+
+      const emailTrim = String(req.body.email).trim()
+      const milestoneId = Number(req.body.milestoneId)
+      const missingDaysRaw = Number(req.body.missingDays)
+
+      const user = await getRow(
+        `SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(?)`,
+        [emailTrim]
+      ) as { id: number } | undefined
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message:
+              'No account found with that email. Use the same email you used to register for The Bible Bus.',
+          },
+        })
+      }
+
+      const userGroup = await getRow(
+        `
+        SELECT gm.group_id
+        FROM group_members gm
+        JOIN bible_groups bg ON gm.group_id = bg.id
+        WHERE gm.user_id = ?
+          AND gm.status = 'active'
+          AND bg.status = 'active'
+        ORDER BY bg.start_date DESC
+        LIMIT 1
+      `,
+        [user.id]
+      ) as { group_id: number } | undefined
+
+      if (!userGroup) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message:
+              'Your account is not in an active reading group. Join or contact your leader, then try again.',
+          },
+        })
+      }
+
+      const def = getMilestoneDefinition(milestoneId)
+      if (!def) {
+        return res.status(400).json({ success: false, error: { message: 'Invalid milestone' } })
+      }
+
+      if (missingDaysRaw > def.dayNumber) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: `Missing days cannot exceed ${def.dayNumber} for this milestone.`,
+          },
+        })
+      }
+
+      const computed = computeProgressFromMissingDays(def, missingDaysRaw)
+
+      const result = await upsertMilestoneProgressRow(user.id, userGroup.group_id, {
+        milestoneId: def.id,
+        milestoneName: def.name,
+        dayNumber: def.dayNumber,
+        totalDays: def.totalDays,
+        missingDays: computed.missingDays,
+        daysCompleted: computed.daysCompleted,
+        percentage: computed.percentage,
+        grade: computed.grade,
+        completed: computed.completed,
+      })
+
+      if (!result.ok) {
+        return res.status(result.status).json({ success: false, error: { message: result.message } })
+      }
+
+      res.json({
+        success: true,
+        message: 'Your milestone progress was saved.',
+        data: {
+          milestoneName: def.name,
+          percentage: computed.percentage,
+          grade: computed.grade,
+          daysCompleted: computed.daysCompleted,
+          dayTarget: def.dayNumber,
+        },
+      })
+    } catch (error) {
+      console.error('Error milestone-checkin:', error)
+      res.status(500).json({ success: false, error: { message: 'Failed to save milestone progress' } })
+    }
+  }
+)
 
 // Get milestone progress for user
 router.get('/milestone-progress', userAuth, async (req: Request, res: Response) => {
