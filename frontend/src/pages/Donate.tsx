@@ -6,6 +6,10 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
+/** Stripe Customer Portal (Dashboard → Billing → Customer portal → Activate link). */
+const MONTHLY_BILLING_PORTAL_URL =
+  'https://billing.stripe.com/p/login/28E7sNezE0Aj7avbWB1wY00'
+
 /** Monthly gifts: Stripe Checkout (hosted) — reliably attaches payment method to the subscription. */
 const MonthlyCheckoutForm = ({
   donationAmount,
@@ -74,6 +78,20 @@ const MonthlyCheckoutForm = ({
         >
           {isRedirecting ? 'Redirecting to secure checkout…' : `Continue — $${(typeof donationAmount === 'number' ? donationAmount : parseFloat(donationAmount as string)).toFixed(2)}/month`}
         </button>
+      </div>
+
+      <div className="bg-purple-900/40 backdrop-blur-sm rounded-2xl p-6 border border-purple-600/40">
+        <p className="text-purple-100 text-center text-sm mb-4">
+          Already giving monthly? Update your card, manage billing, or cancel your subscription on Stripe&apos;s secure page.
+        </p>
+        <a
+          href={MONTHLY_BILLING_PORTAL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center bg-purple-700/80 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg border border-purple-500/50 transition-colors"
+        >
+          Manage or cancel monthly donation
+        </a>
       </div>
     </div>
   )
