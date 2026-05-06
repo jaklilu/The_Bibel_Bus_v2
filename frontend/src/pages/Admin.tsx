@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Mail,
   Loader,
-  Activity,
   Send,
   Link2
 } from 'lucide-react'
@@ -34,7 +33,6 @@ interface AdminData {
 const ADMIN_TAB_IDS = new Set<string>([
   'overview',
   'milestone-links',
-  'status',
   'groups',
   'users',
   'progress',
@@ -63,40 +61,6 @@ const Admin = () => {
     messages: [],
     donations: [],
   })
-  const [statusData, setStatusData] = useState<any>(null)
-  const [loadingStatus, setLoadingStatus] = useState(false)
-  const [statusLastUpdated, setStatusLastUpdated] = useState<Date | null>(null)
-
-  // Fetch status data
-  const fetchStatusData = async () => {
-    const token = localStorage.getItem('adminToken')
-    if (!token) return
-
-    setLoadingStatus(true)
-    try {
-      const response = await fetch('/api/admin/status', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      
-      if (response.status === 401) {
-        localStorage.removeItem('adminToken')
-        setIsLoggedIn(false)
-        setError('Your admin session expired. Please sign in again.')
-        return
-      }
-      
-      const data = await response.json()
-      if (data.success) {
-        setStatusData(data.data)
-        setStatusLastUpdated(new Date())
-      }
-    } catch (error) {
-      console.error('Error fetching status:', error)
-    } finally {
-      setLoadingStatus(false)
-    }
-  }
-
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
@@ -753,13 +717,6 @@ const Admin = () => {
     }
   }
 
-  // Fetch status when status tab is active
-  useEffect(() => {
-    if (activeTab === 'status' && isLoggedIn) {
-      fetchStatusData()
-    }
-  }, [activeTab, isLoggedIn])
-
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
     if (token) {
@@ -936,7 +893,6 @@ const Admin = () => {
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
-                 { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
@@ -967,7 +923,6 @@ const Admin = () => {
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
-                 { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
                  { id: 'progress', label: 'Progress', icon: BarChart3 },
@@ -1052,181 +1007,6 @@ const Admin = () => {
             </div>
           </div>
         </div>
-          )}
-
-          {activeTab === 'status' && (
-            <div>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Member Status Tracking</h2>
-                  {statusLastUpdated && (
-                    <p className="text-sm text-purple-300 mt-1">
-                      Last updated: {statusLastUpdated.toLocaleTimeString()} • 
-                      Data is not auto-refreshed - click Refresh to update
-                    </p>
-                  )}
-                  {!statusLastUpdated && (
-                    <p className="text-sm text-purple-300 mt-1">
-                      Click Refresh to load status data
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={fetchStatusData}
-                  disabled={loadingStatus}
-                  className="bg-amber-500 text-purple-900 px-6 py-3 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center space-x-2 font-semibold shadow-lg"
-                  title="Refresh status data manually"
-                >
-                  {loadingStatus ? (
-                    <>
-                      <Loader className="h-5 w-5 animate-spin" />
-                      <span>Refreshing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Activity className="h-5 w-5" />
-                      <span>Refresh Data</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {loadingStatus ? (
-                <div className="text-center py-12">
-                  <Loader className="h-12 w-12 text-amber-500 mx-auto mb-4 animate-spin" />
-                  <p className="text-purple-200">Loading status data...</p>
-                </div>
-              ) : statusData && statusData.groups ? (
-                <div className="space-y-6">
-                  {statusData.groups.map((group: any) => {
-                    const isExpanded = expandedGroups.has(group.group_id)
-                    return (
-                      <motion.div
-                        key={group.group_id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-purple-800/50 backdrop-blur-sm rounded-xl border border-purple-700/30 overflow-hidden"
-                      >
-                        {/* Group Header - Clickable to expand/collapse */}
-                        <button
-                          onClick={() => {
-                            const newExpanded = new Set(expandedGroups)
-                            if (isExpanded) {
-                              newExpanded.delete(group.group_id)
-                            } else {
-                              newExpanded.add(group.group_id)
-                            }
-                            setExpandedGroups(newExpanded)
-                          }}
-                          className="w-full p-6 flex justify-between items-center hover:bg-purple-700/30 transition-colors"
-                        >
-                          <div className="text-left">
-                            <h3 className="text-lg font-semibold text-white mb-1">{group.group_name}</h3>
-                            <div className="flex items-center space-x-4 text-sm text-purple-300">
-                              <span>{group.status === 'active' ? '🟢 Active' : '🔵 Upcoming'}</span>
-                              <span>Start: {new Date(group.start_date).toLocaleDateString()}</span>
-                              <span>{group.summary.total_members} members</span>
-                            </div>
-                            <div className="flex items-center space-x-4 mt-2 text-xs">
-                              <span className="text-green-300">📱 WhatsApp: {group.summary.whatsapp_joined}/{group.summary.total_members}</span>
-                              <span className="text-blue-300">✅ Invitation: {group.summary.invitation_accepted}/{group.summary.total_members}</span>
-                              <span className="text-purple-300">📊 Progress: {group.summary.progress_updated}/{group.summary.total_members}</span>
-                            </div>
-                          </div>
-                          <div className="text-purple-300">
-                            {isExpanded ? (
-                              <ChevronDown className="h-5 w-5" />
-                            ) : (
-                              <ChevronRight className="h-5 w-5" />
-                            )}
-                          </div>
-                        </button>
-
-                        {/* Group Members Table - Collapsible */}
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-6 pb-6">
-                                <div className="overflow-x-auto">
-                                  <table className="w-full">
-                                    <thead>
-                                      <tr className="border-b border-purple-600/30">
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-purple-200">Name</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-purple-200">Email</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">📱 WhatsApp</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">✅ Invitation</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-purple-200">📊 Progress</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {group.members.length > 0 ? (
-                                        group.members.map((member: any) => (
-                                          <tr
-                                            key={member.user_id}
-                                            className="border-b border-purple-700/20 hover:bg-purple-700/20 transition-colors"
-                                          >
-                                            <td className="py-3 px-4 text-white font-medium">{member.name}</td>
-                                            <td className="py-3 px-4 text-purple-200 text-sm">{member.email}</td>
-                                            <td className="py-3 px-4 text-center">
-                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                                                member.status.whatsapp_joined
-                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                                              }`}>
-                                                {member.status.whatsapp_joined ? 'Y' : 'N'}
-                                              </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-center">
-                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                                                member.status.invitation_accepted
-                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                                              }`}>
-                                                {member.status.invitation_accepted ? 'Y' : 'N'}
-                                              </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-center">
-                                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                                                member.status.progress_updated
-                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                                              }`}>
-                                                {member.status.progress_updated ? 'Y' : 'N'}
-                                              </span>
-                                            </td>
-                                          </tr>
-                                        ))
-                                      ) : (
-                                        <tr>
-                                          <td colSpan={5} className="py-8 text-center text-purple-300">
-                                            No members in this group
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Activity className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-                  <p className="text-purple-200">No status data available</p>
-                </div>
-              )}
-            </div>
           )}
 
                                            {activeTab === 'groups' && (
@@ -2270,10 +2050,6 @@ const Admin = () => {
                                           whatsapp_joined: m.whatsapp_joined === 1 || m.whatsapp_joined === true
                                         }))
                                         setGroupMembers(updatedMembers)
-                                        // Also refresh Status page data if Status tab is active
-                                        if (activeTab === 'status') {
-                                          setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
-                                        }
                                         console.log('✅ WhatsApp status updated successfully', updatedMembers.find((m: any) => m.user_id === member.user_id))
                                       } else {
                                         console.error('❌ Failed to toggle WhatsApp:', data.error)
@@ -2313,10 +2089,6 @@ const Admin = () => {
                                           invitation_accepted_at: m.invitation_accepted_at || null
                                         }))
                                         setGroupMembers(updatedMembers)
-                                        // Also refresh Status page data if Status tab is active
-                                        if (activeTab === 'status') {
-                                          setTimeout(() => fetchStatusData(), 500) // Small delay to ensure DB update completes
-                                        }
                                         console.log('✅ Invitation status updated successfully', updatedMembers.find((m: any) => m.user_id === member.user_id))
                                       } else {
                                         console.error('❌ Failed to toggle invitation:', data.error)
