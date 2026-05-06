@@ -180,33 +180,22 @@ const Reflections: React.FC = () => {
               >
                 Filter by name
               </label>
-              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                <input
-                  id="reflection-name-filter"
-                  type="text"
-                  list="reflection-author-names"
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
-                  placeholder="Type or pick a name to see only their reflections"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-purple-900/50 border border-purple-600 text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-                />
-                <datalist id="reflection-author-names">
-                  {uniqueNames.map((n) => (
-                    <option key={n} value={n} />
-                  ))}
-                </datalist>
-                {nameFilter.trim() !== "" && (
-                  <button
-                    type="button"
-                    onClick={() => setNameFilter("")}
-                    className="px-4 py-2.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium whitespace-nowrap border border-purple-500/50"
-                  >
-                    Show everyone
-                  </button>
-                )}
-              </div>
+              {/* Native <select> — datalist + text input is unreliable on mobile Safari (no suggestions). */}
+              <select
+                id="reflection-name-filter"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                className="w-full max-w-full px-4 py-3 rounded-lg bg-purple-900/50 border border-purple-600 text-white text-base focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              >
+                <option value="">Everyone — show all reflections</option>
+                {uniqueNames.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
               <p className="text-purple-300 text-xs mt-2">
-                Choose a name from the suggestions (or type it exactly) to show only that person&apos;s entries.
+                Pick someone to see only their reflections. Names come from everyone who has submitted.
               </p>
             </div>
 
