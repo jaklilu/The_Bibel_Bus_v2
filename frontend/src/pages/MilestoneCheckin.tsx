@@ -35,6 +35,8 @@ const MilestoneCheckin = () => {
   const [searchParams] = useSearchParams()
   const mParam = searchParams.get('m')
   const milestoneId = mParam ? parseInt(mParam, 10) : NaN
+  const gParam = searchParams.get('groupId')
+  const groupId = gParam ? parseInt(gParam, 10) : NaN
 
   const [meta, setMeta] = useState<MilestoneMeta | null>(null)
   const [metaError, setMetaError] = useState('')
@@ -59,7 +61,17 @@ const MilestoneCheckin = () => {
 
   useEffect(() => {
     if (!Number.isFinite(milestoneId) || milestoneId < 1 || milestoneId > 8) {
+      setMeta(null)
       setMetaError('This link needs a milestone number. Ask your leader for the full link, or add ?m=1 through ?m=8.')
+      setLoadingMeta(false)
+      return
+    }
+
+    if (!Number.isFinite(groupId) || groupId < 1) {
+      setMeta(null)
+      setMetaError(
+        'This link must include your cohort (for example ?groupId=12). Ask your leader for the complete link they sent for your group.'
+      )
       setLoadingMeta(false)
       return
     }
@@ -68,6 +80,7 @@ const MilestoneCheckin = () => {
     ;(async () => {
       setLoadingMeta(true)
       setMetaError('')
+      setMeta(null)
       try {
         const res = await fetch(`/api/auth/milestone-checkin-meta?m=${milestoneId}`)
         const data = await res.json()
@@ -87,7 +100,7 @@ const MilestoneCheckin = () => {
     return () => {
       cancelled = true
     }
-  }, [milestoneId])
+  }, [milestoneId, groupId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,6 +125,7 @@ const MilestoneCheckin = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim(),
+          groupId,
           milestoneId: meta.id,
           missingDays: md,
         }),

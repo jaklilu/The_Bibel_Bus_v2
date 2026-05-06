@@ -370,11 +370,12 @@ router.get('/milestone-checkin-meta', async (req: Request, res: Response) => {
   }
 })
 
-/** Quick milestone update from WhatsApp — email must match a user in an active reading group */
+/** Quick milestone update from WhatsApp — email must match a user who belongs to the cohort (groupId in link/body) */
 router.post(
   '/milestone-checkin',
   [
     body('email').trim().isEmail().withMessage('Valid email required'),
+    body('groupId').isInt({ min: 1 }).withMessage('groupId is required (use the full link from your leader, including ?groupId=…)'),
     body('milestoneId').isInt({ min: 1, max: 8 }).withMessage('milestoneId must be 1–8'),
     body('missingDays').isInt({ min: 0 }).withMessage('missingDays must be a non-negative integer'),
   ],
@@ -389,6 +390,7 @@ router.post(
       }
 
       const emailTrim = String(req.body.email).trim()
+      const groupId = Number(req.body.groupId)
       const milestoneId = Number(req.body.milestoneId)
       const missingDaysRaw = Number(req.body.missingDays)
 
@@ -407,26 +409,25 @@ router.post(
         })
       }
 
-      const userGroup = await getRow(
+      const membership = await getRow(
         `
         SELECT gm.group_id
         FROM group_members gm
         JOIN bible_groups bg ON gm.group_id = bg.id
         WHERE gm.user_id = ?
+          AND gm.group_id = ?
           AND gm.status = 'active'
           AND bg.status IN ('active', 'closed', 'upcoming')
-        ORDER BY bg.start_date DESC
-        LIMIT 1
       `,
-        [user.id]
+        [user.id, groupId]
       ) as { group_id: number } | undefined
 
-      if (!userGroup) {
+      if (!membership) {
         return res.status(400).json({
           success: false,
           error: {
             message:
-              'Your account is not in an active reading group. Join or contact your leader, then try again.',
+              'Your email is not part of this reading group. Use the WhatsApp link your leader sent for your cohort, or ask them for the correct link.',
           },
         })
       }
@@ -447,7 +448,7 @@ router.post(
 
       const computed = computeProgressFromMissingDays(def, missingDaysRaw)
 
-      const result = await upsertMilestoneProgressRow(user.id, userGroup.group_id, {
+      const result = await upsertMilestoneProgressRow(user.id, membership.group_id, {
         milestoneId: def.id,
         milestoneName: def.name,
         dayNumber: def.dayNumber,

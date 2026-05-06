@@ -118,9 +118,15 @@ const Admin = () => {
   const [sendingIndividualEmail, setSendingIndividualEmail] = useState(false)
   const [individualEmailStatus, setIndividualEmailStatus] = useState('')
   const [copiedMilestoneId, setCopiedMilestoneId] = useState<number | null>(null)
+  /** Cohort for Milestone links tab — links include ?groupId= so check-ins save to the intended group */
+  const [milestoneLinksGroupId, setMilestoneLinksGroupId] = useState<number | ''>('')
 
   const copyMilestoneCheckinLink = async (milestoneId: number) => {
-    const url = `${window.location.origin}/milestone-checkin?m=${milestoneId}`
+    if (milestoneLinksGroupId === '') {
+      alert('Select a cohort first. Each link must include ?groupId=… so members update the right group.')
+      return
+    }
+    const url = `${window.location.origin}/milestone-checkin?m=${milestoneId}&groupId=${milestoneLinksGroupId}`
     try {
       await navigator.clipboard.writeText(url)
       setCopiedMilestoneId(milestoneId)
@@ -131,8 +137,13 @@ const Admin = () => {
   }
 
   const copyAllMilestoneCheckinLinks = async () => {
+    if (milestoneLinksGroupId === '') {
+      alert('Select a cohort first. Each line will include ?groupId=… for that group.')
+      return
+    }
+    const gid = milestoneLinksGroupId
     const lines = MILESTONE_WHATSAPP_LABELS.map(
-      (m) => `${m.name}: ${window.location.origin}/milestone-checkin?m=${m.id}`
+      (m) => `${m.name}: ${window.location.origin}/milestone-checkin?m=${m.id}&groupId=${gid}`
     ).join('\n')
     try {
       await navigator.clipboard.writeText(lines)
@@ -1839,9 +1850,34 @@ const Admin = () => {
               <p className="text-purple-300 mb-4 max-w-3xl">
                 Copy a link and paste it into WhatsApp when members finish a milestone. They enter their{' '}
                 <strong className="text-purple-100">registered email</strong> and{' '}
-                <strong className="text-purple-100">cumulative missing days</strong> — no login. Links use this
-                site&apos;s address ({typeof window !== 'undefined' ? window.location.origin : ''}).
+                <strong className="text-purple-100">cumulative missing days</strong> — no login. Each link includes{' '}
+                <strong className="text-purple-100">groupId</strong> so scores save to the cohort you choose (not another group).
               </p>
+              <div className="bg-purple-900/40 rounded-xl p-4 border border-purple-600/40 mb-6">
+                <label htmlFor="milestone-links-group" className="block text-sm font-medium text-purple-200 mb-2">
+                  Cohort for these milestone links
+                </label>
+                <select
+                  id="milestone-links-group"
+                  value={milestoneLinksGroupId === '' ? '' : String(milestoneLinksGroupId)}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setMilestoneLinksGroupId(v === '' ? '' : parseInt(v, 10))
+                  }}
+                  className="w-full max-w-xl px-3 py-2 rounded-lg bg-purple-900/60 border border-purple-600 text-white text-sm"
+                >
+                  <option value="">Select a group…</option>
+                  {(adminData.groups || []).map((g: any) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} (id {g.id}) · {g.status}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-purple-400 text-xs mt-2">
+                  Pick the group you are messaging (e.g. January 2026). Links look like{' '}
+                  <span className="font-mono text-purple-200">/milestone-checkin?m=3&amp;groupId=…</span>
+                </p>
+              </div>
               <div className="bg-purple-800/40 rounded-xl p-4 border border-purple-600/30 mb-6">
                 <p className="text-purple-200 text-sm font-medium mb-2">New member onboarding link (skip WhatsApp step)</p>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-center">
@@ -1878,17 +1914,23 @@ const Admin = () => {
                 <button
                   type="button"
                   onClick={copyAllMilestoneCheckinLinks}
-                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold text-sm"
+                  disabled={milestoneLinksGroupId === ''}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+                    milestoneLinksGroupId === ''
+                      ? 'bg-amber-900/40 text-purple-400 cursor-not-allowed'
+                      : 'bg-amber-500 hover:bg-amber-600 text-purple-900'
+                  }`}
                 >
                   Copy all 8 links (one block)
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {MILESTONE_WHATSAPP_LABELS.map((m) => {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : ''
                   const url =
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/milestone-checkin?m=${m.id}`
-                      : `/milestone-checkin?m=${m.id}`
+                    milestoneLinksGroupId === ''
+                      ? ''
+                      : `${origin}/milestone-checkin?m=${m.id}&groupId=${milestoneLinksGroupId}`
                   return (
                     <div
                       key={m.id}
@@ -1902,14 +1944,19 @@ const Admin = () => {
                       </div>
                       <input
                         readOnly
-                        value={url}
+                        value={url || 'Select a cohort above — each link will include ?groupId=…'}
                         className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg bg-purple-900/60 border border-purple-600 text-purple-100 font-mono"
                         onFocus={(e) => e.target.select()}
                       />
                       <button
                         type="button"
+                        disabled={milestoneLinksGroupId === ''}
                         onClick={() => copyMilestoneCheckinLink(m.id)}
-                        className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                        className={`w-full py-2 rounded-lg text-sm font-medium border border-purple-500/50 ${
+                          milestoneLinksGroupId === ''
+                            ? 'bg-purple-900/50 text-purple-500 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-500 text-white'
+                        }`}
                       >
                         {copiedMilestoneId === m.id ? '✓ Copied' : 'Copy link'}
                       </button>
@@ -1920,7 +1967,7 @@ const Admin = () => {
               <div className="mt-8 bg-purple-800/40 rounded-xl p-4 border border-purple-600/30">
                 <p className="text-purple-200 text-sm font-medium mb-2">Sample WhatsApp message</p>
                 <p className="text-purple-300 text-sm whitespace-pre-wrap">
-                  {`Great job finishing this section! Tap to log your reading score (takes under a minute):\n${typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'}/milestone-checkin?m=3\nUse your Bible Bus email + cumulative missing days from YouVersion.`}
+                  {`Great job finishing this section! Tap to log your reading score (takes under a minute):\n${typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'}/milestone-checkin?m=3&groupId=YOUR_GROUP_ID\nUse your Bible Bus email + cumulative missing days from YouVersion.`}
                 </p>
               </div>
             </div>
