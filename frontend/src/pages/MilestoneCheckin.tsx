@@ -213,6 +213,20 @@ const MilestoneCheckin = () => {
               <p className="text-xs text-purple-400 mt-2">
                 Same number you would enter on the Progress tab. Max {meta.dayNumber} for this milestone.
               </p>
+              <div className="mt-4 rounded-xl border border-purple-600/50 bg-purple-900/25 overflow-hidden">
+                <p className="text-xs text-purple-200 px-3 pt-3 pb-2 leading-relaxed">
+                  Open your plan in the{' '}
+                  <strong className="text-purple-100">BibleProject</strong> app — next to &quot;Day ___ of
+                  365&quot; you&apos;ll see <strong className="text-amber-300">Missed Days</strong>. Enter that
+                  same count here (your cumulative total so far).
+                </p>
+                <img
+                  src="/images/youversion-missed-days-hint.png"
+                  alt="BibleProject reading plan: Day 125 of 365 with Missed Days shown on the right"
+                  className="w-full block border-t border-purple-600/40"
+                  loading="lazy"
+                />
+              </div>
             </div>
 
             {formError && (
