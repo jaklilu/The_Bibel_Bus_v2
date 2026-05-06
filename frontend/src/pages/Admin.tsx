@@ -15,9 +15,11 @@ import {
   Mail,
   Loader,
   Activity,
-  Send
+  Send,
+  Link2
 } from 'lucide-react'
 import AdminMessageManager from '../components/AdminMessageManager'
+import { MILESTONE_WHATSAPP_LABELS } from '../constants/milestones'
 
 interface AdminData {
   groups: any[]
@@ -131,6 +133,30 @@ const Admin = () => {
   const [individualForceSend, setIndividualForceSend] = useState(true)
   const [sendingIndividualEmail, setSendingIndividualEmail] = useState(false)
   const [individualEmailStatus, setIndividualEmailStatus] = useState('')
+  const [copiedMilestoneId, setCopiedMilestoneId] = useState<number | null>(null)
+
+  const copyMilestoneCheckinLink = async (milestoneId: number) => {
+    const url = `${window.location.origin}/milestone-checkin?m=${milestoneId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedMilestoneId(milestoneId)
+      window.setTimeout(() => setCopiedMilestoneId(null), 2000)
+    } catch {
+      window.prompt('Copy this link:', url)
+    }
+  }
+
+  const copyAllMilestoneCheckinLinks = async () => {
+    const lines = MILESTONE_WHATSAPP_LABELS.map(
+      (m) => `${m.name}: ${window.location.origin}/milestone-checkin?m=${m.id}`
+    ).join('\n')
+    try {
+      await navigator.clipboard.writeText(lines)
+      alert('✅ Copied all milestone links to your clipboard.')
+    } catch {
+      window.prompt('Copy these lines:', lines)
+    }
+  }
 
   // Manage modal editable fields
   const [editName, setEditName] = useState('')
@@ -891,6 +917,7 @@ const Admin = () => {
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
                  { id: 'email', label: 'Email', icon: Mail },
+                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'password', label: 'Password', icon: Shield }
                ].map((tab) => (
                  <button
@@ -909,9 +936,9 @@ const Admin = () => {
              </div>
            </div>
 
-           {/* Desktop: Full navigation */}
-           <div className="hidden md:flex justify-between items-center">
-             <div className="flex space-x-8">
+           {/* Desktop: Full navigation (horizontal scroll so every tab stays reachable on narrow viewports) */}
+           <div className="hidden md:flex justify-between items-center gap-4 min-w-0">
+             <div className="flex flex-1 min-w-0 overflow-x-auto scrollbar-hide items-center gap-x-6 lg:gap-x-8 pb-1">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
                  { id: 'status', label: 'Status', icon: Activity },
@@ -922,6 +949,7 @@ const Admin = () => {
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
                  { id: 'email', label: 'Email', icon: Mail },
+                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'password', label: 'Change Password', icon: Shield }
                ].map((tab) => (
                  <button
@@ -1934,6 +1962,70 @@ const Admin = () => {
                   <li>• Failed sends are tracked and logged</li>
                   <li>• Each email type has specific targeting criteria</li>
                 </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'milestone-links' && (
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                <Link2 className="h-6 w-6 text-amber-500" />
+                Milestone check-in links (WhatsApp)
+              </h2>
+              <p className="text-purple-300 mb-4 max-w-3xl">
+                Copy a link and paste it into WhatsApp when members finish a milestone. They enter their{' '}
+                <strong className="text-purple-100">registered email</strong> and{' '}
+                <strong className="text-purple-100">cumulative missing days</strong> — no login. Links use this
+                site&apos;s address ({typeof window !== 'undefined' ? window.location.origin : ''}).
+              </p>
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={copyAllMilestoneCheckinLinks}
+                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-purple-900 font-semibold text-sm"
+                >
+                  Copy all 8 links (one block)
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MILESTONE_WHATSAPP_LABELS.map((m) => {
+                  const url =
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/milestone-checkin?m=${m.id}`
+                      : `/milestone-checkin?m=${m.id}`
+                  return (
+                    <div
+                      key={m.id}
+                      className="bg-purple-700/40 rounded-xl p-4 border border-purple-600/40 flex flex-col gap-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 text-sm font-bold border border-amber-500/40">
+                          {m.id}
+                        </span>
+                        <span className="text-white font-semibold text-lg">{m.name}</span>
+                      </div>
+                      <input
+                        readOnly
+                        value={url}
+                        className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg bg-purple-900/60 border border-purple-600 text-purple-100 font-mono"
+                        onFocus={(e) => e.target.select()}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => copyMilestoneCheckinLink(m.id)}
+                        className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                      >
+                        {copiedMilestoneId === m.id ? '✓ Copied' : 'Copy link'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-8 bg-purple-800/40 rounded-xl p-4 border border-purple-600/30">
+                <p className="text-purple-200 text-sm font-medium mb-2">Sample WhatsApp message</p>
+                <p className="text-purple-300 text-sm whitespace-pre-wrap">
+                  {`Great job finishing this section! Tap to log your reading score (takes under a minute):\n${typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'}/milestone-checkin?m=3\nUse your Bible Bus email + cumulative missing days from YouVersion.`}
+                </p>
               </div>
             </div>
           )}
