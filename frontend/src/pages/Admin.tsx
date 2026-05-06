@@ -316,6 +316,15 @@ const Admin = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
+      // If token expired/invalid after deploy, force re-login (prevents silent failures)
+      if (response.status === 401) {
+        localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
+        setAdminData({ groups: [], users: [], progress: [], milestoneProgress: [], progressByGroup: [], messages: [], donations: [] })
+        setError('Your admin session expired. Please sign in again.')
+        return
+      }
+
       const data = await response.json()
       
       if (data.success) {
@@ -330,9 +339,12 @@ const Admin = () => {
         setGroupMembers(normalizedMembers)
         setShowMembersModal(true)
         try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+      } else {
+        alert(data.error?.message || 'Failed to load group members')
       }
     } catch (err) {
       console.error('Error fetching group members:', err)
+      alert('Failed to load group members. Please try again.')
     }
   }
 
@@ -1180,14 +1192,16 @@ const Admin = () => {
                         {/* Reorder controls */}
                         <div className="flex items-center space-x-2 mb-3">
                           <button
-                            onClick={() => moveGroup(group.id, 'up')}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); moveGroup(group.id, 'up') }}
                             disabled={!canMoveUp}
                             className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${!canMoveUp ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
                           >
                             Move Up
                           </button>
                           <button
-                            onClick={() => moveGroup(group.id, 'down')}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); moveGroup(group.id, 'down') }}
                             disabled={!canMoveDown}
                             className={`px-2 py-1 rounded bg-purple-600 text-white text-xs ${!canMoveDown ? 'opacity-40 cursor-not-allowed' : 'hover:bg-purple-700'}`}
                           >
@@ -1198,13 +1212,15 @@ const Admin = () => {
                         <div className="flex flex-col space-y-2">
                           <div className="flex space-x-2">
                             <button 
-                              onClick={() => viewGroupMembers(group.id)}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); void viewGroupMembers(group.id) }}
                               className="flex-1 bg-amber-500 text-purple-900 py-2 px-3 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
                             >
                               View Members
                             </button>
                             <button 
-                              onClick={() => manageGroup(group.id)}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); manageGroup(group.id) }}
                               className="flex-1 bg-purple-600 text-white py-2 px-3 rounded-lg hover:bg-purple-800 transition-colors text-sm font-medium"
                             >
                               Manage
