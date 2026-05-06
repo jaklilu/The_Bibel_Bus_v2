@@ -1782,6 +1782,38 @@ const Admin = () => {
                 <strong className="text-purple-100">cumulative missing days</strong> — no login. Links use this
                 site&apos;s address ({typeof window !== 'undefined' ? window.location.origin : ''}).
               </p>
+              <div className="bg-purple-800/40 rounded-xl p-4 border border-purple-600/30 mb-6">
+                <p className="text-purple-200 text-sm font-medium mb-2">New member onboarding link (skip WhatsApp step)</p>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-center">
+                  <input
+                    readOnly
+                    value={
+                      typeof window !== 'undefined'
+                        ? `${window.location.origin}/register?step=email`
+                        : '/register?step=email'
+                    }
+                    className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg bg-purple-900/60 border border-purple-600 text-purple-100 font-mono"
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url =
+                        typeof window !== 'undefined'
+                          ? `${window.location.origin}/register?step=email`
+                          : '/register?step=email'
+                      navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                    }}
+                    className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                  >
+                    Copy link
+                  </button>
+                </div>
+                <p className="text-purple-300 text-xs mt-2">
+                  Send this when someone joins WhatsApp. It handles <strong className="text-purple-100">new</strong> and{' '}
+                  <strong className="text-purple-100">returning</strong> users.
+                </p>
+              </div>
               <div className="mb-6">
                 <button
                   type="button"
