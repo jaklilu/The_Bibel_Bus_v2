@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, MessageSquare } from "lucide-react";
 
@@ -52,6 +52,21 @@ const formatDate = (dateString: string): string => {
 const Reflections: React.FC = () => {
   const [reflections, setReflections] = useState<ReflectionEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nameFilter, setNameFilter] = useState("");
+
+  const uniqueNames = useMemo(() => {
+    return Array.from(
+      new Set(reflections.map((r) => r.name.trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }, [reflections]);
+
+  const filteredReflections = useMemo(() => {
+    const q = nameFilter.trim().toLowerCase();
+    if (!q) return reflections;
+    return reflections.filter(
+      (r) => r.name.trim().toLowerCase() === q
+    );
+  }, [reflections, nameFilter]);
 
   useEffect(() => {
     const fetchReflections = async () => {
@@ -157,41 +172,91 @@ const Reflections: React.FC = () => {
             </p>
           </motion.div>
         ) : (
-          <div className="space-y-6">
-            {reflections.map((r, i) => (
+          <>
+            <div className="mb-6 bg-purple-800/50 backdrop-blur-sm rounded-2xl p-5 border border-purple-700/30">
+              <label
+                htmlFor="reflection-name-filter"
+                className="block text-sm font-medium text-purple-200 mb-2"
+              >
+                Filter by name
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                <input
+                  id="reflection-name-filter"
+                  type="text"
+                  list="reflection-author-names"
+                  value={nameFilter}
+                  onChange={(e) => setNameFilter(e.target.value)}
+                  placeholder="Type or pick a name to see only their reflections"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-purple-900/50 border border-purple-600 text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <datalist id="reflection-author-names">
+                  {uniqueNames.map((n) => (
+                    <option key={n} value={n} />
+                  ))}
+                </datalist>
+                {nameFilter.trim() !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => setNameFilter("")}
+                    className="px-4 py-2.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium whitespace-nowrap border border-purple-500/50"
+                  >
+                    Show everyone
+                  </button>
+                )}
+              </div>
+              <p className="text-purple-300 text-xs mt-2">
+                Choose a name from the suggestions (or type it exactly) to show only that person&apos;s entries.
+              </p>
+            </div>
+
+            {filteredReflections.length === 0 ? (
               <motion.div
-                key={i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
+                className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-700/30 text-center"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-white font-semibold">{r.name}</p>
-                  <span className="text-purple-300 text-sm">
-                    {formatDate(r.date)}
-                  </span>
-                </div>
-
-                {/* Verse line (inline) */}
-                {r.verse && (
-                  <div className="mb-4">
-                    <p className="text-amber-400 font-semibold mb-1">
-                      Verse:{" "}
-                      <span className="text-purple-100 italic font-normal">
-                        {r.verse}
-                      </span>
-                    </p>
-                  </div>
-                )}
-
-                {/* Reflection */}
-                <div className="text-purple-100 leading-relaxed whitespace-pre-wrap border-t border-purple-700/30 pt-3">
-                  {r.reflection}
-                </div>
+                <MessageSquare className="h-12 w-12 text-purple-400 mx-auto mb-3" />
+                <p className="text-purple-200">
+                  No reflections for &quot;{nameFilter.trim()}&quot;. Try another name or clear the filter.
+                </p>
               </motion.div>
-            ))}
-          </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredReflections.map((r, i) => (
+                  <motion.div
+                    key={`${r.name}-${r.date}-${i}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.05, 0.5) }}
+                    className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-700/30 hover:border-amber-500/40 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-white font-semibold">{r.name}</p>
+                      <span className="text-purple-300 text-sm">
+                        {formatDate(r.date)}
+                      </span>
+                    </div>
+
+                    {r.verse && (
+                      <div className="mb-4">
+                        <p className="text-amber-400 font-semibold mb-1">
+                          Verse:{" "}
+                          <span className="text-purple-100 italic font-normal">
+                            {r.verse}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="text-purple-100 leading-relaxed whitespace-pre-wrap border-t border-purple-700/30 pt-3">
+                      {r.reflection}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
