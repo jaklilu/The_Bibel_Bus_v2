@@ -61,26 +61,30 @@ cd backend && npm run db:reset
 
 ## 📋 **LAST SESSION SUMMARY**
 
-**Date**: 04-01-26  
+**Date**: 05-06-26  
 **Status**: ✅ **COMPLETED**
 
-### **What Was Done**
-- **International mailing address**: Registration forms use multi-line address fields with `autoComplete="street-address"` and `dir="auto"`; backend validates `mailing_address` required + max **2000** characters on `/register` and `/register-existing` (`backend/src/routes/auth.ts`, `frontend/src/pages/Register.tsx`, `RegisterExisting.tsx`).
-- **Dashboard cleanup**: Added **Progress** vs **Resources** tabs (`frontend/src/pages/Dashboard.tsx`). Moved onboarding items into **Resources**: message board link, awards summary, WhatsApp, intro videos, instructions, YouVersion download. **Progress** keeps invitation + milestone progress.
-- **Invitation UX**: While invite is locked, card title shows static **“Accept Your Invitation @ 00 00 00 00”**; the **live** countdown remains in the card body (not in the title).
-- **Mobile — Join Reading Group**: Popup blockers on iOS/Safari often block `window.open()` after `await fetch`. Fix: open `about:blank` synchronously on tap, then set `location.href` after `/api/auth/accept-invitation` returns (`Dashboard.tsx`).
-- **Admin — Bible Reading Groups grid**: Cards always display **Active** first, **Upcoming** second; remaining statuses follow. **Move Up/Down** cannot swap across those status buckets (`frontend/src/pages/Admin.tsx`).
-- **Register deep link**: Visiting `/register?sign-up=1` (or `?step=email`) **skips WhatsApp** and starts at **Step 2 — Enter Your Email** (`Register.tsx`).
-- **Register Step 1 (WhatsApp)**: Updated instructional copy; bold example labels; subtitle **“Step 1: Join Our WhatsApp Group”**; green button **“Join Our WhatsApp Group”**.
+### **→ Start here (next agent)**
+- **Admin — Control Room**: `frontend/src/pages/Admin.tsx` → **Groups** → **Manage** → **Control Room**. WhatsApp / **1st — After WhatsApp Join** / **2nd — Accept Invitation to Read** cards; controlled URL fields + **`refreshGroupDetailsForManage()`**.
+- **Admin — Milestone links**: Same file → **Milestone links** tab. Copy links **only after** selecting a cohort; URLs **must** include **`?groupId=<bible_groups.id>`** alongside **`?m=1..8`**. Dropdown lists **`active`** + **`closed`** + **only the latest `completed`** cohort (by `start_date`) — **no `upcoming`**, **no older completed** clutter.
+- **Public milestone check-in**: `frontend/src/pages/MilestoneCheckin.tsx` + **`POST /api/auth/milestone-checkin`** in `backend/src/routes/auth.ts` — **`groupId` required**; server checks email user has **active membership in that exact group** before saving progress (cohort-specific blast links).
+- **Member dashboard**: `frontend/src/pages/Dashboard.tsx` shows **“Your group: {name}”** under the welcome line (from `/api/auth/my-group`).
+- **Groups → View Members**: `Admin.tsx` — **`type="button"`** + **`stopPropagation`**, **401** forces re-login, failed fetch surfaces **alert** (no silent no-op).
+
+### **What Was Done** (this session arc)
+- Control Room polish (labels with em dash, YouVersion for “2nd”, amber Step 2 card, removed helper blurbs under cards).
+- **`groupId`**-scoped milestone check-in end-to-end; **`env.example`** documents full URL shape.
+- Milestone cohort picker UX: exclude upcoming; show single latest completed only.
+- Dashboard group name chip; View Members reliability fixes.
 
 ### **Current State**
-- ✅ Above changes built (`npm run build` frontend) and pushed to `main`
-- ✅ Reflections page CSV/date fixes from **02-27-26** remain in place (`Reflections.tsx`)
+- ✅ Changes intended for production are **committed and pushed** to `main` (frontend + backend as applicable).
+- ✅ Backend **`npm run build`** (`tsc`) succeeds after milestone-check-in auth changes.
+- ✅ Older docs elsewhere may still say `/milestone-checkin?m=…` only — **obsolete**; full link requires **`&groupId=…`**.
 
 ### **Next Priorities** (if any)
-- Monitor manual email sending usage and effectiveness (from earlier sessions)
-- Consider adding email failure statistics/reporting in Email tab
-- After deploy, verify **Resources** tab + invitation button on real mobile browsers (Safari/Chrome)
+- Smoke-test on prod: **Milestone links** copy → member submits check-in → progress lands on correct **`group_id`**.
+- Optional: add **`groupId`** note to any printed/WhatsApp templates leaders reuse outside the app.
 
 ---
 
@@ -332,6 +336,7 @@ CREATE TABLE password_reset_tokens (
 - `POST /create-message` - Create user-generated message ✨ **NEW!**
 - `GET /my-messages` - Get user's own messages ✨ **NEW!**
 - `DELETE /my-messages/:messageId` - Delete user's own message ✨ **NEW!**
+- `POST /milestone-checkin` - Public milestone score by email ✨ **UPDATED!** — requires **`email`**, **`groupId`**, **`milestoneId`** (1–8), **`missingDays`**; verifies user is an **active member of that `group_id`** (group status `active` \| `closed` \| `upcoming`) then upserts `milestone_progress` for **that cohort only**. Links: **`/milestone-checkin?m=N&groupId=ID`** ( **`?m=` alone is rejected** ).
 
 ### **Admin Routes** (`/api/admin`)
 - `GET /groups` - Get all groups with member counts
@@ -375,7 +380,48 @@ CREATE TABLE password_reset_tokens (
 
 ## 🔄 **Recent Major Updates**
 
-### **Dashboard, Registration & Admin polish** (April 2026) ✨ **LATEST UPDATE!**
+### **Milestone check-in — cohort-scoped links (`groupId`)** (May 2026) ✨ **LATEST UPDATE!**
+
+#### **Problem / Goal** 🎯
+- Leaders send WhatsApp links **per cohort** (different groups finish milestones at different times). The old flow picked **one** membership server-side (newest `start_date`), so a member in multiple qualifying groups could save scores to the **wrong** cohort.
+
+#### **Solutions Implemented** ✅
+- **`POST /api/auth/milestone-checkin`** (`backend/src/routes/auth.ts`): requires **`groupId`**; validates **`group_members`** row `(user_id, group_id)` with **`gm.status = 'active'`** and **`bg.status IN ('active','closed','upcoming')`**; rejects if email not in that cohort.
+- **`frontend/src/pages/MilestoneCheckin.tsx`**: reads **`groupId`** from query string; blocks the form if missing; sends **`groupId`** on submit.
+- **`frontend/src/pages/Admin.tsx` → Milestone links tab**: cohort dropdown drives copied URLs as **`/milestone-checkin?m=N&groupId=ID`**. Dropdown includes **`active`**, **`closed`**, and **only the single latest `completed`** group (by `start_date`); **`upcoming` excluded** (no pre-start milestone blasts).
+- **`backend/env.example`**: documents URL shape with **`groupId`**.
+
+#### **Result** 🎯
+- Each blast link targets exactly **one** SQLite **`bible_groups.id`**; submissions succeed only if that email belongs to that group.
+
+#### **Breaking change** ⚠️
+- Legacy URLs with **`?m=` only** no longer work — regenerate links from **Admin → Milestone links** after picking the cohort.
+
+---
+
+### **Admin Control Room — WhatsApp cohort link** (May 2026)
+
+#### **Problem / Goal** 🎯
+- Admins needed the **actual WhatsApp chat invite** (`chat.whatsapp.com/...`) next to the existing registration links in **Control Room**, without hunting Group Settings every time.
+
+#### **Solutions Implemented** ✅
+- **`frontend/src/pages/Admin.tsx`**: **Manage Group → Control Room** — three compact cards, each with **Copy** + **Open**:
+  - **WhatsApp Invite URL** → uses **`bible_groups.whatsapp_invite_url`** (same as **Group settings → WhatsApp Invite URL**)
+  - **1st — After WhatsApp Join** → fixed site URL: **`/register?step=email`**
+  - **2nd — Accept Invitation to Read** → uses **`bible_groups.youversion_plan_url`** (same as **Group settings → YouVersion Plan URL**)
+- **Refresh**: **`refreshGroupDetailsForManage()`** runs when opening Control Room; **`GET /api/admin/groups/:id`** merges into `groupToManage` so WhatsApp/YouVersion links match DB truth.
+- **Settings sync**: WhatsApp + YouVersion inputs are **controlled** state, so Control Room matches the settings card immediately; successful **PUT** keeps `groupToManage` in sync.
+- **Not in Control Room**: Milestone check-in links remain on the **Milestone links** tab only; Dashboard has no **`?tab=`** deep linking.
+
+#### **Result** 🎯
+- One panel for **WhatsApp invite** + **Bible Bus onboarding** + **YouVersion plan**, all copyable/openable; reduced confusion and stale-state issues.
+
+#### **Deployment / visibility** ⚠️
+- Production must ship a **current frontend build**; old bundles may omit the WhatsApp row or older copy. **Hard refresh** after deploy.
+
+---
+
+### **Dashboard, Registration & Admin polish** (April 2026)
 
 #### **Problem / Goal** 🎯
 - Dashboard was crowded; onboarding blocks (WhatsApp, videos, instructions, awards, etc.) mixed with day-to-day progress.
@@ -2336,6 +2382,24 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ## 🛠 **Handoff Notes (for next agent)**
 
+### **Admin — Control Room (May 2026)**
+- **Where**: **Groups** tab → **Manage** on a group → **Control Room** (Quick Actions). Not the standalone **Milestone links** tab.
+- **Fields / cards**:
+  - **WhatsApp Invite URL**: **`whatsapp_invite_url`** (SQLite `bible_groups`) — invite links look like **`https://chat.whatsapp.com/...`**
+  - **1st — After WhatsApp Join**: fixed site URL **`/register?step=email`**
+  - **2nd — Accept Invitation to Read**: **`youversion_plan_url`** (SQLite `bible_groups`) — the cohort’s YouVersion plan link
+- **Code**: **`refreshGroupDetailsForManage`** + Control Room **`onClick`**; **`GET /api/admin/groups/:id`** returns **`data.group`** (`GroupService.getGroupById`). Merge preserves **`member_count`** from the admin list row when missing on the detail object.
+- **User confusion to expect**: WhatsApp invite is NOT the Bible Bus site. Empty WhatsApp/YouVersion → add it under Group settings; Control Room is a quick copy/open surface.
+
+### **Admin — Milestone links + public check-in (May 2026)**
+- **Where**: **Milestone links** tab (`Admin.tsx`). Generates **`/milestone-checkin?m=1..8&groupId=<id>`** after **cohort** select.
+- **Cohort dropdown**: **`active`**, **`closed`**, **latest `completed` only** (most recent `start_date`). No **`upcoming`**; no pile-up of old completed groups.
+- **Backend**: **`POST /api/auth/milestone-checkin`** — membership must match **`groupId`** or reject (wrong-link / wrong-cohort message).
+- **Breaking**: **`?m=` without `groupId`** rejected by UI + API.
+
+### **Member Dashboard — group name (May 2026)**
+- **Where**: `Dashboard.tsx` header under “Welcome back…” — **Your group: …** from **`/api/auth/my-group`** (`inGroup` gates display).
+
 ### **Critical Deployment Information**
 - **Frontend calls use relative `/api/...`**: Netlify proxies to Render automatically
 - **Render URL**: `https://the-bibel-bus-v2.onrender.com` ⚠️ **IMPORTANT**: URL contains typo "bibel" (should be "bible") - **DO NOT CHANGE** as it's the actual production URL. Changing it would break production.
@@ -2360,8 +2424,8 @@ Multiple forms throughout the admin panel and user interface were appearing inli
 
 ## 📅 **DOCUMENT METADATA**
 
-**Last Updated**: 04-01-26  
-**Last Session**: Updated dashboard (Progress/Resources tabs, invitation UX, mobile Join Reading Group), international mailing address validation/UI, admin group card ordering (Active/Upcoming first), registration deep link `?sign-up=1`, and WhatsApp Step 1 copy; documented in Recent Major Updates and Last Session Summary. Prior Reflections CSV fixes (02-27-26) unchanged.
+**Last Updated**: 05-06-26  
+**Last Session**: **Milestone check-in cohort locking (`groupId`)** + **Admin cohort picker** (active / closed / latest completed only; no upcoming) + **Dashboard “Your group”** label + **View Members** click/auth fixes + **context handoff** refresh. All pushed to `main` as of this update.
 
 **Format Version**: 2.0 (Agent-Optimized)  
 **Maintained By**: AI Agents (follow format guidelines above)
