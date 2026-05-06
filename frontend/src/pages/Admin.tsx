@@ -2377,9 +2377,6 @@ const Admin = () => {
                           <label className="block text-sm font-semibold text-emerald-100 mb-1">
                             WhatsApp Invite URL
                           </label>
-                          <p className="text-xs text-emerald-200/90 mb-2">
-                            Same value as <strong className="text-white">Group settings → WhatsApp Invite URL</strong> (above when you use Back).
-                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
                             <input
                               readOnly
@@ -2421,9 +2418,6 @@ const Admin = () => {
                           <label className="block text-sm font-semibold text-amber-100 mb-1">
                             1st — After WhatsApp Join
                           </label>
-                          <p className="text-xs text-amber-200/90 mb-2">
-                            Entry point at <strong className="text-white">/register?step=email</strong> on this site (same for every cohort).
-                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
                             <input
                               readOnly
@@ -2467,9 +2461,6 @@ const Admin = () => {
                           <label className="block text-sm font-semibold text-blue-100 mb-1">
                             2nd — Accept Invitation to Read
                           </label>
-                          <p className="text-xs text-blue-200/90 mb-2">
-                            Same URL as <strong className="text-white">Group settings → YouVersion Plan URL</strong>.
-                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
                             <input
                               readOnly
