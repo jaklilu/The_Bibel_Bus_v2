@@ -2357,8 +2357,8 @@ const Admin = () => {
                         <div>
                           <h3 className="text-lg font-medium text-white">Control Room</h3>
                           <p className="text-xs text-purple-200">
-                            Uses <span className="text-purple-100 font-medium">WhatsApp Invite URL</span>,{' '}
-                            <span className="text-purple-100 font-medium">YouVersion Plan URL</span>, and the Step 2 Bible Bus registration link from Group settings.
+                            <span className="text-purple-100 font-medium">WhatsApp</span> and{' '}
+                            <span className="text-purple-100 font-medium">YouVersion</span> come from Group settings; Step 2 Email is the fixed Bible Bus entry URL on this site.
                           </p>
                         </div>
                         <button
@@ -2415,11 +2415,14 @@ const Admin = () => {
                           </div>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-purple-200 mb-2">
+                        <div className="rounded-xl border-2 border-amber-500/50 bg-amber-950/20 p-4 space-y-2">
+                          <label className="block text-sm font-semibold text-amber-100 mb-1">
                             Bible Bus — After WhatsApp (Step 2: Email)
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                          <p className="text-xs text-amber-200/90 mb-2">
+                            Entry point at <strong className="text-white">/register?step=email</strong> on this site (same for every cohort).
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
                             <input
                               readOnly
                               value={
@@ -2443,6 +2446,18 @@ const Admin = () => {
                             >
                               Copy
                             </button>
+                            <a
+                              href={
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/register?step=email`
+                                  : '/register?step=email'
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 rounded-lg text-sm font-medium border text-center bg-amber-500 hover:bg-amber-600 text-purple-900 border-amber-400/50"
+                            >
+                              Open
+                            </a>
                           </div>
                         </div>
 
