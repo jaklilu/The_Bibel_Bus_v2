@@ -32,6 +32,20 @@ interface AdminData {
   pendingRegistrations: { [key: string]: any[] }
 }
 
+const ADMIN_TAB_IDS = new Set<string>([
+  'overview',
+  'milestone-links',
+  'status',
+  'groups',
+  'users',
+  'pending',
+  'progress',
+  'messages',
+  'donations',
+  'email',
+  'password',
+])
+
 const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [email, setEmail] = useState('')
@@ -87,6 +101,14 @@ const Admin = () => {
   }
 
   const [activeTab, setActiveTab] = useState('overview')
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab && ADMIN_TAB_IDS.has(tab)) {
+      setActiveTab(tab)
+    }
+  }, [])
+
   // removed unused newMessage state
   const [passwordChange, setPasswordChange] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [passwordError, setPasswordError] = useState('')
@@ -895,7 +917,17 @@ const Admin = () => {
            <div className="flex justify-center items-center py-4">
              <div className="flex items-center space-x-3">
                <Shield className="h-8 w-8 text-amber-500" />
-               <h1 className="text-2xl font-bold text-white">Bible Bus Admin</h1>
+               <div className="flex flex-col items-center sm:flex-row sm:items-baseline sm:gap-2">
+                 <h1 className="text-2xl font-bold text-white">Bible Bus Admin</h1>
+                 {import.meta.env.VITE_COMMIT_REF ? (
+                   <span
+                     className="text-xs text-purple-300/90 font-mono"
+                     title="This bundle was built from this Git commit on Netlify"
+                   >
+                     build {import.meta.env.VITE_COMMIT_REF.slice(0, 7)}
+                   </span>
+                 ) : null}
+               </div>
              </div>
            </div>
          </div>
@@ -909,6 +941,7 @@ const Admin = () => {
              <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
@@ -917,7 +950,6 @@ const Admin = () => {
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
                  { id: 'email', label: 'Email', icon: Mail },
-                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'password', label: 'Password', icon: Shield }
                ].map((tab) => (
                  <button
@@ -941,6 +973,7 @@ const Admin = () => {
              <div className="flex flex-1 min-w-0 overflow-x-auto scrollbar-hide items-center gap-x-6 lg:gap-x-8 pb-1">
                {[
                  { id: 'overview', label: 'Overview', icon: BarChart3 },
+                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'status', label: 'Status', icon: Activity },
                  { id: 'groups', label: 'Groups', icon: BookOpen },
                  { id: 'users', label: 'Users', icon: Users },
@@ -949,7 +982,6 @@ const Admin = () => {
                  { id: 'messages', label: 'Messages', icon: MessageSquare },
                  { id: 'donations', label: 'Donations', icon: DollarSign },
                  { id: 'email', label: 'Email', icon: Mail },
-                 { id: 'milestone-links', label: 'Milestone links', icon: Link2 },
                  { id: 'password', label: 'Change Password', icon: Shield }
                ].map((tab) => (
                  <button
