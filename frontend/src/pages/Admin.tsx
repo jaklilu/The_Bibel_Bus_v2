@@ -147,6 +147,8 @@ const Admin = () => {
   const [editStatus, setEditStatus] = useState<'upcoming' | 'active' | 'closed' | 'completed'>('upcoming')
   const [editStart, setEditStart] = useState('')
   const [editMax, setEditMax] = useState<number>(50)
+  /** Same value as Group settings → WhatsApp Invite URL; Control Room reads this so the link is visible before blur/save. */
+  const [editWhatsAppInviteUrl, setEditWhatsAppInviteUrl] = useState('')
 
   const getDaySuffix = (day: number) => {
     if (day % 10 === 1 && day % 100 !== 11) return 'st'
@@ -344,6 +346,38 @@ const Admin = () => {
       setEditStatus(group.status || 'upcoming')
       setEditStart(group.start_date || '')
       setEditMax(group.max_members || 50)
+      setEditWhatsAppInviteUrl(
+        group.whatsapp_invite_url != null ? String(group.whatsapp_invite_url) : ''
+      )
+    }
+  }
+
+  /** Merge latest DB row into modal state (fixes stale whatsapp_invite_url when opening Control Room). */
+  const refreshGroupDetailsForManage = async () => {
+    const token = localStorage.getItem('adminToken')
+    const id = groupToManage?.id
+    if (!token || !id) return
+    try {
+      const res = await fetch(`/api/admin/groups/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.success && data.data?.group) {
+        const g = data.data.group
+        setEditWhatsAppInviteUrl(
+          g.whatsapp_invite_url != null ? String(g.whatsapp_invite_url) : ''
+        )
+        setGroupToManage((prev: any) => {
+          if (!prev || prev.id !== g.id) return prev
+          return {
+            ...prev,
+            ...g,
+            member_count: prev.member_count ?? g.member_count,
+          }
+        })
+      }
+    } catch (e) {
+      console.error('refreshGroupDetailsForManage', e)
     }
   }
 
@@ -2314,7 +2348,9 @@ const Admin = () => {
                       <div className="flex items-center justify-between gap-3 mb-3">
                         <div>
                           <h3 className="text-lg font-medium text-white">Control Room</h3>
-                          <p className="text-xs text-purple-200">WhatsApp links for this group.</p>
+                          <p className="text-xs text-purple-200">
+                            Uses <span className="text-purple-100 font-medium">WhatsApp Invite URL</span> from Group settings below, plus Bible Bus registration links.
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -2326,9 +2362,53 @@ const Admin = () => {
                       </div>
 
                       <div className="space-y-4">
+                        <div className="rounded-xl border-2 border-emerald-500/50 bg-emerald-950/25 p-4 space-y-2">
+                          <label className="block text-sm font-semibold text-emerald-100 mb-1">
+                            WhatsApp Invite URL
+                          </label>
+                          <p className="text-xs text-emerald-200/90 mb-2">
+                            Same value as <strong className="text-white">Group settings → WhatsApp Invite URL</strong> (above when you use Back).
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
+                            <input
+                              readOnly
+                              value={editWhatsAppInviteUrl.trim()}
+                              placeholder="Paste the invite URL in Group settings → WhatsApp Invite URL"
+                              className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm placeholder-purple-400/80"
+                              onFocus={(e) => e.target.select()}
+                            />
+                            <button
+                              type="button"
+                              disabled={!editWhatsAppInviteUrl.trim()}
+                              onClick={() => {
+                                const url = editWhatsAppInviteUrl.trim()
+                                if (!url) return
+                                navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                              }}
+                              className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium border border-purple-500/50"
+                            >
+                              Copy
+                            </button>
+                            {editWhatsAppInviteUrl.trim() ? (
+                              <a
+                                href={editWhatsAppInviteUrl.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-lg text-sm font-medium border text-center bg-amber-500 hover:bg-amber-600 text-purple-900 border-amber-400/50"
+                              >
+                                Open
+                              </a>
+                            ) : (
+                              <span className="px-4 py-2 rounded-lg text-sm font-medium border text-center bg-purple-900/40 text-purple-400 border-purple-600/50 cursor-not-allowed">
+                                Open
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-sm font-medium text-purple-200 mb-2">
-                            After they join WhatsApp (Step 2: Email)
+                            Bible Bus — After WhatsApp (Step 2: Email)
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                             <input
@@ -2359,7 +2439,7 @@ const Admin = () => {
 
                         <div>
                           <label className="block text-sm font-medium text-purple-200 mb-2">
-                            Day 1 (Accept invitation + open plan)
+                            Bible Bus — Day 1 (accept invitation + open plan)
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                             <input
@@ -2438,17 +2518,24 @@ const Admin = () => {
                         <label className="block text-sm font-medium text-purple-200 mb-2">WhatsApp Invite URL</label>
                         <input
                           type="url"
-                          defaultValue={groupToManage?.whatsapp_invite_url || ''}
+                          value={editWhatsAppInviteUrl}
+                          onChange={(e) => setEditWhatsAppInviteUrl(e.target.value)}
                           onBlur={async (e) => {
                             const val = e.target.value.trim() || null
                             if (!groupToManage) return
                             const token = localStorage.getItem('adminToken'); if (!token) return
                             try {
-                              await fetch(`/api/admin/groups/${groupToManage.id}`, {
+                              const res = await fetch(`/api/admin/groups/${groupToManage.id}`, {
                                 method: 'PUT',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ whatsapp_invite_url: val })
                               })
+                              if (res.ok) {
+                                setEditWhatsAppInviteUrl(val || '')
+                                setGroupToManage((prev: any) =>
+                                  prev ? { ...prev, whatsapp_invite_url: val } : prev
+                                )
+                              }
                             } catch {}
                           }}
                           placeholder="https://chat.whatsapp.com/..."
@@ -2519,7 +2606,11 @@ const Admin = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setManageGroupView('control-room'); try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {} }}
+                        onClick={() => {
+                          setManageGroupView('control-room')
+                          void refreshGroupDetailsForManage()
+                          try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+                        }}
                         className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium"
                       >
                         Control Room
