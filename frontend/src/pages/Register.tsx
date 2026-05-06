@@ -3,6 +3,28 @@ import { motion } from 'framer-motion'
 import { User, Mail, ArrowRight, AlertCircle, MessageCircle, Loader } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+const REGISTER_EMAIL_KEY = 'bibleBusRegisterEmail'
+
+function readStoredRegisterEmail(): string {
+  try {
+    const rawUser = localStorage.getItem('userData')
+    if (rawUser) {
+      const u = JSON.parse(rawUser) as { email?: string }
+      if (typeof u.email === 'string' && u.email.trim()) return u.email.trim()
+    }
+    const saved = localStorage.getItem(REGISTER_EMAIL_KEY)
+    return saved ? saved.trim() : ''
+  } catch {
+    return ''
+  }
+}
+
+function persistRegisterEmail(value: string) {
+  const t = value.trim()
+  if (t) localStorage.setItem(REGISTER_EMAIL_KEY, t)
+  else localStorage.removeItem(REGISTER_EMAIL_KEY)
+}
+
 const Register = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -29,9 +51,21 @@ const Register = () => {
   useEffect(() => {
     const signUp = searchParams.get('sign-up')
     const step = searchParams.get('step')
+    const emailParam = searchParams.get('email') || searchParams.get('e')
     if (signUp === '1' || step === 'email') {
       setCurrentStep('email')
       setError('')
+    }
+    // Prefill email for returning users (logged-in userData first, then last-used on this device)
+    try {
+      const fromUrl = (emailParam || '').trim()
+      const initial = fromUrl || readStoredRegisterEmail()
+      if (initial) {
+        setFormData((prev) => (prev.email ? prev : { ...prev, email: initial }))
+        persistRegisterEmail(initial)
+      }
+    } catch {
+      /* ignore */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -68,6 +102,7 @@ const Register = () => {
     const email = formData.email.trim()
     if (!email || !email.includes('@')) return
 
+    persistRegisterEmail(email)
     setCheckingEmail(true)
     setError('')
     
