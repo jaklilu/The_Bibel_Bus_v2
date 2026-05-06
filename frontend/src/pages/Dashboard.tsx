@@ -34,6 +34,19 @@ interface Milestone {
   missingDays: number
   percentage: number
   grade: string
+  /** Server time when cumulative missing-days were first saved; edits lock after 24h */
+  missingDaysEnteredAt?: string | null
+}
+
+const MILESTONE_EDIT_LOCK_MS = 24 * 60 * 60 * 1000
+
+function isMilestoneMissingDaysLocked(enteredAt?: string | null): boolean {
+  if (!enteredAt) return false
+  const s = String(enteredAt).trim()
+  const iso = s.includes('T') ? s : s.replace(' ', 'T')
+  const ms = new Date(iso.endsWith('Z') ? iso : `${iso}Z`).getTime()
+  if (Number.isNaN(ms)) return false
+  return Date.now() - ms >= MILESTONE_EDIT_LOCK_MS
 }
 
 const Dashboard = () => {
@@ -149,6 +162,10 @@ const Dashboard = () => {
 
       if (response.ok) {
         console.log('Milestone progress saved successfully')
+      } else if (response.status === 403) {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.error?.message || 'This milestone can no longer be edited.')
+        await loadMilestoneProgress()
       } else {
         const errorData = await response.json()
         console.error('Error saving milestone progress:', errorData)
@@ -160,6 +177,14 @@ const Dashboard = () => {
 
   // Handle missing days input (cumulative from day 1)
   const handleMissingDaysChange = async (milestoneId: number, value: string) => {
+    const current = milestones.find((m) => m.id === milestoneId)
+    if (current && isMilestoneMissingDaysLocked(current.missingDaysEnteredAt)) {
+      alert(
+        'This milestone number can no longer be changed (24 hours have passed since it was saved). Contact an admin if you need a correction.'
+      )
+      return
+    }
+
     // Don't update if input is empty (user is typing)
     if (value === '') {
       const updatedMilestones = milestones.map(milestone => 
@@ -242,7 +267,8 @@ const Dashboard = () => {
                 daysCompleted: saved.days_completed || 0,
                 percentage: saved.percentage || 0,
                 grade: saved.grade || 'D',
-                completed: saved.completed === 1
+                completed: saved.completed === 1,
+                missingDaysEnteredAt: saved.missing_days_entered_at ?? null
               }
             }
             return milestone
@@ -928,18 +954,35 @@ const Dashboard = () => {
                         <label className="block text-xs text-purple-200 mb-1">
                           Cumulative Missing Days (from YouVersion):
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={milestone.dayNumber}
-                          value={milestone.missingDays || ''}
-                          onChange={(e) => handleMissingDaysChange(milestone.id, e.target.value)}
-                          className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                          placeholder="Enter cumulative missing days"
-                        />
-                        <p className="text-xs text-purple-300 mt-1 italic">
-                          To tell the truth, God is watching.
-                        </p>
+                        {isMilestoneMissingDaysLocked(milestone.missingDaysEnteredAt) ? (
+                          <>
+                            <div className="w-full px-3 py-2 bg-purple-900/40 border border-purple-600/60 rounded-lg text-purple-100 text-sm">
+                              <span className="text-purple-300">Saved value: </span>
+                              <span className="text-white font-semibold">{milestone.missingDays}</span>
+                            </div>
+                            <p className="text-xs text-amber-200/90 mt-2">
+                              This number can&apos;t be changed after 24 hours from when you first saved it. Contact an admin if you need a correction.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              type="number"
+                              min="0"
+                              max={milestone.dayNumber}
+                              value={milestone.missingDays || ''}
+                              onChange={(e) => handleMissingDaysChange(milestone.id, e.target.value)}
+                              className="w-full px-3 py-2 bg-purple-800/50 border border-purple-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                              placeholder="Enter cumulative missing days"
+                            />
+                            <p className="text-xs text-purple-300 mt-1 italic">
+                              To tell the truth, God is watching.
+                            </p>
+                            <p className="text-xs text-purple-400 mt-1">
+                              You can edit this for 24 hours after you first save your number.
+                            </p>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

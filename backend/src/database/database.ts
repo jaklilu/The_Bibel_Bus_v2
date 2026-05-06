@@ -224,6 +224,26 @@ const initializeTables = () => {
     }
   })
 
+  // First save time for cumulative missing-days (edits locked after 24 hours)
+  db.run(`
+    ALTER TABLE milestone_progress ADD COLUMN missing_days_entered_at DATETIME
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding missing_days_entered_at to milestone_progress:', err)
+    }
+    db.run(
+      `
+      UPDATE milestone_progress
+      SET missing_days_entered_at = updated_at
+      WHERE missing_days_entered_at IS NULL
+        AND (missing_days > 0 OR days_completed > 0 OR completed = 1)
+    `,
+      (e2) => {
+        if (e2) console.error('Error backfilling missing_days_entered_at:', e2)
+      }
+    )
+  })
+
   // Add the 'sort_index' column to bible_groups if it doesn't exist (for existing databases)
   db.run(`
     ALTER TABLE bible_groups ADD COLUMN sort_index INTEGER DEFAULT NULL
