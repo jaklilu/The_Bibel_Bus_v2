@@ -79,6 +79,7 @@ const Admin = () => {
   const [showMembersModal, setShowMembersModal] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
   const [groupToManage, setGroupToManage] = useState<any>(null)
+  const [manageGroupView, setManageGroupView] = useState<'settings' | 'control-room'>('settings')
   const [showPostMessageModal, setShowPostMessageModal] = useState(false)
   const [newGroupMessage, setNewGroupMessage] = useState({ title: '', content: '', type: 'encouragement', priority: 'normal' })
   const [postingMessage, setPostingMessage] = useState(false)
@@ -334,6 +335,7 @@ const Admin = () => {
   const manageGroup = (groupId: number) => {
     const group = adminData.groups.find((g: any) => g.id === groupId)
     setGroupToManage(group)
+    setManageGroupView('settings')
     setShowManageModal(true)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     // Initialize edit fields
@@ -2299,7 +2301,7 @@ const Admin = () => {
                     Manage {groupToManage?.name}
                   </h2>
                   <button
-                    onClick={() => setShowManageModal(false)}
+                    onClick={() => { setShowManageModal(false); setManageGroupView('settings') }}
                     className="text-purple-300 hover:text-white transition-colors"
                   >
                     ✕
@@ -2307,6 +2309,94 @@ const Admin = () => {
                 </div>
                 
                 <div className="space-y-6">
+                  {manageGroupView === 'control-room' && (
+                    <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <h3 className="text-lg font-medium text-white">Control Room</h3>
+                          <p className="text-xs text-purple-200">WhatsApp links for this group.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setManageGroupView('settings')}
+                          className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                        >
+                          ← Back
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-purple-200 mb-2">
+                            After they join WhatsApp (Step 2: Email)
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                            <input
+                              readOnly
+                              value={
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/register?step=email`
+                                  : '/register?step=email'
+                              }
+                              className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
+                              onFocus={(e) => e.target.select()}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url =
+                                  typeof window !== 'undefined'
+                                    ? `${window.location.origin}/register?step=email`
+                                    : '/register?step=email'
+                                navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                              }}
+                              className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-purple-200 mb-2">
+                            Day 1 (Accept invitation + open plan)
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                            <input
+                              readOnly
+                              value={
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                  : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                              }
+                              className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
+                              onFocus={(e) => e.target.select()}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url =
+                                  typeof window !== 'undefined'
+                                    ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                    : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                              }}
+                              className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <p className="text-xs text-purple-200 mt-2">
+                            Works for <strong className="text-white">new</strong> and{' '}
+                            <strong className="text-white">returning</strong> users.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {manageGroupView === 'settings' && (
+                  <>
                   {/* Group Status Management */}
                   <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
                     <h3 className="text-lg font-medium text-white mb-4">Group Status</h3>
@@ -2417,81 +2507,6 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Control Room (WhatsApp links) */}
-                  <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
-                    <h3 className="text-lg font-medium text-white mb-1">Control Room</h3>
-                    <p className="text-xs text-purple-200 mb-4">
-                      Copy/paste these into WhatsApp for this group.
-                    </p>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-purple-200 mb-2">
-                          After they join WhatsApp (Step 2: Email)
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-                          <input
-                            readOnly
-                            value={
-                              typeof window !== 'undefined'
-                                ? `${window.location.origin}/register?step=email`
-                                : '/register?step=email'
-                            }
-                            className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
-                            onFocus={(e) => e.target.select()}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const url =
-                                typeof window !== 'undefined'
-                                  ? `${window.location.origin}/register?step=email`
-                                  : '/register?step=email'
-                              navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
-                            }}
-                            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-purple-200 mb-2">
-                          Day 1 (Accept invitation + open plan)
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-                          <input
-                            readOnly
-                            value={
-                              typeof window !== 'undefined'
-                                ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                                : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                            }
-                            className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
-                            onFocus={(e) => e.target.select()}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const url =
-                                typeof window !== 'undefined'
-                                  ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                                  : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                              navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
-                            }}
-                            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                        <p className="text-xs text-purple-200 mt-2">
-                          Works for <strong className="text-white">new</strong> and{' '}
-                          <strong className="text-white">returning</strong> users.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Quick Actions */}
                   <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
                     <h3 className="text-lg font-medium text-white mb-4">Quick Actions</h3>
@@ -2502,8 +2517,12 @@ const Admin = () => {
                       >
                         Post Message
                       </button>
-                      <button className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium">
-                        Export Members
+                      <button
+                        type="button"
+                        onClick={() => { setManageGroupView('control-room'); try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {} }}
+                        className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium"
+                      >
+                        Control Room
                       </button>
                       <button className="bg-amber-600 hover:bg-amber-700 text-purple-900 py-2 px-4 rounded-lg transition-colors text-sm font-medium">
                         View Progress
@@ -2513,6 +2532,8 @@ const Admin = () => {
                       </button>
                     </div>
                   </div>
+                  </>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="flex space-x-3 pt-4">
@@ -2525,7 +2546,7 @@ const Admin = () => {
                         if ((editStatus || '') !== (groupToManage.status || '')) payload.status = editStatus
                         if ((editStart || '') !== (groupToManage.start_date || '')) payload.start_date = editStart
                         if ((editMax || 0) !== (groupToManage.max_members || 0)) payload.max_members = editMax
-                        if (Object.keys(payload).length === 0) { setShowManageModal(false); return }
+                        if (Object.keys(payload).length === 0) { setShowManageModal(false); setManageGroupView('settings'); return }
                         try {
                           const endpoint = (Object.keys(payload).length === 1 && payload.status)
                             ? `/api/admin/groups/${groupToManage.id}/status`
@@ -2539,6 +2560,7 @@ const Admin = () => {
                           const data = await res.json()
                           if (data.success) {
                             setShowManageModal(false)
+                            setManageGroupView('settings')
                             await fetchAdminData()
                           }
                         } catch (e) {
@@ -2550,7 +2572,7 @@ const Admin = () => {
                       Save Changes
                     </button>
                     <button 
-                      onClick={() => setShowManageModal(false)}
+                      onClick={() => { setShowManageModal(false); setManageGroupView('settings') }}
                       className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors font-medium"
                     >
                       Cancel
