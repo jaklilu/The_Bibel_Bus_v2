@@ -10,6 +10,27 @@ type MilestoneMeta = {
   totalDays: number
 }
 
+const MILESTONE_CHECKIN_EMAIL_KEY = 'bibleBusMilestoneCheckinEmail'
+
+function readStoredCheckinEmail(): string {
+  try {
+    const saved = localStorage.getItem(MILESTONE_CHECKIN_EMAIL_KEY)?.trim()
+    if (saved) return saved
+    const raw = localStorage.getItem('userData')
+    if (!raw) return ''
+    const u = JSON.parse(raw) as { email?: string }
+    return typeof u.email === 'string' ? u.email.trim() : ''
+  } catch {
+    return ''
+  }
+}
+
+function persistCheckinEmail(value: string) {
+  const t = value.trim()
+  if (t) localStorage.setItem(MILESTONE_CHECKIN_EMAIL_KEY, t)
+  else localStorage.removeItem(MILESTONE_CHECKIN_EMAIL_KEY)
+}
+
 const MilestoneCheckin = () => {
   const [searchParams] = useSearchParams()
   const mParam = searchParams.get('m')
@@ -30,6 +51,11 @@ const MilestoneCheckin = () => {
     daysCompleted: number
     dayTarget: number
   } | null>(null)
+
+  useEffect(() => {
+    const initial = readStoredCheckinEmail()
+    if (initial) setEmail(initial)
+  }, [])
 
   useEffect(() => {
     if (!Number.isFinite(milestoneId) || milestoneId < 1 || milestoneId > 8) {
@@ -92,6 +118,7 @@ const MilestoneCheckin = () => {
       })
       const data = await res.json()
       if (data.success && data.data) {
+        persistCheckinEmail(email)
         setSuccess(data.data)
         setMissingDays('')
       } else {
@@ -161,6 +188,7 @@ const MilestoneCheckin = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => persistCheckinEmail(email)}
                 className="w-full px-4 py-3 rounded-xl bg-purple-900/50 border border-purple-600 text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-amber-400 text-base"
                 placeholder="you@example.com"
               />
