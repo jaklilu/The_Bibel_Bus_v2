@@ -896,32 +896,49 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-700/30"
+            className="mb-8"
           >
             <h2 className="text-2xl font-heading text-white mb-6 flex items-center">
               <Award className="h-6 w-6 text-amber-500 mr-2" />
               Milestone Progress
             </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="flex flex-col gap-6">
               {milestones.map((milestone) => (
                 <div
                   key={milestone.id}
-                  className={`bg-purple-700/50 rounded-xl p-4 border ${
-                    milestone.completed 
-                      ? 'border-green-500/50 bg-green-900/20' 
-                      : 'border-purple-600/30'
+                  className={`rounded-2xl overflow-hidden shadow-lg border-2 backdrop-blur-sm ${
+                    milestone.completed
+                      ? 'border-green-500/50 bg-gradient-to-br from-green-950/40 via-purple-900/50 to-purple-900/40 shadow-green-900/20'
+                      : 'border-purple-500/35 bg-purple-900/45 shadow-black/20'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-white">
-                      {milestone.completed && <CheckCircle className="h-5 w-5 text-green-400 inline mr-2" />}
-                      {milestone.name}
-                    </h3>
-                    <span className="text-sm text-purple-300">Day {milestone.dayNumber}</span>
+                  <div
+                    className={`px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2 ${
+                      milestone.completed
+                        ? 'border-green-600/30 bg-green-950/30'
+                        : 'border-purple-600/40 bg-purple-950/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 text-sm font-bold border border-amber-500/40">
+                        {milestone.id}
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2 flex-wrap">
+                          {milestone.completed && (
+                            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" aria-hidden />
+                          )}
+                          <span>{milestone.name}</span>
+                        </h3>
+                      </div>
+                    </div>
+                    <span className="text-sm text-purple-200 font-medium whitespace-nowrap">
+                      Day {milestone.dayNumber}
+                    </span>
                   </div>
-                  
-                  <div className="space-y-2">
+
+                  <div className="p-5 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-purple-200">Days Completed:</span>
                       <span className="text-white font-medium">
