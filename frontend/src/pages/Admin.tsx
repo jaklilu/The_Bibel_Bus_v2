@@ -149,6 +149,8 @@ const Admin = () => {
   const [editMax, setEditMax] = useState<number>(50)
   /** Same value as Group settings → WhatsApp Invite URL; Control Room reads this so the link is visible before blur/save. */
   const [editWhatsAppInviteUrl, setEditWhatsAppInviteUrl] = useState('')
+  /** Same value as Group settings → YouVersion Plan URL. */
+  const [editYouVersionPlanUrl, setEditYouVersionPlanUrl] = useState('')
 
   const getDaySuffix = (day: number) => {
     if (day % 10 === 1 && day % 100 !== 11) return 'st'
@@ -349,6 +351,9 @@ const Admin = () => {
       setEditWhatsAppInviteUrl(
         group.whatsapp_invite_url != null ? String(group.whatsapp_invite_url) : ''
       )
+      setEditYouVersionPlanUrl(
+        group.youversion_plan_url != null ? String(group.youversion_plan_url) : ''
+      )
     }
   }
 
@@ -366,6 +371,9 @@ const Admin = () => {
         const g = data.data.group
         setEditWhatsAppInviteUrl(
           g.whatsapp_invite_url != null ? String(g.whatsapp_invite_url) : ''
+        )
+        setEditYouVersionPlanUrl(
+          g.youversion_plan_url != null ? String(g.youversion_plan_url) : ''
         )
         setGroupToManage((prev: any) => {
           if (!prev || prev.id !== g.id) return prev
@@ -2349,7 +2357,8 @@ const Admin = () => {
                         <div>
                           <h3 className="text-lg font-medium text-white">Control Room</h3>
                           <p className="text-xs text-purple-200">
-                            Uses <span className="text-purple-100 font-medium">WhatsApp Invite URL</span> from Group settings below, plus Bible Bus registration links.
+                            Uses <span className="text-purple-100 font-medium">WhatsApp Invite URL</span>,{' '}
+                            <span className="text-purple-100 font-medium">YouVersion Plan URL</span>, and the Step 2 Bible Bus registration link from Group settings.
                           </p>
                         </div>
                         <button
@@ -2437,39 +2446,48 @@ const Admin = () => {
                           </div>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-purple-200 mb-2">
-                            Bible Bus — Day 1 (accept invitation + open plan)
+                        <div className="rounded-xl border-2 border-blue-500/50 bg-blue-950/20 p-4 space-y-2">
+                          <label className="block text-sm font-semibold text-blue-100 mb-1">
+                            Day 1 — YouVersion plan (accept invitation + open plan)
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                          <p className="text-xs text-blue-200/90 mb-2">
+                            Same URL as <strong className="text-white">Group settings → YouVersion Plan URL</strong>.
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
                             <input
                               readOnly
-                              value={
-                                typeof window !== 'undefined'
-                                  ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                                  : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                              }
-                              className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
+                              value={editYouVersionPlanUrl.trim()}
+                              placeholder="Add the plan URL in Group settings → YouVersion Plan URL"
+                              className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm placeholder-purple-400/80"
                               onFocus={(e) => e.target.select()}
                             />
                             <button
                               type="button"
+                              disabled={!editYouVersionPlanUrl.trim()}
                               onClick={() => {
-                                const url =
-                                  typeof window !== 'undefined'
-                                    ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
-                                    : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                const url = editYouVersionPlanUrl.trim()
+                                if (!url) return
                                 navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
                               }}
-                              className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                              className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium border border-purple-500/50"
                             >
                               Copy
                             </button>
+                            {editYouVersionPlanUrl.trim() ? (
+                              <a
+                                href={editYouVersionPlanUrl.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-lg text-sm font-medium border text-center bg-amber-500 hover:bg-amber-600 text-purple-900 border-amber-400/50"
+                              >
+                                Open
+                              </a>
+                            ) : (
+                              <span className="px-4 py-2 rounded-lg text-sm font-medium border text-center bg-purple-900/40 text-purple-400 border-purple-600/50 cursor-not-allowed">
+                                Open
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-purple-200 mt-2">
-                            Works for <strong className="text-white">new</strong> and{' '}
-                            <strong className="text-white">returning</strong> users.
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -2546,17 +2564,24 @@ const Admin = () => {
                         <label className="block text-sm font-medium text-purple-200 mb-2">YouVersion Plan URL</label>
                         <input
                           type="url"
-                          defaultValue={groupToManage?.youversion_plan_url || ''}
+                          value={editYouVersionPlanUrl}
+                          onChange={(e) => setEditYouVersionPlanUrl(e.target.value)}
                           onBlur={async (e) => {
                             const val = e.target.value.trim() || null
                             if (!groupToManage) return
                             const token = localStorage.getItem('adminToken'); if (!token) return
                             try {
-                              await fetch(`/api/admin/groups/${groupToManage.id}`, {
+                              const res = await fetch(`/api/admin/groups/${groupToManage.id}`, {
                                 method: 'PUT',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ youversion_plan_url: val })
                               })
+                              if (res.ok) {
+                                setEditYouVersionPlanUrl(val || '')
+                                setGroupToManage((prev: any) =>
+                                  prev ? { ...prev, youversion_plan_url: val } : prev
+                                )
+                              }
                             } catch {}
                           }}
                           placeholder="https://www.bible.com/..."
