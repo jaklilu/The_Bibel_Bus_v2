@@ -2358,7 +2358,9 @@ const Admin = () => {
                           <h3 className="text-lg font-medium text-white">Control Room</h3>
                           <p className="text-xs text-purple-200">
                             <span className="text-purple-100 font-medium">WhatsApp</span> and{' '}
-                            <span className="text-purple-100 font-medium">YouVersion</span> come from Group settings; <strong className="text-purple-100 font-medium">1st After WhatsApp Join</strong> is the fixed Bible Bus entry URL on this site.
+                            <span className="text-purple-100 font-medium">YouVersion</span> come from Group settings;{' '}
+                            <strong className="text-purple-100 font-medium">1st After WhatsApp Join</strong> is the fixed Bible Bus entry URL;{' '}
+                            <strong className="text-purple-100 font-medium">2nd Accept Invitation to Read</strong> is the YouVersion plan link.
                           </p>
                         </div>
                         <button
@@ -2463,7 +2465,7 @@ const Admin = () => {
 
                         <div className="rounded-xl border-2 border-blue-500/50 bg-blue-950/20 p-4 space-y-2">
                           <label className="block text-sm font-semibold text-blue-100 mb-1">
-                            Day 1 — YouVersion plan (accept invitation + open plan)
+                            2nd Accept Invitation to Read
                           </label>
                           <p className="text-xs text-blue-200/90 mb-2">
                             Same URL as <strong className="text-white">Group settings → YouVersion Plan URL</strong>.
