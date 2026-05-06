@@ -1883,21 +1883,36 @@ router.post('/join-current-group', userAuth, async (req: Request, res: Response)
 router.post('/accept-invitation', userAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id
-    
-    // Get user's current active group membership
-    const userGroup = await getRow(`
+
+    const rawGroupId = (req.body?.groupId ?? req.body?.g) as unknown
+    const groupId =
+      typeof rawGroupId === 'number'
+        ? rawGroupId
+        : typeof rawGroupId === 'string'
+          ? parseInt(rawGroupId, 10)
+          : NaN
+
+    // Pick the requested group (preferred) or the latest group membership.
+    // Include 'closed' because cohorts flip to closed after registration deadline while reading continues.
+    const userGroup = await getRow(
+      `
       SELECT gm.id, gm.group_id, gm.invitation_accepted_at, bg.youversion_plan_url
       FROM group_members gm
       JOIN bible_groups bg ON gm.group_id = bg.id
-      WHERE gm.user_id = ? AND bg.status = 'active' AND gm.status = 'active'
+      WHERE gm.user_id = ?
+        AND gm.status = 'active'
+        AND bg.status IN ('active', 'closed', 'upcoming')
+        AND (? IS NULL OR gm.group_id = ?)
       ORDER BY bg.start_date DESC
       LIMIT 1
-    `, [userId])
+    `,
+      [userId, Number.isFinite(groupId) ? groupId : null, Number.isFinite(groupId) ? groupId : null]
+    )
     
     if (!userGroup) {
       return res.status(404).json({ 
         success: false, 
-        error: { message: 'No active group found' } 
+        error: { message: 'No group membership found for this account' } 
       })
     }
     

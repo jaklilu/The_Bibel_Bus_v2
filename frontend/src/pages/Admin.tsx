@@ -2417,6 +2417,81 @@ const Admin = () => {
                     </div>
                   </div>
 
+                  {/* Control Room (WhatsApp links) */}
+                  <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
+                    <h3 className="text-lg font-medium text-white mb-1">Control Room</h3>
+                    <p className="text-xs text-purple-200 mb-4">
+                      Copy/paste these into WhatsApp for this group.
+                    </p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-purple-200 mb-2">
+                          After they join WhatsApp (Step 2: Email)
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                          <input
+                            readOnly
+                            value={
+                              typeof window !== 'undefined'
+                                ? `${window.location.origin}/register?step=email`
+                                : '/register?step=email'
+                            }
+                            className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
+                            onFocus={(e) => e.target.select()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url =
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/register?step=email`
+                                  : '/register?step=email'
+                              navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                            }}
+                            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-purple-200 mb-2">
+                          Day 1 (Accept invitation + open plan)
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                          <input
+                            readOnly
+                            value={
+                              typeof window !== 'undefined'
+                                ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                            }
+                            className="w-full px-3 py-2 border border-purple-600 rounded-md bg-purple-800/50 text-white font-mono text-xs sm:text-sm"
+                            onFocus={(e) => e.target.select()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url =
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                                  : `/register?step=email&next=accept&groupId=${groupToManage?.id}`
+                              navigator.clipboard?.writeText(url).catch(() => window.prompt('Copy this link:', url))
+                            }}
+                            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium border border-purple-500/50"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <p className="text-xs text-purple-200 mt-2">
+                          Works for <strong className="text-white">new</strong> and{' '}
+                          <strong className="text-white">returning</strong> users.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Quick Actions */}
                   <div className="bg-purple-700/50 rounded-lg p-4 border border-purple-600/30">
                     <h3 className="text-lg font-medium text-white mb-4">Quick Actions</h3>

@@ -28,6 +28,9 @@ function persistRegisterEmail(value: string) {
 const Register = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const next = searchParams.get('next') || ''
+  const groupIdParam = searchParams.get('groupId') || searchParams.get('g') || ''
+  const nextGroupId = groupIdParam ? parseInt(groupIdParam, 10) : NaN
 
   // Flow states: 'whatsapp' | 'email' | 'form' | 'returning'
   const [currentStep, setCurrentStep] = useState<'whatsapp' | 'email' | 'form' | 'returning'>('whatsapp')
@@ -161,6 +164,12 @@ const Register = () => {
         if (data.data.groupStatus) {
           localStorage.setItem('groupStatus', JSON.stringify(data.data.groupStatus))
         }
+
+        // Optional post-login redirect used by WhatsApp "Day 1" links.
+        if (next === 'accept' && Number.isFinite(nextGroupId)) {
+          navigate(`/accept-invitation?groupId=${nextGroupId}`, { replace: true })
+          return
+        }
         
         // Route based on group status
         if (data.data.groupStatus?.inCurrentGroup) {
@@ -222,6 +231,10 @@ const Register = () => {
         }
 
         setTimeout(() => {
+          if (next === 'accept' && Number.isFinite(nextGroupId)) {
+            navigate(`/accept-invitation?groupId=${nextGroupId}`, { replace: true })
+            return
+          }
           navigate('/dashboard')
         }, 2000)
       } else {

@@ -17,6 +17,7 @@ const Awards = Trophies
 import Messages from './pages/Messages'
 import Reflections from './pages/Reflections'
 import MilestoneCheckin from './pages/MilestoneCheckin'
+import AcceptInvitation from './pages/AcceptInvitation'
 const LegacyIntake = lazy(() => import('./pages/LegacyIntake'))
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
           <Route path="/trophies" element={<Awards />} />
           <Route path="/reflections" element={<Reflections />} />
           <Route path="/milestone-checkin" element={<MilestoneCheckin />} />
+          <Route path="/accept-invitation" element={<AcceptInvitation />} />
           <Route path="/legacy" element={<LegacyIntake />} />
           <Route path="/alumni" element={<LegacyIntake />} />
         </Routes>
