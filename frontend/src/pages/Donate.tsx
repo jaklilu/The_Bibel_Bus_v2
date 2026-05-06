@@ -55,10 +55,31 @@ const MonthlyCheckoutForm = ({
 
   const isFormComplete = donationAmount && donorInfo.fullName && donorInfo.email
 
+  const billingPortalCard = (
+    <div className="bg-purple-900/40 backdrop-blur-sm rounded-2xl p-6 border border-purple-600/40">
+      <p className="text-purple-100 text-center text-sm mb-4">
+        Already giving monthly? Update your card, manage billing, or cancel your subscription on Stripe&apos;s secure page.
+      </p>
+      <a
+        href={MONTHLY_BILLING_PORTAL_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex w-full items-center justify-center bg-purple-700/80 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg border border-purple-500/50 transition-colors"
+      >
+        Manage or cancel monthly donation
+      </a>
+    </div>
+  )
+
   if (!isFormComplete) {
     return (
-      <div className="bg-yellow-800/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-700/30 text-center">
-        <p className="text-yellow-300">Please fill in the donation amount and donor information above to continue.</p>
+      <div className="space-y-6">
+        <div className="bg-yellow-800/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-700/30 text-center">
+          <p className="text-yellow-300">
+            Please fill in the donation amount and donor information above to start a new monthly gift.
+          </p>
+        </div>
+        {billingPortalCard}
       </div>
     )
   }
@@ -80,19 +101,7 @@ const MonthlyCheckoutForm = ({
         </button>
       </div>
 
-      <div className="bg-purple-900/40 backdrop-blur-sm rounded-2xl p-6 border border-purple-600/40">
-        <p className="text-purple-100 text-center text-sm mb-4">
-          Already giving monthly? Update your card, manage billing, or cancel your subscription on Stripe&apos;s secure page.
-        </p>
-        <a
-          href={MONTHLY_BILLING_PORTAL_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center bg-purple-700/80 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg border border-purple-500/50 transition-colors"
-        >
-          Manage or cancel monthly donation
-        </a>
-      </div>
+      {billingPortalCard}
     </div>
   )
 }
