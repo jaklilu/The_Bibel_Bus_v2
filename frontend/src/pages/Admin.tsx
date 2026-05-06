@@ -124,7 +124,9 @@ const Admin = () => {
   /** All groups except old completed ones — keeps only the single latest completed cohort (for post-wrap links). */
   const milestoneLinkCohortOptions = useMemo(() => {
     const list = Array.isArray(adminData.groups) ? adminData.groups : []
-    const nonCompleted = list.filter((g: any) => g && g.status !== 'completed')
+    const nonCompleted = list.filter(
+      (g: any) => g && g.status !== 'completed' && g.status !== 'upcoming'
+    )
     const completed = list.filter((g: any) => g && g.status === 'completed')
     let lastCompleted: any = null
     if (completed.length) {
@@ -1915,8 +1917,9 @@ const Admin = () => {
                   ))}
                 </select>
                 <p className="text-purple-400 text-xs mt-2">
-                  Lists active / upcoming / closed cohorts, plus{' '}
-                  <strong className="text-purple-200">only the most recently completed</strong> group (so you can send links after a cohort wraps). Older completed groups are hidden.
+                  Lists <strong className="text-purple-200">active</strong> and{' '}
+                  <strong className="text-purple-200">closed</strong> cohorts (not upcoming — milestones aren&apos;t sent before start), plus{' '}
+                  <strong className="text-purple-200">only the most recently completed</strong> group for post-wrap links. Older completed groups stay hidden.
                   Links look like{' '}
                   <span className="font-mono text-purple-200">/milestone-checkin?m=3&amp;groupId=…</span>
                 </p>
